@@ -1,5 +1,23 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
+import { db } from './firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+// Dentro da função handleAnalyze (após receber a resposta do Gemini):
+const saveReportToFirebase = async (rawJson, generatedReport) => {
+  try {
+    await addDoc(collection(db, "dre_historico"), {
+      dadosBrutosJson: rawJson,
+      relatorioDRE: generatedReport,
+      dataCriacao: serverTimestamp(),
+      competencia: "07/2026" // Exemplo de metadado para filtros futuros
+    });
+    console.log("DRE salva no Firebase com sucesso!");
+  } catch (e) {
+    console.error("Erro ao salvar no Firebase: ", e);
+  }
+};
+
 
 // Inicializa a SDK do Gemini pegando a chave do arquivo .env
 const ai = new GoogleGenAI({
