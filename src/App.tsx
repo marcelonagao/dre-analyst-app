@@ -23,7 +23,7 @@ const IconRefreshCw = ({ className = "w-3.5 h-3.5" }) => (
 
 const IconLink2 = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 005.656-5.656l-1.1 1.1" />
   </svg>
 );
 
@@ -88,6 +88,12 @@ const IconShieldAlert = ({ className = "w-3.5 h-3.5" }) => (
   </svg>
 );
 
+const IconAlertTriangle = ({ className = "w-3 h-3" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>
+);
+
 const IconAlertCircle = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -100,22 +106,28 @@ const IconChevronRight = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+const IconChevronDown = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 // ==========================================
-// HISTÓRICO COMPLETO DE 12 MESES
+// HISTÓRICO COMPLETO 12 MESES
 // ==========================================
 const HISTORICO_12_MESES = [
-  { mes: "05/2025", faturamento: 180000.00, lucro: 14400.00, margem: 8.00 },
-  { mes: "06/2025", faturamento: 195000.00, lucro: 16575.00, margem: 8.50 },
-  { mes: "07/2025", faturamento: 205000.00, lucro: 18040.00, margem: 8.80 },
-  { mes: "08/2025", faturamento: 220000.00, lucro: 19800.00, margem: 9.00 },
-  { mes: "09/2025", faturamento: 215000.00, lucro: 18705.00, margem: 8.70 },
-  { mes: "10/2025", faturamento: 230000.00, lucro: 20470.00, margem: 8.90 },
-  { mes: "11/2025", faturamento: 260000.00, lucro: 23920.00, margem: 9.20 },
-  { mes: "12/2025", faturamento: 310000.00, lucro: 29450.00, margem: 9.50 },
-  { mes: "01/2026", faturamento: 210000.00, lucro: 18500.00, margem: 8.81 },
-  { mes: "02/2026", faturamento: 245000.00, lucro: 22100.00, margem: 9.02 },
-  { mes: "03/2026", faturamento: 280000.00, lucro: 24760.00, margem: 8.84 },
-  { mes: "04/2026", faturamento: 300939.97, lucro: 21545.65, margem: 7.16 }
+  { mes: "05/2025", faturamento: 180000.00, lucro: 14400.00, margem: 8.00, shopee: 110000, meli: 70000 },
+  { mes: "06/2025", faturamento: 195000.00, lucro: 16575.00, margem: 8.50, shopee: 120000, meli: 75000 },
+  { mes: "07/2025", faturamento: 205000.00, lucro: 18040.00, margem: 8.80, shopee: 125000, meli: 80000 },
+  { mes: "08/2025", faturamento: 220000.00, lucro: 19800.00, margem: 9.00, shopee: 135000, meli: 85000 },
+  { mes: "09/2025", faturamento: 215000.00, lucro: 18705.00, margem: 8.70, shopee: 130000, meli: 85000 },
+  { mes: "10/2025", faturamento: 230000.00, lucro: 20470.00, margem: 8.90, shopee: 140000, meli: 90000 },
+  { mes: "11/2025", faturamento: 260000.00, lucro: 23920.00, margem: 9.20, shopee: 160000, meli: 100000 },
+  { mes: "12/2025", faturamento: 310000.00, lucro: 29450.00, margem: 9.50, shopee: 190000, meli: 120000 },
+  { mes: "01/2026", faturamento: 210000.00, lucro: 18500.00, margem: 8.81, shopee: 130000, meli: 80000 },
+  { mes: "02/2026", faturamento: 245000.00, lucro: 22100.00, margem: 9.02, shopee: 150000, meli: 95000 },
+  { mes: "03/2026", faturamento: 280000.00, lucro: 24760.00, margem: 8.84, shopee: 170000, meli: 110000 },
+  { mes: "04/2026", faturamento: 300939.97, lucro: 21545.65, margem: 7.16, shopee: 185000, meli: 115939.97 }
 ];
 
 const formatBRL = (val) => {
@@ -128,11 +140,14 @@ const formatPercent = (val) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + '%';
 };
 
+// ==========================================
+// COMPONENTE PRINCIPAL
+// ==========================================
 export default function App() {
   const [apiUrl, setApiUrl] = useState('');
   const [showApiModal, setShowApiModal] = useState(false);
   const [selectedCompetencia, setSelectedCompetencia] = useState('04/2026');
-  const [viewMode, setViewMode] = useState('mensal');
+  const [viewMode, setViewMode] = useState('mensal'); // 'mensal' | 'consolidado'
   const [activeTab, setActiveTab] = useState('visao-geral');
   
   const [data, setData] = useState(null);
@@ -141,7 +156,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowMargin, setFilterLowMargin] = useState(false);
 
-  // CACHE EM MEMÓRIA LOCAL (0ms DE LATÊNCIA APÓS CARREGAR)
   const localCache = useRef({});
 
   const fetchData = async (competencia, forceRefresh = false) => {
@@ -188,7 +202,9 @@ export default function App() {
           ],
           topProdutosCurvaABC: [
             { sku: "2LB05", produto: "Creme Facial Anti-olheira Com Filtro Solar", marca: "La Belle Paris", quantidadeVendida: 120, faturamentoBruto: 1618.80, lucroLiquido: 92.40, margemLiquida: 5.71 },
-            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml Anti-idade", marca: "La Belle Paris", quantidadeVendida: 95, faturamentoBruto: 4275.00, lucroLiquido: 2137.50, margemLiquida: 50.00 }
+            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml Anti-idade", marca: "La Belle Paris", quantidadeVendida: 95, faturamentoBruto: 4275.00, lucroLiquido: 2137.50, margemLiquida: 50.00 },
+            { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", quantidadeVendida: 78, faturamentoBruto: 3510.00, lucroLiquido: 1579.50, margemLiquida: 45.00 },
+            { sku: "BATOM-MATTE-01", produto: "Batom Matte Longa Duração Nude Rose", marca: "Glamour Makeup", quantidadeVendida: 49, faturamentoBruto: 1225.00, lucroLiquido: 110.25, margemLiquida: 9.00 }
           ]
         };
         localCache.current[competencia] = mockData;
@@ -205,9 +221,7 @@ export default function App() {
     fetchData(selectedCompetencia);
   }, [selectedCompetencia]);
 
-  const listaHistorico = useMemo(() => {
-    return data?.historicoMensal || HISTORICO_12_MESES;
-  }, [data]);
+  const listaHistorico = useMemo(() => data?.historicoMensal || HISTORICO_12_MESES, [data]);
 
   const competenciasList = useMemo(() => {
     return data?.metadados?.competenciasDisponiveis || listaHistorico.map(h => h.mes);
@@ -224,15 +238,16 @@ export default function App() {
     });
 
     const margemMedia = fatBrutoTotal > 0 ? (lucroLiquidoTotal / fatBrutoTotal) * 100 : 0;
+    const fatorMult = listaHistorico.length || 1;
 
     return {
       faturamentoBruto: fatBrutoTotal,
       lucroLiquido: lucroLiquidoTotal,
       margemLiquidaMedia: margemMedia,
-      totalTaxas: (data?.kpisGerais?.totalTaxas || 42959.91) * 3,
-      totalImpostos: (data?.kpisGerais?.totalImpostos || 33100.00) * 3,
-      totalCpv: (data?.kpisGerais?.totalCpv || 203331.01) * 3,
-      totalPedidos: (data?.kpisGerais?.totalPedidos || 4386) * 3
+      totalTaxas: (data?.kpisGerais?.totalTaxas || 42959.91) * fatorMult,
+      totalImpostos: (data?.kpisGerais?.totalImpostos || 33100.00) * fatorMult,
+      totalCpv: (data?.kpisGerais?.totalCpv || 203331.01) * fatorMult,
+      totalPedidos: (data?.kpisGerais?.totalPedidos || 4386) * fatorMult
     };
   }, [listaHistorico, data]);
 
@@ -252,6 +267,45 @@ export default function App() {
     };
   }, [kpisExibidos]);
 
+  // CONSOLIDAÇÃO DRE POR PLATAFORMA (RESPEITA MÊS OU CONSOLIDADO GLOBAL)
+  const dreExibida = useMemo(() => {
+    const lista = data?.drePorPlataforma || [];
+    if (viewMode === 'mensal') return lista;
+
+    // Se estiver em modo CONSOLIDADO GLOBAL:
+    const mapPlat = {};
+    listaHistorico.forEach(m => {
+      const shopeeFat = m.shopee || 185000;
+      const meliFat = m.meli || 115939.97;
+
+      if (!mapPlat["Shopee RAFA"]) {
+        mapPlat["Shopee RAFA"] = { plataforma: "Shopee RAFA", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 };
+      }
+      if (!mapPlat["Mercado Livre"]) {
+        mapPlat["Mercado Livre"] = { plataforma: "Mercado Livre", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 };
+      }
+
+      mapPlat["Shopee RAFA"].faturamentoBruto += shopeeFat;
+      mapPlat["Shopee RAFA"].lucroLiquido += shopeeFat * 0.0715;
+      mapPlat["Shopee RAFA"].taxasPlataforma += shopeeFat * 0.1428;
+      mapPlat["Shopee RAFA"].imposto += shopeeFat * 0.11;
+      mapPlat["Shopee RAFA"].cpv += shopeeFat * 0.6757;
+      mapPlat["Shopee RAFA"].pedidos += 2710;
+
+      mapPlat["Mercado Livre"].faturamentoBruto += meliFat;
+      mapPlat["Mercado Livre"].lucroLiquido += meliFat * 0.0717;
+      mapPlat["Mercado Livre"].taxasPlataforma += meliFat * 0.1428;
+      mapPlat["Mercado Livre"].imposto += meliFat * 0.11;
+      mapPlat["Mercado Livre"].cpv += meliFat * 0.6757;
+      mapPlat["Mercado Livre"].pedidos += 1676;
+    });
+
+    return Object.values(mapPlat).map(p => ({
+      ...p,
+      margemLiquida: p.faturamentoBruto > 0 ? (p.lucroLiquido / p.faturamentoBruto) * 100 : 0
+    }));
+  }, [viewMode, data, listaHistorico]);
+
   const filteredABC = useMemo(() => {
     if (!data?.topProdutosCurvaABC) return [];
     return data.topProdutosCurvaABC.filter((item) => {
@@ -268,7 +322,7 @@ export default function App() {
   return (
     <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0">
       
-      {/* SIDEBAR FIXA GOOGLE AI STUDIO */}
+      {/* SIDEBAR FIXA GOOGLE AI STUDIO STYLE */}
       <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 border-r border-slate-800 fixed left-0 top-0 bottom-0 h-screen z-30 shadow-2xl">
         <div className="p-6 space-y-6 overflow-y-auto">
           <div className="flex items-center space-x-3">
@@ -330,32 +384,34 @@ export default function App() {
         </div>
       </aside>
 
-      {/* ÁREA DE CONTEÚDO À DIREITA */}
+      {/* ÁREA DE CONTEÚDO */}
       <div className="md:pl-64 lg:pl-72 flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50 overflow-x-hidden">
         
+        {/* BARRA SUPERIOR COM BOTÃO DE VISÃO CONSOLIDADA GLOBAL */}
         <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">
               {activeTab === 'visao-geral' && (viewMode === 'consolidado' ? 'Visão Consolidada Acumulada' : 'Visão Geral Executiva')}
-              {activeTab === 'dre' && 'DRE por Canal de Vendas'}
-              {activeTab === 'abc' && 'Curva ABC de Produtos'}
+              {activeTab === 'dre' && (viewMode === 'consolidado' ? 'DRE Consolidada Acumulada' : 'DRE por Canal de Vendas')}
+              {activeTab === 'abc' && (viewMode === 'consolidado' ? 'Curva ABC Consolidada Acumulada' : 'Curva ABC de Produtos')}
             </h2>
             <p className="text-xs text-slate-400">
-              Modo: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado 12 Meses' : `Mês ${selectedCompetencia}`}</strong>
+              Modo Global: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado 12 Meses' : `Mês ${selectedCompetencia}`}</strong>
             </p>
           </div>
 
+          {/* BOTÃO GLOBAL QUE AFETA TODAS AS ABAS */}
           <div className="flex items-center space-x-3">
             <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs">
               <button
                 onClick={() => setViewMode('mensal')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'mensal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'mensal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Mês ({selectedCompetencia})
               </button>
               <button
                 onClick={() => setViewMode('consolidado')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'consolidado' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-500'}`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'consolidado' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Visão Consolidada
               </button>
@@ -390,7 +446,13 @@ export default function App() {
                   selectedCompetencia={selectedCompetencia}
                 />
               )}
-              {activeTab === 'dre' && <DREPlataformasTab dre={data?.drePorPlataforma || []} />}
+              {activeTab === 'dre' && (
+                <DREPlataformasTab
+                  dre={dreExibida}
+                  historico12Meses={listaHistorico}
+                  viewMode={viewMode}
+                />
+              )}
               {activeTab === 'abc' && (
                 <CurvaABCTab
                   produtos={filteredABC}
@@ -398,6 +460,8 @@ export default function App() {
                   setSearchQuery={setSearchQuery}
                   filterLowMargin={filterLowMargin}
                   setFilterLowMargin={setFilterLowMargin}
+                  viewMode={viewMode}
+                  factor={viewMode === 'consolidado' ? 12 : 1}
                 />
               )}
             </>
@@ -408,6 +472,9 @@ export default function App() {
   );
 }
 
+// ==========================================
+// ABA 1: VISÃO GERAL + GRÁFICO COM TOOLTIP HOVER
+// ==========================================
 function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
 
@@ -435,15 +502,14 @@ function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, 
             <span className="text-xs font-bold text-slate-400 uppercase">Volume de Vendas</span>
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl"><IconShoppingBag /></div>
           </div>
-          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate">{kpis.totalPedidos || 0} pedidos</span>
+          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate">{Math.round(kpis.totalPedidos || 0)} pedidos</span>
           <span className="text-xs text-slate-500 mt-1 block">Ticket Médio: <strong>{formatBRL(ticketMedio)}</strong></span>
         </div>
       </div>
 
-      {/* GRÁFICO DE LINHA SUAVE DE 12 MESES (MERCADO LIVRE / GOOGLE ANALYTICS STYLE) */}
+      {/* GRÁFICO COM TOOLTIP FLUTUANTE NO HOVER */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
-      {/* PAINEL DE DEDUÇÕES */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
@@ -497,18 +563,22 @@ function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, 
   );
 }
 
-// GRÁFICO DE LINHA SUAVE DE 12 MESES
+// ==========================================
+// GRÁFICO COM HOVER TOOLTIP FLUTUANTE
+// ==========================================
 function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) {
+  const [hoveredIdx, setHoveredIndex] = useState(null);
+
   const maxVal = Math.max(...historico.map(d => d.faturamento)) * 1.25;
   const svgWidth = 900;
   const svgHeight = 220;
   const paddingX = 45;
-  const paddingY = 30;
+  const paddingY = 35;
 
   const pointsFat = historico.map((d, i) => {
     const x = paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1);
     const y = svgHeight - paddingY - (d.faturamento / maxVal) * (svgHeight - 2 * paddingY);
-    return { x, y, val: d.faturamento, mes: d.mes, margem: d.margem };
+    return { x, y, val: d.faturamento, mes: d.mes, margem: d.margem, lucro: d.lucro };
   });
 
   const pointsLucro = historico.map((d, i) => {
@@ -532,48 +602,42 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
   const pathFat = generatePath(pointsFat);
   const pathLucro = generatePath(pointsLucro);
 
-  const areaFat = `${pathFat} L ${pointsFat[pointsFat.length - 1].x} ${svgHeight - paddingY} L ${pointsFat[0].x} ${svgHeight - paddingY} Z`;
-  const areaLucro = `${pathLucro} L ${pointsLucro[pointsLucro.length - 1].x} ${svgHeight - paddingY} L ${pointsLucro[0].x} ${svgHeight - paddingY} Z`;
+  const activePoint = hoveredIdx !== null ? pointsFat[hoveredIdx] : null;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full relative">
       <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3">
         <div>
-          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução Mensal de Vendas & Lucro (12 Meses)</h3>
-          <p className="text-xs text-slate-400">Clique em qualquer mês para selecionar seus detalhes</p>
+          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução Mensal (Passe o mouse para ver os valores)</h3>
+          <p className="text-xs text-slate-400">Clique em um ponto para filtrar a competência</p>
         </div>
 
         <div className="flex items-center space-x-4 text-xs font-semibold">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 bg-pink-500 rounded-full inline-block" />
-            <span className="text-slate-700">Faturamento Bruto</span>
-          </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 bg-emerald-500 rounded-full inline-block" />
-            <span className="text-slate-700">Lucro Líquido</span>
-          </div>
+          <div className="flex items-center space-x-1.5"><span className="w-3 h-3 bg-pink-500 rounded-full inline-block" /><span className="text-slate-700">Faturamento</span></div>
+          <div className="flex items-center space-x-1.5"><span className="w-3 h-3 bg-emerald-500 rounded-full inline-block" /><span className="text-slate-700">Lucro Líquido</span></div>
         </div>
       </div>
 
+      {/* BALÃO FLUTUANTE (TOOLTIP NO HOVER) */}
+      {activePoint && (
+        <div
+          className="absolute z-20 bg-slate-900 text-white p-3 rounded-xl shadow-2xl text-xs space-y-1 border border-slate-700 pointer-events-none transition-all"
+          style={{
+            left: `${Math.min(Math.max(activePoint.x - 70, 20), svgWidth - 160)}px`,
+            top: '50px'
+          }}
+        >
+          <p className="font-extrabold text-emerald-400 border-b border-slate-800 pb-1 mb-1">Mês: {activePoint.mes}</p>
+          <p className="text-slate-300">Faturamento: <strong className="text-white">{formatBRL(activePoint.val)}</strong></p>
+          <p className="text-slate-300">Lucro Líquido: <strong className="text-emerald-400">{formatBRL(activePoint.lucro)}</strong></p>
+          <p className="text-slate-300">Margem: <strong className="text-emerald-400">{formatPercent(activePoint.margem)}</strong></p>
+        </div>
+      )}
+
       <div className="w-full overflow-x-auto">
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
-          <defs>
-            <linearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ec4899" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#ec4899" stopOpacity="0.0" />
-            </linearGradient>
-
-            <linearGradient id="gradLucro" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
           <line x1={paddingX} y1={paddingY} x2={svgWidth - paddingX} y2={paddingY} stroke="#f1f5f9" strokeDasharray="4 4" />
           <line x1={paddingX} y1={svgHeight - paddingY} x2={svgWidth - paddingX} y2={svgHeight - paddingY} stroke="#e2e8f0" strokeWidth="1.5" />
-
-          <path d={areaFat} fill="url(#gradFat)" />
-          <path d={areaLucro} fill="url(#gradLucro)" />
 
           <path d={pathFat} fill="none" stroke="#ec4899" strokeWidth="3" strokeLinecap="round" />
           <path d={pathLucro} fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" />
@@ -583,13 +647,19 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
             const ptLucro = pointsLucro[idx];
 
             return (
-              <g key={pt.mes} className="cursor-pointer" onClick={() => onSelectMonth(pt.mes)}>
+              <g
+                key={pt.mes}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onClick={() => onSelectMonth(pt.mes)}
+              >
                 <text x={pt.x} y={svgHeight - 8} textAnchor="middle" className={`text-[10px] font-bold ${isSelected ? 'fill-emerald-600 font-black' : 'fill-slate-500'}`}>
                   {pt.mes}
                 </text>
 
-                <circle cx={pt.x} cy={pt.y} r={isSelected ? "6" : "4"} fill="#ec4899" stroke="#ffffff" strokeWidth="2" />
-                <circle cx={ptLucro.x} cy={ptLucro.y} r={isSelected ? "6" : "4"} fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                <circle cx={pt.x} cy={pt.y} r={hoveredIdx === idx || isSelected ? "7" : "4"} fill="#ec4899" stroke="#ffffff" strokeWidth="2" className="transition-all" />
+                <circle cx={ptLucro.x} cy={ptLucro.y} r={hoveredIdx === idx || isSelected ? "7" : "4"} fill="#10b981" stroke="#ffffff" strokeWidth="2" className="transition-all" />
               </g>
             );
           })}
@@ -599,20 +669,17 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
   );
 }
 
-// ABA 2: CANAIS / DRE
-function DREPlataformasTab({ dre }) {
-  if (!dre || dre.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">
-        Nenhum canal cadastrado para esta competência.
-      </div>
-    );
-  }
-
+// ==========================================
+// ABA 2: CANAIS / DRE COM GRÁFICO MULTI-LINHAS
+// ==========================================
+function DREPlataformasTab({ dre, historico12Meses, viewMode }) {
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-6 w-full">
+      {/* GRÁFICO DE EVOLUÇÃO DE FATURAMENTO POR PLATAFORMA */}
+      <GraficoCanaisPorPlataforma historico={historico12Meses} />
+
       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-        Canais Cadastrados ({dre.length})
+        Detalhamento por Canal ({viewMode === 'consolidado' ? 'Acumulado Total' : 'Mensal'})
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
@@ -623,7 +690,7 @@ function DREPlataformasTab({ dre }) {
                 <div className="p-3 bg-slate-100 text-slate-800 rounded-2xl"><IconStore className="w-5 h-5" /></div>
                 <div>
                   <h4 className="text-base font-bold text-slate-900">{plat.plataforma}</h4>
-                  <p className="text-xs text-slate-400">{plat.pedidos} pedidos processados</p>
+                  <p className="text-xs text-slate-400">{Math.round(plat.pedidos)} pedidos processados</p>
                 </div>
               </div>
               <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-black">
@@ -656,16 +723,110 @@ function DREPlataformasTab({ dre }) {
   );
 }
 
-// ABA 3: CURVA ABC DE PRODUTOS
-function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin }) {
+// GRÁFICO DE LINHAS MULTI-CANAL
+function GraficoCanaisPorPlataforma({ historico }) {
+  const maxVal = Math.max(...historico.map(d => d.shopee)) * 1.25;
+  const svgWidth = 800;
+  const svgHeight = 200;
+  const paddingX = 40;
+  const paddingY = 30;
+
+  const pointsShopee = historico.map((d, i) => ({
+    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
+    y: svgHeight - paddingY - (d.shopee / maxVal) * (svgHeight - 2 * paddingY)
+  }));
+
+  const pointsMeli = historico.map((d, i) => ({
+    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
+    y: svgHeight - paddingY - (d.meli / maxVal) * (svgHeight - 2 * paddingY)
+  }));
+
+  const generatePath = (pts) => {
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const cx = (pts[i].x + pts[i + 1].x) / 2;
+      d += ` C ${cx} ${pts[i].y}, ${cx} ${pts[i + 1].y}, ${pts[i + 1].x} ${pts[i + 1].y}`;
+    }
+    return d;
+  };
+
   return (
-    <div className="space-y-4 w-full">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full">
+      <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução do Faturamento por Plataforma</h3>
+          <p className="text-xs text-slate-400">Comparativo mensal entre Shopee e Mercado Livre</p>
+        </div>
+        <div className="flex items-center space-x-4 text-xs font-semibold">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-orange-500 rounded-full inline-block" /> Shopee</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-amber-500 rounded-full inline-block" /> Mercado Livre</span>
+        </div>
+      </div>
+
+      <div className="w-full overflow-x-auto">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto">
+          <line x1={paddingX} y1={svgHeight - paddingY} x2={svgWidth - paddingX} y2={svgHeight - paddingY} stroke="#e2e8f0" strokeWidth="1.5" />
+          <path d={generatePath(pointsShopee)} fill="none" stroke="#f97316" strokeWidth="3" />
+          <path d={generatePath(pointsMeli)} fill="none" stroke="#f59e0b" strokeWidth="3" />
+
+          {pointsShopee.map((pt, i) => (
+            <g key={i}>
+              <circle cx={pt.x} cy={pt.y} r="4" fill="#f97316" stroke="#ffffff" strokeWidth="1.5" />
+              <circle cx={pointsMeli[i].x} cy={pointsMeli[i].y} r="4" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.5" />
+              <text x={pt.x} y={svgHeight - 10} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">{historico[i].mes}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// ABA 3: CURVA ABC COM CONSOLIDAÇÃO POR MARCA E DRILL-DOWN
+// ==========================================
+function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin, factor }) {
+  const [expandedBrand, setExpandedBrand] = useState(null);
+
+  // AGRUPAMENTO DE PRODUTOS POR MARCA
+  const marcasAgrupadas = useMemo(() => {
+    const map = {};
+    produtos.forEach(p => {
+      const brand = p.marca || "Outras Marcas";
+      if (!map[brand]) {
+        map[brand] = {
+          marca: brand,
+          faturamento: 0,
+          lucro: 0,
+          quantidade: 0,
+          produtos: []
+        };
+      }
+      const fat = p.faturamentoBruto * factor;
+      const luc = p.lucroLiquido * factor;
+      const qtd = p.quantidadeVendida * factor;
+
+      map[brand].faturamento += fat;
+      map[brand].lucro += luc;
+      map[brand].quantidade += qtd;
+      map[brand].produtos.push({ ...p, faturamentoBruto: fat, lucroLiquido: luc, quantidadeVendida: qtd });
+    });
+
+    return Object.values(map).map(b => ({
+      ...b,
+      margemMedia: b.faturamento > 0 ? (b.lucro / b.faturamento) * 100 : 0
+    })).sort((a, b) => b.lucro - a.lucro); // Ordena da marca mais rentável para a menos
+  }, [produtos, factor]);
+
+  return (
+    <div className="space-y-6 w-full">
+      {/* BARRA DE PESQUISA */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="relative flex-1">
           <IconSearch className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
-            placeholder="Buscar por SKU, Nome do Produto ou Marca..."
+            placeholder="Buscar por Marca, SKU ou Nome de Produto..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner"
@@ -683,48 +844,80 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
         </button>
       </div>
 
-      {produtos.length === 0 ? (
+      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Consolidação por Marca (Clique para expandir o detalhamento por SKU)
+      </h3>
+
+      {marcasAgrupadas.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">
-          Nenhum produto encontrado na pesquisa.
+          Nenhum produto encontrado.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-          {produtos.map((prod, idx) => {
-            const isLowMargin = prod.margemLiquida < 10;
+        <div className="space-y-4 w-full">
+          {marcasAgrupadas.map((b) => {
+            const isExpanded = expandedBrand === b.marca;
+
             return (
-              <div key={idx} className={`bg-white rounded-2xl p-5 shadow-sm border transition-all flex flex-col justify-between ${isLowMargin ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'}`}>
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md border border-slate-200">
-                          SKU: {prod.sku}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">{prod.marca}</span>
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 leading-snug">{prod.produto}</h4>
+              <div key={b.marca} className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden transition-all">
+                {/* CABEÇALHO DA MARCA */}
+                <div
+                  onClick={() => setExpandedBrand(isExpanded ? null : b.marca)}
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/80 transition-colors border-b border-slate-100"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl font-black text-xs border border-emerald-200">
+                      MARCA
                     </div>
-                    
-                    <span className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1 shrink-0 ${isLowMargin ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-100 text-emerald-800'}`}>
-                      {formatPercent(prod.margemLiquida)}
+                    <div>
+                      <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
+                      <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) cadastrados • {Math.round(b.quantidade)} un vendidas</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase text-slate-400 font-bold block">Lucro Total</span>
+                      <span className="text-sm font-black text-emerald-600">{formatBRL(b.lucro)}</span>
+                    </div>
+
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black">
+                      {formatPercent(b.margemMedia)}
                     </span>
+
+                    {isExpanded ? <IconChevronDown className="w-5 h-5 text-slate-400" /> : <IconChevronRight className="w-5 h-5 text-slate-400" />}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 text-center text-xs">
-                  <div className="bg-slate-50 p-2 rounded-xl">
-                    <span className="text-[9px] text-slate-400 uppercase block font-medium">Qtd Vendida</span>
-                    <span className="font-bold text-slate-800">{prod.quantidadeVendida} un</span>
+                {/* DRILL-DOWN DOS PRODUTOS DA MARCA */}
+                {isExpanded && (
+                  <div className="p-5 bg-slate-50/50 space-y-3">
+                    <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Produtos da Marca {b.marca}:</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {b.produtos.map((prod, idx) => {
+                        const isLow = prod.margemLiquida < 10;
+                        return (
+                          <div key={idx} className={`bg-white p-4 rounded-xl border ${isLow ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200'}`}>
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border text-slate-700">SKU: {prod.sku}</span>
+                                <h6 className="text-xs font-bold text-slate-900 mt-1">{prod.produto}</h6>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-lg text-xs font-black ${isLow ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-50 text-emerald-700'}`}>
+                                {formatPercent(prod.margemLiquida)}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-1 pt-2 border-t text-center text-xs">
+                              <div><span className="text-[9px] text-slate-400 block">Qtd</span><strong className="text-slate-800">{Math.round(prod.quantidadeVendida)}</strong></div>
+                              <div><span className="text-[9px] text-slate-400 block">Fat.</span><strong className="text-blue-700">{formatBRL(prod.faturamentoBruto)}</strong></div>
+                              <div><span className="text-[9px] text-slate-400 block">Lucro</span><strong className="text-emerald-700">{formatBRL(prod.lucroLiquido)}</strong></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="bg-slate-50 p-2 rounded-xl">
-                    <span className="text-[9px] text-slate-400 uppercase block font-medium">Faturamento</span>
-                    <span className="font-bold text-blue-700">{formatBRL(prod.faturamentoBruto)}</span>
-                  </div>
-                  <div className="bg-slate-50 p-2 rounded-lg">
-                    <span className="text-[9px] text-slate-400 uppercase block font-medium">Lucro Líquido</span>
-                    <span className="font-bold text-emerald-700">{formatBRL(prod.lucroLiquido)}</span>
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
