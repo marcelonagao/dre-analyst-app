@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 // ==========================================
-// ÍCONES SVG LEVES E NATIVOS (ZERO DEPENDÊNCIAS)
+// ÍCONES SVG NATIVOS (ZERO DEPENDÊNCIAS)
 // ==========================================
 const IconBarChart3 = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -88,12 +88,6 @@ const IconShieldAlert = ({ className = "w-3.5 h-3.5" }) => (
   </svg>
 );
 
-const IconAlertTriangle = ({ className = "w-3 h-3" }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-  </svg>
-);
-
 const IconAlertCircle = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -107,7 +101,7 @@ const IconChevronRight = ({ className = "w-4 h-4" }) => (
 );
 
 // ==========================================
-// MOCK DE HISTÓRICO MÊS A MÊS (REAL E-COMMERCE)
+// MOCK DE HISTÓRICO MÊS A MÊS
 // ==========================================
 const MOCK_DATA_BY_MONTH = {
   "04/2026": {
@@ -183,29 +177,8 @@ const MOCK_DATA_BY_MONTH = {
       margemLiquidaMedia: 8.84,
       totalPedidos: 4100
     },
-    drePorPlataforma: [
-      {
-        plataforma: "Shopee RAFA",
-        faturamentoBruto: 170000.00,
-        taxasPlataforma: 24310.00,
-        imposto: 18700.00,
-        cpv: 112000.00,
-        lucroLiquido: 14990.00,
-        margemLiquida: 8.82,
-        pedidos: 2500
-      }
-    ],
-    topProdutosCurvaABC: [
-      {
-        sku: "SÉRUM-VITC",
-        produto: "Sérum Facial Vitamina C 30ml Anti-idade",
-        marca: "La Belle Paris",
-        quantidadeVendida: 110,
-        faturamentoBruto: 4950.00,
-        lucroLiquido: 2475.00,
-        margemLiquida: 50.00
-      }
-    ]
+    drePorPlataforma: [],
+    topProdutosCurvaABC: []
   },
   "02/2026": {
     metadados: {
@@ -328,7 +301,7 @@ export default function App() {
     fetchData(selectedCompetencia);
   }, [selectedCompetencia]);
 
-  // CÁLCULO DA VISÃO CONSOLIDADA (SOMA DE TODOS OS MESES DISPONÍVEIS)
+  // CÁLCULO DA VISÃO CONSOLIDADA
   const dadosConsolidados = useMemo(() => {
     const todosMeses = Object.values(MOCK_DATA_BY_MONTH);
     let fatBrutoTotal = 0;
@@ -392,12 +365,12 @@ export default function App() {
     <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0">
       
       {/* ========================================== */}
-      {/* SIDEBAR ANCORADA À ESQUERDA (TOP: 0, LEFT: 0) */}
+      {/* SIDEBAR FIXA ESTILO GOOGLE AI STUDIO      */}
       {/* ========================================== */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 shadow-2xl border-r border-slate-800 sticky top-0 h-screen overflow-y-auto z-30 m-0 p-0">
+      <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 border-r border-slate-800 fixed left-0 top-0 bottom-0 h-screen z-30 shadow-2xl">
         
-        <div className="p-6 space-y-6">
-          {/* Logo Controller */}
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* Logo Brand */}
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
               <IconBarChart3 className="w-6 h-6" />
@@ -406,11 +379,11 @@ export default function App() {
               <h1 className="text-base font-black tracking-tight text-white leading-tight">
                 Controller
               </h1>
-              <p className="text-[11px] text-slate-400">Executive Fintech View</p>
+              <p className="text-[11px] text-slate-400">Executive Fintech Studio</p>
             </div>
           </div>
 
-          {/* Seletor de Competência */}
+          {/* Competência Activa */}
           <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80 space-y-1.5">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Competência Ativa</span>
             <div className="flex items-center justify-between">
@@ -443,10 +416,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Menus Principais */}
+          {/* Seção de Menus */}
           <nav className="space-y-1.5">
             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-1">
-              Navegação
+              NAVEGAÇÃO
             </span>
 
             <button
@@ -495,7 +468,7 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="p-6 border-t border-slate-800 space-y-3">
+        <div className="p-6 border-t border-slate-800 space-y-3 bg-slate-900">
           <button
             onClick={() => setShowApiModal(!showApiModal)}
             className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/50 transition-colors"
@@ -532,9 +505,9 @@ export default function App() {
       </header>
 
       {/* ========================================== */}
-      {/* ÁREA DE CONTEÚDO PRINCIPAL (FULL WIDTH)    */}
+      {/* ÁREA DE CONTEÚDO COM PLACEMENT À DIREITA   */}
       {/* ========================================== */}
-      <div className="flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50">
+      <div className="md:pl-64 lg:pl-72 flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50 overflow-x-hidden">
         
         {/* BARRA SUPERIOR EXECUTIVA */}
         <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
@@ -545,11 +518,11 @@ export default function App() {
               {activeTab === 'abc' && 'Curva ABC de Produtos'}
             </h2>
             <p className="text-xs text-slate-400">
-              Modo de Exibição: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado Total' : `Mês ${selectedCompetencia}`}</strong>
+              Modo: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado Total' : `Mês ${selectedCompetencia}`}</strong>
             </p>
           </div>
 
-          {/* SELECTOR DE VISÃO (MENSAL vs CONSOLIDADO) */}
+          {/* SELECTOR DE MENSAL / CONSOLIDADO */}
           <div className="flex items-center space-x-3">
             <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs">
               <button
@@ -558,7 +531,7 @@ export default function App() {
                   viewMode === 'mensal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                Detalhes Mês ({selectedCompetencia})
+                Mês ({selectedCompetencia})
               </button>
               <button
                 onClick={() => setViewMode('consolidado')}
@@ -626,7 +599,7 @@ export default function App() {
           )}
         </main>
 
-        {/* BOTTOM NAV PARA MOBILE */}
+        {/* BOTTOM NAV MOBILE */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 px-3 flex justify-around items-center z-30 shadow-lg">
           <button
             onClick={() => setActiveTab('visao-geral')}
@@ -658,7 +631,7 @@ export default function App() {
 }
 
 // ==========================================
-// ABA 1: VISÃO GERAL + GRÁFICO DE EVOLUÇÃO
+// ABA 1: VISÃO GERAL + GRÁFICO DE LINHA SUAVE
 // ==========================================
 function VisaoGeralTab({ kpis, deducoesTotais, onSelectMonth, selectedCompetencia }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
@@ -666,7 +639,7 @@ function VisaoGeralTab({ kpis, deducoesTotais, onSelectMonth, selectedCompetenci
   return (
     <div className="space-y-6 w-full">
       
-      {/* GRID DE CARDS RESUMO (SEM ESTOURO E COMPATÍVEL COM NOTEBOOK) */}
+      {/* GRID DE CARDS ESTILO MERCADO LIVRE (IMAGEM 6) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
         
         {/* CARD LUCRO LÍQUIDO */}
@@ -730,10 +703,10 @@ function VisaoGeralTab({ kpis, deducoesTotais, onSelectMonth, selectedCompetenci
         </div>
       </div>
 
-      {/* NOVO: GRÁFICO DE EVOLUÇÃO MÊS A MÊS */}
-      <GraficoEvolucaoMensal onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
+      {/* GRÁFICO DE LINHA SUAVE DE EVOLUÇÃO (MERCADO LIVRE / IMAGEM 6) */}
+      <GraficoLinhaSuave onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
-      {/* PAINEL DE DEDUÇÕES E CUSTOS */}
+      {/* PAINEL DE DEDUÇÕES */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
@@ -788,10 +761,10 @@ function VisaoGeralTab({ kpis, deducoesTotais, onSelectMonth, selectedCompetenci
 }
 
 // ==========================================
-// COMPONENTE GRÁFICO DE EVOLUÇÃO MENSAL
+// COMPONENTE GRÁFICO DE LINHA SUAVE (SVG NATIVO)
 // ==========================================
-function GraficoEvolucaoMensal({ onSelectMonth, selectedCompetencia }) {
-  const meses = Object.keys(MOCK_DATA_BY_MONTH).reverse(); // Ordena 01, 02, 03, 04
+function GraficoLinhaSuave({ onSelectMonth, selectedCompetencia }) {
+  const meses = Object.keys(MOCK_DATA_BY_MONTH).reverse();
   const dados = meses.map(m => {
     const k = MOCK_DATA_BY_MONTH[m].kpisGerais;
     return {
@@ -802,77 +775,123 @@ function GraficoEvolucaoMensal({ onSelectMonth, selectedCompetencia }) {
     };
   });
 
-  const maxFat = Math.max(...dados.map(d => d.faturamento)) * 1.15; // Teto do gráfico
+  const maxVal = Math.max(...dados.map(d => d.faturamento)) * 1.2;
+  const svgWidth = 800;
+  const svgHeight = 220;
+  const paddingX = 60;
+  const paddingY = 30;
+
+  // CÁLCULO DAS COORDENADAS X/Y PARA A CURVA BEZIER
+  const pointsFat = dados.map((d, i) => {
+    const x = paddingX + (i * (svgWidth - 2 * paddingX)) / (dados.length - 1);
+    const y = svgHeight - paddingY - (d.faturamento / maxVal) * (svgHeight - 2 * paddingY);
+    return { x, y, val: d.faturamento, mes: d.mes, margem: d.margem };
+  });
+
+  const pointsLucro = dados.map((d, i) => {
+    const x = paddingX + (i * (svgWidth - 2 * paddingX)) / (dados.length - 1);
+    const y = svgHeight - paddingY - (d.lucro / maxVal) * (svgHeight - 2 * paddingY);
+    return { x, y, val: d.lucro };
+  });
+
+  // FUNÇÃO DE GERAR CURVA BEZIER
+  const generateSmoothPath = (pts) => {
+    if (pts.length === 0) return '';
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i];
+      const p1 = pts[i + 1];
+      const cx = (p0.x + p1.x) / 2;
+      d += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  };
+
+  const pathFat = generateSmoothPath(pointsFat);
+  const pathLucro = generateSmoothPath(pointsLucro);
+
+  const areaFat = `${pathFat} L ${pointsFat[pointsFat.length - 1].x} ${svgHeight - paddingY} L ${pointsFat[0].x} ${svgHeight - paddingY} Z`;
+  const areaLucro = `${pathLucro} L ${pointsLucro[pointsLucro.length - 1].x} ${svgHeight - paddingY} L ${pointsLucro[0].x} ${svgHeight - paddingY} Z`;
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full">
       <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
         <div>
           <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">
-            Evolução Mensal (Faturamento vs. Lucro Líquido)
+            Evolução de Vendas e Lucro (Curva Contínua)
           </h3>
-          <p className="text-xs text-slate-400">Clique na coluna de qualquer mês para carregar os detalhes</p>
+          <p className="text-xs text-slate-400">Clique nos pontos do gráfico para navegar entre os meses</p>
         </div>
 
-        {/* Legenda */}
+        {/* Legendas */}
         <div className="flex items-center space-x-4 text-xs font-semibold">
           <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 bg-blue-600 rounded-sm" />
-            <span className="text-slate-600">Faturamento Bruto</span>
+            <span className="w-3 h-3 bg-pink-500 rounded-full" />
+            <span className="text-slate-700">Faturamento Bruto</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 bg-emerald-500 rounded-sm" />
-            <span className="text-slate-600">Lucro Líquido</span>
+            <span className="w-3 h-3 bg-emerald-500 rounded-full" />
+            <span className="text-slate-700">Lucro Líquido</span>
           </div>
         </div>
       </div>
 
-      {/* GRÁFICO SVG INTERATIVO DE BARRAS DUPLAS */}
-      <div className="pt-4 pb-2">
-        <div className="grid grid-cols-4 gap-4 items-end h-48 md:h-56">
-          {dados.map((item) => {
-            const isSelected = item.mes === selectedCompetencia;
-            const fatHeight = (item.faturamento / maxFat) * 100;
-            const lucroHeight = (item.lucro / maxFat) * 100;
+      {/* SVG RESPONSIVO */}
+      <div className="w-full overflow-x-auto">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
+          <defs>
+            {/* GRADIENTES SUAVES DA CURVA */}
+            <linearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ec4899" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#ec4899" stopOpacity="0.0" />
+            </linearGradient>
+
+            <linearGradient id="gradLucro" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          {/* LINHAS DE GRADE DE FUNDO */}
+          <line x1={paddingX} y1={paddingY} x2={svgWidth - paddingX} y2={paddingY} stroke="#f1f5f9" strokeDasharray="4 4" />
+          <line x1={paddingX} y1={svgHeight / 2} x2={svgWidth - paddingX} y2={svgHeight / 2} stroke="#f1f5f9" strokeDasharray="4 4" />
+          <line x1={paddingX} y1={svgHeight - paddingY} x2={svgWidth - paddingX} y2={svgHeight - paddingY} stroke="#e2e8f0" strokeWidth="1.5" />
+
+          {/* ÁREAS COM GRADIENTE */}
+          <path d={areaFat} fill="url(#gradFat)" />
+          <path d={areaLucro} fill="url(#gradLucro)" />
+
+          {/* CURVAS SUAVES */}
+          <path d={pathFat} fill="none" stroke="#ec4899" strokeWidth="3.5" strokeLinecap="round" />
+          <path d={pathLucro} fill="none" stroke="#10b981" strokeWidth="3.5" strokeLinecap="round" />
+
+          {/* PONTOS DE DADOS INTERATIVOS */}
+          {pointsFat.map((pt, idx) => {
+            const isSelected = pt.mes === selectedCompetencia;
+            const ptLucro = pointsLucro[idx];
 
             return (
-              <div
-                key={item.mes}
-                onClick={() => onSelectMonth(item.mes)}
-                className={`flex flex-col items-center h-full justify-end group cursor-pointer p-2 rounded-2xl transition-all ${
-                  isSelected ? 'bg-slate-100 border border-slate-300 shadow-inner' : 'hover:bg-slate-50'
-                }`}
-              >
-                {/* Badge de Margem */}
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mb-2 border border-emerald-200">
-                  {formatPercent(item.margem)} mg
-                </span>
+              <g key={pt.mes} className="cursor-pointer" onClick={() => onSelectMonth(pt.mes)}>
+                {/* Rótulo do Mês na base */}
+                <text x={pt.x} y={svgHeight - 8} textAnchor="middle" className={`text-[11px] font-bold ${isSelected ? 'fill-emerald-600 font-extrabold' : 'fill-slate-500'}`}>
+                  {pt.mes}
+                </text>
 
-                {/* Colunas do Gráfico */}
-                <div className="w-full flex justify-center items-end space-x-1.5 md:space-x-3 h-full">
-                  {/* Barra Faturamento (Azul) */}
-                  <div
-                    className="w-5 md:w-8 bg-blue-600 rounded-t-lg transition-all duration-500 group-hover:bg-blue-700 relative"
-                    style={{ height: `${Math.max(fatHeight, 5)}%` }}
-                    title={`Faturamento: ${formatBRL(item.faturamento)}`}
-                  />
+                {/* Badge da Margem sobre o ponto */}
+                <rect x={pt.x - 26} y={pt.y - 24} width="52" height="16" rx="8" fill={isSelected ? '#10b981' : '#f0fdf4'} stroke="#10b981" strokeWidth="1" />
+                <text x={pt.x} y={pt.y - 13} textAnchor="middle" className={`text-[9px] font-black ${isSelected ? 'fill-white' : 'fill-emerald-800'}`}>
+                  {formatPercent(pt.margem)}
+                </text>
 
-                  {/* Barra Lucro (Verde) */}
-                  <div
-                    className="w-5 md:w-8 bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600 relative"
-                    style={{ height: `${Math.max(lucroHeight, 5)}%` }}
-                    title={`Lucro Líquido: ${formatBRL(item.lucro)}`}
-                  />
-                </div>
-
-                {/* Rótulo do Mês */}
-                <span className={`text-xs font-bold mt-2 ${isSelected ? 'text-emerald-600 font-extrabold' : 'text-slate-600'}`}>
-                  {item.mes}
-                </span>
-              </div>
+                {/* Ponto Faturamento (Rosa) */}
+                <circle cx={pt.x} cy={pt.y} r={isSelected ? "6" : "4.5"} fill="#ec4899" stroke="#ffffff" strokeWidth="2" className="transition-all hover:scale-125" />
+                
+                {/* Ponto Lucro (Verde) */}
+                <circle cx={ptLucro.x} cy={ptLucro.y} r={isSelected ? "6" : "4.5"} fill="#10b981" stroke="#ffffff" strokeWidth="2" className="transition-all hover:scale-125" />
+              </g>
             );
           })}
-        </div>
+        </svg>
       </div>
     </div>
   );
@@ -976,7 +995,6 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
                   </div>
                   
                   <span className={`px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1 shrink-0 ${isLowMargin ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-100 text-emerald-800'}`}>
-                    {isLowMargin && <IconAlertTriangle />}
                     {formatPercent(prod.margemLiquida)}
                   </span>
                 </div>
