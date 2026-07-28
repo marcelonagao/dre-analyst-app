@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // URL do seu Google Apps Script (API)
-const API_URL = "https://script.google.com/macros/s/AKfycbwIZ2PfNvKGy_C0pdtNZgOP6W0kNtLA747RuOVBCBOug-H_8nbzUzA54_bNDdr1m-oa/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwYXG4rDv0gGbRRd4Wlgza5rWFX9rQKIBVSrzGuag7E_o4DG7csdPHioPU0ZvVeBVaB/exec";
 
 export default function App() {
   const [data, setData] = useState(null);
