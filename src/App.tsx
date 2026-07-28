@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-// URL do seu Google Apps Script (API)
-const API_URL = "https://script.google.com/macros/s/AKfycbxF-Q4p6Qxfkog8PFW6CaEUige0DMI0xNstTIi1bAY-aroC9B1wHg5NLZimS0q7uYEh/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxF-Q4p6Qxfkog8PFW6CaEUige0DMI0xNstTIi1bAY-aroC9B1wHg5NLZimS0q7uYEh/exec"; // Cole o link /exec atualizado
 
 export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('geral'); // geral, canais, produtos
+  const [activeTab, setActiveTab] = useState('geral');
 
   useEffect(() => {
     fetchData();
@@ -18,8 +17,9 @@ export default function App() {
     setError(null);
     try {
       const response = await fetch(API_URL);
-      if (!response.ok) throw new Error('Falha ao carregar dados da API');
+      if (!response.ok) throw new Error('Falha ao comunicar com a API de dados');
       const result = await response.json();
+      if (result.error) throw new Error(result.error);
       setData(result);
     } catch (err) {
       setError(err.message);
@@ -28,111 +28,116 @@ export default function App() {
     }
   };
 
-  // Formatador de Moeda (BRL)
-  const formatBRL = (value) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
-  };
-
-  // Formatador de Porcentagem
-  const formatPct = (value) => {
-    return `${Number(value || 0).toFixed(2).replace('.', ',')}%`;
-  };
+  const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+  const formatPct = (val) => `${Number(val || 0).toFixed(2).replace('.', ',')}%`;
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
+      <div style={styles.loadingScreen}>
         <div style={styles.spinner}></div>
-        <p style={{ marginTop: '16px', color: '#64748b' }}>Sincronizando dados de vendas...</p>
+        <p style={{ marginTop: '14px', color: '#64748b', fontSize: '14px', fontWeight: '500' }}>Carregando inteligência financeira...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={styles.loadingContainer}>
-        <p style={{ color: '#ef4444', fontWeight: 'bold' }}>Erro de conexão</p>
-        <p style={{ color: '#64748b' }}>{error}</p>
-        <button onClick={fetchData} style={styles.retryButton}>Tentar Novamente</button>
+      <div style={styles.loadingScreen}>
+        <div style={styles.errorBox}>
+          <h3 style={{ margin: '0 0 8px 0', color: '#dc2626' }}>Atenção</h3>
+          <p style={{ color: '#475569', fontSize: '13px', margin: 0 }}>{error}</p>
+          <button onClick={fetchData} style={styles.retryBtn}>Tentar Novamente</button>
+        </div>
       </div>
     );
   }
 
-  if (!data) return null;
+  const kpis = data?.kpisGerais || {};
 
   return (
-    <div style={styles.appContainer}>
-      {/* CABEÇALHO */}
+    <div style={styles.deviceFrame}>
+      {/* HEADER EXECUTIVO */}
       <header style={styles.header}>
-        <h1 style={styles.headerTitle}>Controller Financeiro</h1>
-        <p style={styles.headerSubtitle}>Competência: {data.metadados?.competenciaAtual}</p>
+        <div style={styles.headerTop}>
+          <span style={styles.brandTag}>CONTROLLER DRE</span>
+          <span style={styles.competenciaBadge}>Ref: {data.metadados?.competenciaAtual}</span>
+        </div>
+        <h1 style={styles.headerTitle}>Visão Geral do Negócio</h1>
       </header>
 
-      {/* ÁREA PRINCIPAL (ROLÁVEL) */}
+      {/* CORPO DO APP */}
       <main style={styles.mainContent}>
         
-        {/* ABA: VISÃO GERAL */}
+        {/* ABA 1: VISÃO GERAL */}
         {activeTab === 'geral' && (
-          <div style={styles.fadeAnimation}>
-            <h2 style={styles.sectionTitle}>Visão Executiva</h2>
-            
-            <div style={styles.kpiCardHighlight}>
-              <span style={styles.kpiLabel}>Receita Bruta</span>
-              <span style={styles.kpiValueHighlight}>{formatBRL(data.kpisGerais?.faturamentoBruto)}</span>
-            </div>
-
-            <div style={styles.grid2Col}>
-              <div style={styles.kpiCard}>
-                <span style={styles.kpiLabel}>Lucro Líquido</span>
-                <span style={{...styles.kpiValue, color: '#16a34a'}}>{formatBRL(data.kpisGerais?.lucroLiquido)}</span>
-              </div>
-              <div style={styles.kpiCard}>
-                <span style={styles.kpiLabel}>Margem Média</span>
-                <span style={styles.kpiValue}>{formatPct(data.kpisGerais?.margemLiquidaMedia)}</span>
+          <div style={styles.tabPane}>
+            {/* Card Principal - Faturamento */}
+            <div style={styles.heroCard}>
+              <span style={styles.heroLabel}>Faturamento Bruto Consolidado</span>
+              <div style={styles.heroValue}>{formatBRL(kpis.faturamentoBruto)}</div>
+              <div style={styles.heroSub}>
+                <span>Volume de Pedidos: <strong>{kpis.totalPedidos}</strong></span>
               </div>
             </div>
 
-            <div style={styles.kpiCard}>
-              <span style={styles.kpiLabel}>Custos e Deduções (CPV + Taxas + Impostos)</span>
-              <div style={styles.progressContainer}>
-                <div style={{
-                  ...styles.progressBar, 
-                  width: `${((data.kpisGerais?.totalCpv + data.kpisGerais?.totalTaxas + data.kpisGerais?.totalImpostos) / data.kpisGerais?.faturamentoBruto) * 100}%`
-                }}></div>
+            {/* Grid de KPIs de Resultado */}
+            <div style={styles.grid2}>
+              <div style={styles.metricCard}>
+                <span style={styles.metricTitle}>Lucro Líquido</span>
+                <span style={{ ...styles.metricValue, color: '#16a34a' }}>{formatBRL(kpis.lucroLiquido)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
-                <span>CPV: {formatBRL(data.kpisGerais?.totalCpv)}</span>
-                <span>Taxas: {formatBRL(data.kpisGerais?.totalTaxas)}</span>
+              <div style={styles.metricCard}>
+                <span style={styles.metricTitle}>Margem Líquida</span>
+                <span style={{ ...styles.metricValue, color: kpis.margemLiquidaMedia < 10 ? '#dc2626' : '#2563eb' }}>
+                  {formatPct(kpis.margemLiquidaMedia)}
+                </span>
+              </div>
+            </div>
+
+            {/* Card de Custos e Deduções */}
+            <div style={styles.cardSection}>
+              <h3 style={styles.cardSectionTitle}>Composição de Custos & Deduções</h3>
+              <div style={styles.costRow}>
+                <span style={styles.costLabel}>CPV Total (Produtos + Embalagem)</span>
+                <span style={styles.costVal}>{formatBRL(kpis.totalCpv)}</span>
+              </div>
+              <div style={styles.costRow}>
+                <span style={styles.costLabel}>Taxas de Plataforma</span>
+                <span style={styles.costVal}>{formatBRL(kpis.totalTaxas)}</span>
+              </div>
+              <div style={{ ...styles.costRow, borderBottom: 'none' }}>
+                <span style={styles.costLabel}>Impostos (11%)</span>
+                <span style={styles.costVal}>{formatBRL(kpis.totalImpostos)}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* ABA: DRE POR CANAL */}
+        {/* ABA 2: DRE POR CANAL */}
         {activeTab === 'canais' && (
-          <div style={styles.fadeAnimation}>
-            <h2 style={styles.sectionTitle}>DRE por Plataforma</h2>
-            {data.drePorPlataforma?.map((canal, index) => (
-              <div key={index} style={styles.listItem}>
-                <div style={styles.listHeader}>
+          <div style={styles.tabPane}>
+            <h2 style={styles.sectionHeading}>Rentabilidade por Canal</h2>
+            {data.drePorPlataforma?.map((canal, idx) => (
+              <div key={idx} style={styles.channelCard}>
+                <div style={styles.channelHeader}>
                   <strong>{canal.plataforma}</strong>
-                  <span style={styles.badge}>{canal.pedidos} pedidos</span>
+                  <span style={styles.orderCountBadge}>{canal.pedidos} vendas</span>
                 </div>
-                <div style={styles.grid2ColList}>
+                
+                <div style={styles.channelGrid}>
                   <div>
-                    <span style={styles.microLabel}>Faturamento</span>
-                    <strong style={styles.microValue}>{formatBRL(canal.faturamentoBruto)}</strong>
+                    <span style={styles.subLabel}>Faturamento</span>
+                    <div style={styles.subVal}>{formatBRL(canal.faturamentoBruto)}</div>
                   </div>
                   <div>
-                    <span style={styles.microLabel}>Lucro Líquido</span>
-                    <strong style={{...styles.microValue, color: '#16a34a'}}>{formatBRL(canal.lucroLiquido)}</strong>
+                    <span style={styles.subLabel}>Lucro Líquido</span>
+                    <div style={{ ...styles.subVal, color: '#16a34a' }}>{formatBRL(canal.lucroLiquido)}</div>
                   </div>
                 </div>
-                <div style={styles.marginIndicator}>
-                  <span style={styles.microLabel}>Margem Líquida</span>
-                  <strong style={{
-                    color: canal.margemLiquida < 10 ? '#ef4444' : '#16a34a',
-                    fontSize: '14px'
-                  }}>
+
+                <div style={styles.channelFooter}>
+                  <span>Margem Líquida do Canal:</span>
+                  <strong style={{ color: canal.margemLiquida < 10 ? '#dc2626' : '#16a34a' }}>
                     {formatPct(canal.margemLiquida)}
                   </strong>
                 </div>
@@ -141,26 +146,33 @@ export default function App() {
           </div>
         )}
 
-        {/* ABA: CURVA ABC DE PRODUTOS */}
+        {/* ABA 3: CURVA ABC DE PRODUTOS */}
         {activeTab === 'produtos' && (
-          <div style={styles.fadeAnimation}>
-            <h2 style={styles.sectionTitle}>Curva ABC (Top Produtos)</h2>
-            {data.topProdutosCurvaABC?.map((prod, index) => (
-              <div key={index} style={{...styles.listItem, borderLeft: prod.margemLiquida < 10 ? '4px solid #ef4444' : '4px solid #3b82f6'}}>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>SKU: {prod.sku} | {prod.marca}</div>
-                <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '12px', lineHeight: '1.4' }}>{prod.produto}</div>
+          <div style={styles.tabPane}>
+            <h2 style={styles.sectionHeading}>Top Produtos (Curva ABC)</h2>
+            {data.topProdutosCurvaABC?.map((prod, idx) => (
+              <div key={idx} style={{ 
+                ...styles.productCard, 
+                borderLeft: prod.margemLiquida < 10 ? '4px solid #dc2626' : '4px solid #2563eb' 
+              }}>
+                <div style={styles.productMeta}>
+                  <span>SKU: {prod.sku}</span>
+                  <span style={styles.brandBadge}>{prod.marca}</span>
+                </div>
+                <div style={styles.productName}>{prod.produto}</div>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={styles.productStats}>
                   <div>
-                    <span style={styles.microLabel}>Vendas</span>
-                    <strong style={styles.microValue}>{prod.quantidadeVendida} un</strong>
+                    <span style={styles.subLabel}>Qtd Vendida</span>
+                    <strong style={{ fontSize: '13px', color: '#1e293b' }}>{prod.quantidadeVendida} un</strong>
+                  </div>
+                  <div>
+                    <span style={styles.subLabel}>Faturamento</span>
+                    <strong style={{ fontSize: '13px', color: '#1e293b' }}>{formatBRL(prod.faturamentoBruto)}</strong>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={styles.microLabel}>Margem (Alerta)</span>
-                    <strong style={{ 
-                      fontSize: '14px',
-                      color: prod.margemLiquida < 10 ? '#ef4444' : '#16a34a' 
-                    }}>
+                    <span style={styles.subLabel}>Margem</span>
+                    <strong style={{ fontSize: '13px', color: prod.margemLiquida < 10 ? '#dc2626' : '#16a34a' }}>
                       {formatPct(prod.margemLiquida)}
                     </strong>
                   </div>
@@ -169,117 +181,128 @@ export default function App() {
             ))}
           </div>
         )}
+
       </main>
 
-      {/* NAVEGAÇÃO INFERIOR (BOTTOM TAB BAR) */}
+      {/* BOTTOM NAVIGATION (ESTILO APP NATIVO) */}
       <nav style={styles.bottomNav}>
         <button 
-          style={activeTab === 'geral' ? styles.navButtonActive : styles.navButton}
+          style={activeTab === 'geral' ? styles.navBtnActive : styles.navBtn} 
           onClick={() => setActiveTab('geral')}
         >
-          Visão Geral
+          📊 Visão Geral
         </button>
         <button 
-          style={activeTab === 'canais' ? styles.navButtonActive : styles.navButton}
+          style={activeTab === 'canais' ? styles.navBtnActive : styles.navBtn} 
           onClick={() => setActiveTab('canais')}
         >
-          Canais (DRE)
+          🛒 Canais (DRE)
         </button>
         <button 
-          style={activeTab === 'produtos' ? styles.navButtonActive : styles.navButton}
+          style={activeTab === 'produtos' ? styles.navBtnActive : styles.navBtn} 
           onClick={() => setActiveTab('produtos')}
         >
-          Curva ABC
+          📦 Curva ABC
         </button>
       </nav>
     </div>
   );
 }
 
-// ESTILOS FOCADOS EM MOBILE
+// ESTILOS DE DESIGN FINTECH MOBILE-FIRST
 const styles = {
-  appContainer: {
+  deviceFrame: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#f8fafc',
     minHeight: '100vh',
-    maxWidth: '480px', // Restringe a largura para parecer um celular no desktop
+    maxWidth: '480px',
     margin: '0 auto',
     position: 'relative',
-    boxShadow: '0 0 15px rgba(0,0,0,0.1)',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
   },
-  loadingContainer: {
-    display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-    height: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif'
+  loadingScreen: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    height: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif'
   },
   spinner: {
-    width: '40px', height: '40px', border: '4px solid #cbd5e1', borderTop: '4px solid #3b82f6',
-    borderRadius: '50%', animation: 'spin 1s linear infinite'
+    width: '36px', height: '36px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb',
+    borderRadius: '50%', animation: 'spin 0.8s linear infinite'
   },
-  retryButton: {
-    marginTop: '16px', padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff',
-    border: 'none', borderRadius: '6px', fontWeight: 'bold'
+  errorBox: {
+    backgroundColor: '#fff', padding: '24px', borderRadius: '12px', textAlign: 'center',
+    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', maxWidth: '320px'
+  },
+  retryBtn: {
+    marginTop: '16px', padding: '10px 16px', backgroundColor: '#2563eb', color: '#fff',
+    border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', width: '100%'
   },
   header: {
-    backgroundColor: '#0f172a', color: '#fff', padding: '24px 20px',
-    borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px',
-    position: 'sticky', top: 0, zIndex: 10
+    backgroundColor: '#0f172a', color: '#fff', padding: '24px 20px 20px 20px',
+    borderBottomLeftRadius: '20px', borderBottomRightRadius: '20px',
+    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.1)'
   },
-  headerTitle: { margin: 0, fontSize: '20px', fontWeight: 'bold' },
-  headerSubtitle: { margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' },
-  mainContent: {
-    flex: 1, padding: '20px', paddingBottom: '90px', overflowY: 'auto'
+  headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+  brandTag: { fontSize: '10px', letterSpacing: '1.2px', fontWeight: '700', color: '#94a3b8' },
+  competenciaBadge: { backgroundColor: '#1e293b', color: '#38bdf8', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
+  headerTitle: { margin: 0, fontSize: '20px', fontWeight: '700', color: '#f8fafc' },
+  mainContent: { flex: 1, padding: '20px', paddingBottom: '90px', overflowY: 'auto' },
+  tabPane: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  heroCard: {
+    backgroundColor: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', background: '#2563eb',
+    color: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.2)'
   },
-  sectionTitle: {
-    fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '16px', marginTop: 0
+  heroLabel: { fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#93c5fd', fontWeight: '600' },
+  heroValue: { fontSize: '28px', fontWeight: '800', margin: '8px 0 12px 0' },
+  heroSub: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#dbeafe', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '10px' },
+  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
+  metricCard: {
+    backgroundColor: '#fff', padding: '16px', borderRadius: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0'
   },
-  kpiCardHighlight: {
-    backgroundColor: '#3b82f6', color: '#fff', padding: '20px', borderRadius: '12px',
-    marginBottom: '16px', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+  metricTitle: { fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' },
+  metricValue: { fontSize: '18px', fontWeight: '800', marginTop: '6px', display: 'block' },
+  cardSection: {
+    backgroundColor: '#fff', padding: '16px', borderRadius: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0'
   },
-  kpiValueHighlight: { fontSize: '32px', fontWeight: 'bold', marginTop: '8px' },
-  grid2Col: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
-  kpiCard: {
-    backgroundColor: '#fff', padding: '16px', borderRadius: '12px', display: 'flex',
-    flexDirection: 'column', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  cardSectionTitle: { fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '0 0 12px 0' },
+  costRow: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13px' },
+  costLabel: { color: '#64748b' },
+  costVal: { fontWeight: '600', color: '#1e293b' },
+  sectionHeading: { fontSize: '16px', fontWeight: '700', color: '#1e293b', margin: '0 0 4px 0' },
+  channelCard: {
+    backgroundColor: '#fff', padding: '16px', borderRadius: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px'
   },
-  kpiLabel: { fontSize: '13px', color: '#64748b', fontWeight: '600' },
-  kpiValue: { fontSize: '22px', fontWeight: 'bold', color: '#1e293b', marginTop: '4px' },
-  progressContainer: { width: '100%', backgroundColor: '#e2e8f0', height: '8px', borderRadius: '4px', marginTop: '12px', overflow: 'hidden' },
-  progressBar: { backgroundColor: '#ef4444', height: '100%' },
-  listItem: {
-    backgroundColor: '#fff', padding: '16px', borderRadius: '12px', marginBottom: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  channelHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' },
+  orderCountBadge: { backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '600' },
+  channelGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  subLabel: { fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '2px' },
+  subVal: { fontSize: '15px', fontWeight: '700', color: '#1e293b' },
+  channelFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #e2e8f0', paddingTop: '8px', fontSize: '12px', color: '#64748b' },
+  productCard: {
+    backgroundColor: '#fff', padding: '16px', borderRadius: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px'
   },
-  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9' },
-  badge: { backgroundColor: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' },
-  grid2ColList: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
-  microLabel: { display: 'block', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', marginBottom: '2px' },
-  microValue: { fontSize: '15px', fontWeight: 'bold', color: '#1e293b' },
-  marginIndicator: { marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  productMeta: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', fontWeight: '600' },
+  brandBadge: { backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '2px 6px', borderRadius: '4px' },
+  productName: { fontSize: '13px', fontWeight: '700', color: '#1e293b', lineHeight: '1.4' },
+  productStats: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', alignItems: 'center' },
   bottomNav: {
     position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
     width: '100%', maxWidth: '480px', backgroundColor: '#fff', display: 'flex',
-    borderTop: '1px solid #e2e8f0', zIndex: 10, paddingBottom: 'env(safe-area-inset-bottom)'
+    borderTop: '1px solid #e2e8f0', boxShadow: '0 -4px 10px rgba(0,0,0,0.03)', zIndex: 100,
+    paddingBottom: 'env(safe-area-inset-bottom)'
   },
-  navButton: {
-    flex: 1, padding: '16px 0', backgroundColor: 'transparent', border: 'none',
-    borderTop: '3px solid transparent', color: '#64748b', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
+  navBtn: {
+    flex: 1, padding: '14px 0', backgroundColor: 'transparent', border: 'none',
+    color: '#64748b', fontSize: '12px', fontWeight: '600', cursor: 'pointer', textAlign: 'center'
   },
-  navButtonActive: {
-    flex: 1, padding: '16px 0', backgroundColor: 'transparent', border: 'none',
-    borderTop: '3px solid #3b82f6', color: '#3b82f6', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer'
-  },
-  fadeAnimation: { animation: 'fadeIn 0.3s ease-in-out' }
+  navBtnActive: {
+    flex: 1, padding: '14px 0', backgroundColor: 'transparent', border: 'none',
+    color: '#2563eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textAlign: 'center',
+    borderTop: '2px solid #2563eb'
+  }
 };
-
-// Adicionando a keyframe animation no documento (simples truque para inline styles)
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.innerHTML = `
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  `;
-  document.head.appendChild(style);
-}
