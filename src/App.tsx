@@ -107,7 +107,7 @@ const IconChevronRight = ({ className = "w-4 h-4" }) => (
 );
 
 // ==========================================
-// MOCK DE FALLBACK LOCAL
+// MOCK DE HISTÓRICO MÊS A MÊS (REAL E-COMMERCE)
 // ==========================================
 const MOCK_DATA_BY_MONTH = {
   "04/2026": {
@@ -117,34 +117,34 @@ const MOCK_DATA_BY_MONTH = {
       ultimaAtualizacao: "2026-07-28T14:30:00.000Z"
     },
     kpisGerais: {
-      faturamentoBruto: 15420.50,
-      totalTaxas: 2310.20,
-      totalImpostos: 1696.25,
-      totalCpv: 4500.00,
-      lucroLiquido: 6914.05,
-      margemLiquidaMedia: 44.83,
-      totalPedidos: 342
+      faturamentoBruto: 300939.97,
+      totalTaxas: 42959.91,
+      totalImpostos: 33100.00,
+      totalCpv: 203331.01,
+      lucroLiquido: 21545.65,
+      margemLiquidaMedia: 7.16,
+      totalPedidos: 4386
     },
     drePorPlataforma: [
       {
         plataforma: "Shopee RAFA",
-        faturamentoBruto: 9850.00,
-        taxasPlataforma: 1477.50,
-        imposto: 1083.50,
-        cpv: 2870.00,
-        lucroLiquido: 4419.00,
-        margemLiquida: 44.86,
-        pedidos: 210
+        faturamentoBruto: 185000.00,
+        taxasPlataforma: 26418.00,
+        imposto: 20350.00,
+        cpv: 125000.00,
+        lucroLiquido: 13232.00,
+        margemLiquida: 7.15,
+        pedidos: 2710
       },
       {
         plataforma: "Mercado Livre",
-        faturamentoBruto: 5570.50,
-        taxasPlataforma: 832.70,
-        imposto: 612.75,
-        cpv: 1630.00,
-        lucroLiquido: 2495.05,
-        margemLiquida: 44.79,
-        pedidos: 132
+        faturamentoBruto: 115939.97,
+        taxasPlataforma: 16541.91,
+        imposto: 12750.00,
+        cpv: 78331.01,
+        lucroLiquido: 8313.65,
+        margemLiquida: 7.17,
+        pedidos: 1676
       }
     ],
     topProdutosCurvaABC: [
@@ -165,24 +165,6 @@ const MOCK_DATA_BY_MONTH = {
         faturamentoBruto: 4275.00,
         lucroLiquido: 2137.50,
         margemLiquida: 50.00
-      },
-      {
-        sku: "PROT-SPF50",
-        produto: "Protetor Solar Toque Seco FPS 50",
-        marca: "SunCare Pro",
-        quantidadeVendida: 78,
-        faturamentoBruto: 3510.00,
-        lucroLiquido: 1579.50,
-        margemLiquida: 45.00
-      },
-      {
-        sku: "BATOM-MATTE-01",
-        produto: "Batom Matte Longa Duração Nude Rose",
-        marca: "Glamour Makeup",
-        quantidadeVendida: 49,
-        faturamentoBruto: 1225.00,
-        lucroLiquido: 110.25,
-        margemLiquida: 9.00
       }
     ]
   },
@@ -193,24 +175,24 @@ const MOCK_DATA_BY_MONTH = {
       ultimaAtualizacao: "2026-04-01T08:00:00.000Z"
     },
     kpisGerais: {
-      faturamentoBruto: 13800.00,
-      totalTaxas: 2070.00,
-      totalImpostos: 1518.00,
-      totalCpv: 4140.00,
-      lucroLiquido: 6072.00,
-      margemLiquidaMedia: 44.00,
-      totalPedidos: 298
+      faturamentoBruto: 280000.00,
+      totalTaxas: 40040.00,
+      totalImpostos: 30800.00,
+      totalCpv: 184400.00,
+      lucroLiquido: 24760.00,
+      margemLiquidaMedia: 8.84,
+      totalPedidos: 4100
     },
     drePorPlataforma: [
       {
         plataforma: "Shopee RAFA",
-        faturamentoBruto: 8500.00,
-        taxasPlataforma: 1275.00,
-        imposto: 935.00,
-        cpv: 2550.00,
-        lucroLiquido: 3740.00,
-        margemLiquida: 44.00,
-        pedidos: 180
+        faturamentoBruto: 170000.00,
+        taxasPlataforma: 24310.00,
+        imposto: 18700.00,
+        cpv: 112000.00,
+        lucroLiquido: 14990.00,
+        margemLiquida: 8.82,
+        pedidos: 2500
       }
     ],
     topProdutosCurvaABC: [
@@ -224,6 +206,42 @@ const MOCK_DATA_BY_MONTH = {
         margemLiquida: 50.00
       }
     ]
+  },
+  "02/2026": {
+    metadados: {
+      competenciaAtual: "02/2026",
+      competenciasDisponiveis: ["01/2026", "02/2026", "03/2026", "04/2026"],
+      ultimaAtualizacao: "2026-03-01T08:00:00.000Z"
+    },
+    kpisGerais: {
+      faturamentoBruto: 245000.00,
+      totalTaxas: 35035.00,
+      totalImpostos: 26950.00,
+      totalCpv: 160915.00,
+      lucroLiquido: 22100.00,
+      margemLiquidaMedia: 9.02,
+      totalPedidos: 3580
+    },
+    drePorPlataforma: [],
+    topProdutosCurvaABC: []
+  },
+  "01/2026": {
+    metadados: {
+      competenciaAtual: "01/2026",
+      competenciasDisponiveis: ["01/2026", "02/2026", "03/2026", "04/2026"],
+      ultimaAtualizacao: "2026-02-01T08:00:00.000Z"
+    },
+    kpisGerais: {
+      faturamentoBruto: 210000.00,
+      totalTaxas: 30030.00,
+      totalImpostos: 23100.00,
+      totalCpv: 138370.00,
+      lucroLiquido: 18500.00,
+      margemLiquidaMedia: 8.81,
+      totalPedidos: 3100
+    },
+    drePorPlataforma: [],
+    topProdutosCurvaABC: []
   }
 };
 
@@ -265,12 +283,13 @@ const formatDate = (isoString) => {
 };
 
 // ==========================================
-// COMPONENTE PRINCIPAL (FULL SCREEN)
+// COMPONENTE PRINCIPAL
 // ==========================================
 export default function App() {
-  const [apiUrl, setApiUrl] = useState('https://script.google.com/macros/s/AKfycbwIcyAxQYoQrWJWi8-xdtAAQwGMDbn7m7PWVMKwl_rfBzdFj4HT2JuugLN02sj_gvnO/exec');
+  const [apiUrl, setApiUrl] = useState('');
   const [showApiModal, setShowApiModal] = useState(false);
   const [selectedCompetencia, setSelectedCompetencia] = useState('04/2026');
+  const [viewMode, setViewMode] = useState('mensal'); // 'mensal' | 'consolidado'
   const [activeTab, setActiveTab] = useState('visao-geral');
   
   const [data, setData] = useState(null);
@@ -279,35 +298,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowMargin, setFilterLowMargin] = useState(false);
 
-  // FETCH ROBUSTO COM SUPORTE AO GOOGLE APPS SCRIPT
   const fetchData = async (competencia) => {
     setLoading(true);
     setError(null);
-
     const cleanUrl = apiUrl.trim();
 
     try {
       if (cleanUrl) {
         const fullUrl = `${cleanUrl}?competencia=${encodeURIComponent(competencia)}`;
-        
-        const response = await fetch(fullUrl, {
-          method: 'GET',
-          redirect: 'follow',
-        });
-
-        if (!response.ok) {
-          throw new Error(`Servidor retornou código de erro HTTP ${response.status}`);
-        }
-
+        const response = await fetch(fullUrl, { method: 'GET', redirect: 'follow' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const textResult = await response.text();
-        let parsedJson;
-
-        try {
-          parsedJson = JSON.parse(textResult);
-        } catch (e) {
-          throw new Error("O Google Apps Script retornou HTML em vez de JSON. Verifique as permissões de implantação no Google Script (Quem tem acesso: Qualquer Pessoa).");
-        }
-
+        const parsedJson = JSON.parse(textResult);
         setData(parsedJson);
       } else {
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -315,8 +317,8 @@ export default function App() {
         setData(mockResponse);
       }
     } catch (err) {
-      console.error("Erro na integração com a API:", err);
-      setError(err.message || "Não foi possível conectar à API do Google Apps Script.");
+      console.error("Erro ao carregar dados:", err);
+      setError(err.message || "Erro na conexão com a API do Google Apps Script.");
     } finally {
       setLoading(false);
     }
@@ -325,6 +327,53 @@ export default function App() {
   useEffect(() => {
     fetchData(selectedCompetencia);
   }, [selectedCompetencia]);
+
+  // CÁLCULO DA VISÃO CONSOLIDADA (SOMA DE TODOS OS MESES DISPONÍVEIS)
+  const dadosConsolidados = useMemo(() => {
+    const todosMeses = Object.values(MOCK_DATA_BY_MONTH);
+    let fatBrutoTotal = 0;
+    let lucroLiquidoTotal = 0;
+    let totalTaxas = 0;
+    let totalImpostos = 0;
+    let totalCpv = 0;
+    let totalPedidos = 0;
+
+    todosMeses.forEach(m => {
+      const k = m.kpisGerais;
+      fatBrutoTotal += k.faturamentoBruto || 0;
+      lucroLiquidoTotal += k.lucroLiquido || 0;
+      totalTaxas += k.totalTaxas || 0;
+      totalImpostos += k.totalImpostos || 0;
+      totalCpv += k.totalCpv || 0;
+      totalPedidos += k.totalPedidos || 0;
+    });
+
+    const margemMedia = fatBrutoTotal > 0 ? (lucroLiquidoTotal / fatBrutoTotal) * 100 : 0;
+
+    return {
+      faturamentoBruto: fatBrutoTotal,
+      lucroLiquido: lucroLiquidoTotal,
+      margemLiquidaMedia: margemMedia,
+      totalTaxas,
+      totalImpostos,
+      totalCpv,
+      totalPedidos
+    };
+  }, []);
+
+  const kpisExibidos = useMemo(() => {
+    if (viewMode === 'consolidado') return dadosConsolidados;
+    return data?.kpisGerais || {};
+  }, [viewMode, data, dadosConsolidados]);
+
+  const deducoesTotais = useMemo(() => {
+    const { totalCpv, totalTaxas, totalImpostos, faturamentoBruto } = kpisExibidos;
+    const total = (totalCpv || 0) + (totalTaxas || 0) + (totalImpostos || 0);
+    const cpvPerc = faturamentoBruto > 0 ? (totalCpv / faturamentoBruto) * 100 : 0;
+    const taxasPerc = faturamentoBruto > 0 ? (totalTaxas / faturamentoBruto) * 100 : 0;
+    const impostosPerc = faturamentoBruto > 0 ? (totalImpostos / faturamentoBruto) * 100 : 0;
+    return { total, cpvPerc, taxasPerc, impostosPerc };
+  }, [kpisExibidos]);
 
   const filteredABC = useMemo(() => {
     if (!data?.topProdutosCurvaABC) return [];
@@ -339,35 +388,29 @@ export default function App() {
     });
   }, [data, searchQuery, filterLowMargin]);
 
-  const deducoesTotais = useMemo(() => {
-    if (!data?.kpisGerais) return { total: 0, cpvPerc: 0, taxasPerc: 0, impostosPerc: 0 };
-    const { totalCpv, totalTaxas, totalImpostos, faturamentoBruto } = data.kpisGerais;
-    const total = totalCpv + totalTaxas + totalImpostos;
-    const cpvPerc = faturamentoBruto > 0 ? (totalCpv / faturamentoBruto) * 100 : 0;
-    const taxasPerc = faturamentoBruto > 0 ? (totalTaxas / faturamentoBruto) * 100 : 0;
-    const impostosPerc = faturamentoBruto > 0 ? (totalImpostos / faturamentoBruto) * 100 : 0;
-    return { total, cpvPerc, taxasPerc, impostosPerc };
-  }, [data]);
-
   return (
-    <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden">
+    <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0">
       
-      {/* SIDEBAR DESKTOP */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 shadow-2xl border-r border-slate-800 sticky top-0 h-screen overflow-y-auto z-20">
+      {/* ========================================== */}
+      {/* SIDEBAR ANCORADA À ESQUERDA (TOP: 0, LEFT: 0) */}
+      {/* ========================================== */}
+      <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 shadow-2xl border-r border-slate-800 sticky top-0 h-screen overflow-y-auto z-30 m-0 p-0">
         
         <div className="p-6 space-y-6">
+          {/* Logo Controller */}
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
               <IconBarChart3 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-base font-extrabold tracking-tight text-white leading-tight">
+              <h1 className="text-base font-black tracking-tight text-white leading-tight">
                 Controller
               </h1>
               <p className="text-[11px] text-slate-400">Executive Fintech View</p>
             </div>
           </div>
 
+          {/* Seletor de Competência */}
           <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80 space-y-1.5">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Competência Ativa</span>
             <div className="flex items-center justify-between">
@@ -375,7 +418,10 @@ export default function App() {
                 <IconCalendar className="w-4 h-4" />
                 <select
                   value={selectedCompetencia}
-                  onChange={(e) => setSelectedCompetencia(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCompetencia(e.target.value);
+                    setViewMode('mensal');
+                  }}
                   className="bg-slate-900 text-white font-bold text-xs rounded-lg px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer"
                 >
                   {data?.metadados?.competenciasDisponiveis?.map((comp) => (
@@ -397,9 +443,10 @@ export default function App() {
             </div>
           </div>
 
+          {/* Menus Principais */}
           <nav className="space-y-1.5">
             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-1">
-              Menu Principal
+              Navegação
             </span>
 
             <button
@@ -434,7 +481,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('abc')}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all relative ${
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'abc'
                   ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
@@ -468,7 +515,7 @@ export default function App() {
             <IconBarChart3 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-white">Controller Financeiro</h1>
+            <h1 className="text-sm font-bold text-white">Controller</h1>
             <p className="text-[10px] text-slate-400">E-commerce View</p>
           </div>
         </div>
@@ -484,77 +531,87 @@ export default function App() {
         </select>
       </header>
 
-      {/* ÁREA DE CONTEÚDO 100% LARGURA DA TELA */}
+      {/* ========================================== */}
+      {/* ÁREA DE CONTEÚDO PRINCIPAL (FULL WIDTH)    */}
+      {/* ========================================== */}
       <div className="flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50">
         
-        {/* BARRA SUPERIOR EXECUTIVA (SEM MARGENS) */}
+        {/* BARRA SUPERIOR EXECUTIVA */}
         <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">
-              {activeTab === 'visao-geral' && 'Visão Geral Executiva'}
-              {activeTab === 'dre' && 'Demonstrativo do Resultado por Canal (DRE)'}
-              {activeTab === 'abc' && 'Curva ABC & Performance de Margem por SKU'}
+              {activeTab === 'visao-geral' && (viewMode === 'consolidado' ? 'Visão Consolidada Acumulada' : 'Visão Geral Executiva')}
+              {activeTab === 'dre' && 'DRE por Canal de Vendas'}
+              {activeTab === 'abc' && 'Curva ABC de Produtos'}
             </h2>
-            <p className="text-xs text-slate-400">Competência de análise: <strong className="text-slate-700">{selectedCompetencia}</strong></p>
+            <p className="text-xs text-slate-400">
+              Modo de Exibição: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado Total' : `Mês ${selectedCompetencia}`}</strong>
+            </p>
           </div>
 
+          {/* SELECTOR DE VISÃO (MENSAL vs CONSOLIDADO) */}
           <div className="flex items-center space-x-3">
+            <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs">
+              <button
+                onClick={() => setViewMode('mensal')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  viewMode === 'mensal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Detalhes Mês ({selectedCompetencia})
+              </button>
+              <button
+                onClick={() => setViewMode('consolidado')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  viewMode === 'consolidado' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Visão Consolidada
+              </button>
+            </div>
+
             <button
               onClick={() => fetchData(selectedCompetencia)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 rounded-xl border border-slate-200 transition-colors"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-colors"
+              title="Atualizar"
             >
-              <IconRefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-              <span>Atualizar</span>
+              <IconRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
             </button>
-
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> Status: Online
-            </span>
           </div>
         </header>
 
         {showApiModal && (
           <div className="m-6 p-4 bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 text-xs">
-            <div className="flex justify-between items-center mb-2">
-              <label className="font-bold text-emerald-400">URL da Web App do Google Apps Script:</label>
-              <button
-                onClick={() => { setApiUrl(''); fetchData(selectedCompetencia); }}
-                className="text-[10px] text-slate-400 hover:text-white underline"
-              >
-                Resetar para Dados Demonstrativos
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="https://script.google.com/macros/s/.../exec"
-                value={apiUrl}
-                onChange={(e) => setApiUrl(e.target.value)}
-                className="flex-1 p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              />
-              <button
-                onClick={() => fetchData(selectedCompetencia)}
-                className="px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs"
-              >
-                Conectar
-              </button>
-            </div>
+            <label className="block mb-1 font-bold text-emerald-400">URL do Google Apps Script:</label>
+            <input
+              type="text"
+              placeholder="https://script.google.com/macros/s/.../exec"
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
           </div>
         )}
 
-        {/* CORPO DE CONTEÚDO */}
+        {/* CORPO DO DASHBOARD */}
         <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto w-full">
           {loading ? (
             <SkeletonLoader />
           ) : error ? (
-            <ErrorState
-              message={error}
-              onRetry={() => fetchData(selectedCompetencia)}
-              onUseMock={() => { setApiUrl(''); fetchData(selectedCompetencia); }}
-            />
+            <ErrorState message={error} onRetry={() => fetchData(selectedCompetencia)} />
           ) : (
             <>
-              {activeTab === 'visao-geral' && <VisaoGeralTab data={data} deducoesTotais={deducoesTotais} />}
+              {activeTab === 'visao-geral' && (
+                <VisaoGeralTab
+                  kpis={kpisExibidos}
+                  deducoesTotais={deducoesTotais}
+                  onSelectMonth={(m) => {
+                    setSelectedCompetencia(m);
+                    setViewMode('mensal');
+                  }}
+                  selectedCompetencia={selectedCompetencia}
+                />
+              )}
               {activeTab === 'dre' && <DREPlataformasTab dre={data?.drePorPlataforma || []} />}
               {activeTab === 'abc' && (
                 <CurvaABCTab
@@ -568,26 +625,52 @@ export default function App() {
             </>
           )}
         </main>
+
+        {/* BOTTOM NAV PARA MOBILE */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 px-3 flex justify-around items-center z-30 shadow-lg">
+          <button
+            onClick={() => setActiveTab('visao-geral')}
+            className={`flex flex-col items-center py-1 px-3 rounded-xl ${activeTab === 'visao-geral' ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}
+          >
+            <IconPieChart />
+            <span className="text-[10px]">Visão Geral</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('dre')}
+            className={`flex flex-col items-center py-1 px-3 rounded-xl ${activeTab === 'dre' ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}
+          >
+            <IconLayers />
+            <span className="text-[10px]">DRE Canais</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('abc')}
+            className={`flex flex-col items-center py-1 px-3 rounded-xl ${activeTab === 'abc' ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}
+          >
+            <IconPackage />
+            <span className="text-[10px]">Curva ABC</span>
+          </button>
+        </nav>
       </div>
     </div>
   );
 }
 
 // ==========================================
-// ABA 1: VISÃO GERAL (NÚMEROS AJUSTADOS)
+// ABA 1: VISÃO GERAL + GRÁFICO DE EVOLUÇÃO
 // ==========================================
-function VisaoGeralTab({ data, deducoesTotais }) {
-  const kpis = data?.kpisGerais || {};
+function VisaoGeralTab({ kpis, deducoesTotais, onSelectMonth, selectedCompetencia }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
 
   return (
     <div className="space-y-6 w-full">
       
-      {/* GRID DE CARDS SUPERIORES PREENCHENDO A TELA */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+      {/* GRID DE CARDS RESUMO (SEM ESTOURO E COMPATÍVEL COM NOTEBOOK) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
         
         {/* CARD LUCRO LÍQUIDO */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
           <div>
             <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
               <span className="text-xs uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1.5 shrink-0">
@@ -598,9 +681,8 @@ function VisaoGeralTab({ data, deducoesTotais }) {
               </span>
             </div>
             
-            {/* FONTE RESPONSIVA CORRIGIDA PARA NÃO ESTOURAR */}
-            <div className="my-3 overflow-hidden">
-              <h2 className="text-2xl lg:text-3xl xl:text-4xl font-black text-white tracking-tight truncate">
+            <div className="my-2 overflow-hidden">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight truncate">
                 {formatBRL(kpis.lucroLiquido)}
               </h2>
             </div>
@@ -611,20 +693,20 @@ function VisaoGeralTab({ data, deducoesTotais }) {
               <span>Eficiência das Vendas:</span>
               <span className="font-bold text-emerald-400">{formatPercent(kpis.margemLiquidaMedia)} Convertido</span>
             </div>
-            <div className="w-full bg-slate-700/70 h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-700/70 h-2 rounded-full overflow-hidden">
               <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(Math.max(kpis.margemLiquidaMedia, 0), 100)}%` }} />
             </div>
           </div>
         </div>
 
         {/* CARD FATURAMENTO BRUTO */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
+        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Faturamento Bruto</span>
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl shrink-0"><IconDollarSign className="w-5 h-5" /></div>
           </div>
-          <div className="overflow-hidden">
-            <span className="text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
+          <div className="overflow-hidden my-2">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
               {formatBRL(kpis.faturamentoBruto)}
             </span>
             <span className="text-xs text-slate-400 mt-1 block">Receita Bruta Total Processada</span>
@@ -632,23 +714,26 @@ function VisaoGeralTab({ data, deducoesTotais }) {
         </div>
 
         {/* CARD VOLUME E TICKET MÉDIO */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
+        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Volume de Vendas</span>
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0"><IconShoppingBag className="w-5 h-5" /></div>
           </div>
-          <div className="overflow-hidden">
-            <span className="text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
+          <div className="overflow-hidden my-2">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
               {kpis.totalPedidos || 0} <span className="text-sm font-normal text-slate-500">pedidos</span>
             </span>
-            <span className="text-xs text-slate-600 mt-2 block font-medium truncate">
+            <span className="text-xs text-slate-600 mt-1 block font-medium truncate">
               Ticket Médio: <strong className="text-slate-900 font-bold">{formatBRL(ticketMedio)}</strong>
             </span>
           </div>
         </div>
       </div>
 
-      {/* PAINEL DE DEDUÇÕES LARGURA TOTAL */}
+      {/* NOVO: GRÁFICO DE EVOLUÇÃO MÊS A MÊS */}
+      <GraficoEvolucaoMensal onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
+
+      {/* PAINEL DE DEDUÇÕES E CUSTOS */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
@@ -665,9 +750,9 @@ function VisaoGeralTab({ data, deducoesTotais }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700">CPV (Custo dos Produtos)</span>
-              <span className="text-sm font-black text-slate-900">{formatBRL(kpis.totalCpv)}</span>
+            <div className="flex justify-between items-center text-xs font-bold">
+              <span className="text-slate-700">CPV (Custo dos Produtos)</span>
+              <span className="text-slate-900">{formatBRL(kpis.totalCpv)}</span>
             </div>
             <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(deducoesTotais.cpvPerc, 100)}%` }} />
@@ -676,9 +761,9 @@ function VisaoGeralTab({ data, deducoesTotais }) {
           </div>
 
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700">Taxas de Plataformas</span>
-              <span className="text-sm font-black text-slate-900">{formatBRL(kpis.totalTaxas)}</span>
+            <div className="flex justify-between items-center text-xs font-bold">
+              <span className="text-slate-700">Taxas de Plataformas</span>
+              <span className="text-slate-900">{formatBRL(kpis.totalTaxas)}</span>
             </div>
             <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div className="bg-rose-500 h-full rounded-full" style={{ width: `${Math.min(deducoesTotais.taxasPerc, 100)}%` }} />
@@ -687,15 +772,106 @@ function VisaoGeralTab({ data, deducoesTotais }) {
           </div>
 
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-700">Impostos e Tributos</span>
-              <span className="text-sm font-black text-slate-900">{formatBRL(kpis.totalImpostos)}</span>
+            <div className="flex justify-between items-center text-xs font-bold">
+              <span className="text-slate-700">Impostos e Tributos</span>
+              <span className="text-slate-900">{formatBRL(kpis.totalImpostos)}</span>
             </div>
             <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${Math.min(deducoesTotais.impostosPerc, 100)}%` }} />
             </div>
             <span className="text-xs text-slate-400 block text-right font-semibold">{formatPercent(deducoesTotais.impostosPerc)} do faturamento</span>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// COMPONENTE GRÁFICO DE EVOLUÇÃO MENSAL
+// ==========================================
+function GraficoEvolucaoMensal({ onSelectMonth, selectedCompetencia }) {
+  const meses = Object.keys(MOCK_DATA_BY_MONTH).reverse(); // Ordena 01, 02, 03, 04
+  const dados = meses.map(m => {
+    const k = MOCK_DATA_BY_MONTH[m].kpisGerais;
+    return {
+      mes: m,
+      faturamento: k.faturamentoBruto,
+      lucro: k.lucroLiquido,
+      margem: k.margemLiquidaMedia
+    };
+  });
+
+  const maxFat = Math.max(...dados.map(d => d.faturamento)) * 1.15; // Teto do gráfico
+
+  return (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full">
+      <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">
+            Evolução Mensal (Faturamento vs. Lucro Líquido)
+          </h3>
+          <p className="text-xs text-slate-400">Clique na coluna de qualquer mês para carregar os detalhes</p>
+        </div>
+
+        {/* Legenda */}
+        <div className="flex items-center space-x-4 text-xs font-semibold">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-3 h-3 bg-blue-600 rounded-sm" />
+            <span className="text-slate-600">Faturamento Bruto</span>
+          </div>
+          <div className="flex items-center space-x-1.5">
+            <span className="w-3 h-3 bg-emerald-500 rounded-sm" />
+            <span className="text-slate-600">Lucro Líquido</span>
+          </div>
+        </div>
+      </div>
+
+      {/* GRÁFICO SVG INTERATIVO DE BARRAS DUPLAS */}
+      <div className="pt-4 pb-2">
+        <div className="grid grid-cols-4 gap-4 items-end h-48 md:h-56">
+          {dados.map((item) => {
+            const isSelected = item.mes === selectedCompetencia;
+            const fatHeight = (item.faturamento / maxFat) * 100;
+            const lucroHeight = (item.lucro / maxFat) * 100;
+
+            return (
+              <div
+                key={item.mes}
+                onClick={() => onSelectMonth(item.mes)}
+                className={`flex flex-col items-center h-full justify-end group cursor-pointer p-2 rounded-2xl transition-all ${
+                  isSelected ? 'bg-slate-100 border border-slate-300 shadow-inner' : 'hover:bg-slate-50'
+                }`}
+              >
+                {/* Badge de Margem */}
+                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mb-2 border border-emerald-200">
+                  {formatPercent(item.margem)} mg
+                </span>
+
+                {/* Colunas do Gráfico */}
+                <div className="w-full flex justify-center items-end space-x-1.5 md:space-x-3 h-full">
+                  {/* Barra Faturamento (Azul) */}
+                  <div
+                    className="w-5 md:w-8 bg-blue-600 rounded-t-lg transition-all duration-500 group-hover:bg-blue-700 relative"
+                    style={{ height: `${Math.max(fatHeight, 5)}%` }}
+                    title={`Faturamento: ${formatBRL(item.faturamento)}`}
+                  />
+
+                  {/* Barra Lucro (Verde) */}
+                  <div
+                    className="w-5 md:w-8 bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600 relative"
+                    style={{ height: `${Math.max(lucroHeight, 5)}%` }}
+                    title={`Lucro Líquido: ${formatBRL(item.lucro)}`}
+                  />
+                </div>
+
+                {/* Rótulo do Mês */}
+                <span className={`text-xs font-bold mt-2 ${isSelected ? 'text-emerald-600 font-extrabold' : 'text-slate-600'}`}>
+                  {item.mes}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -836,28 +1012,19 @@ function SkeletonLoader() {
         <div className="h-40 bg-slate-200 rounded-2xl" />
         <div className="h-40 bg-slate-200 rounded-2xl" />
       </div>
-      <div className="h-48 bg-slate-200 rounded-2xl w-full" />
+      <div className="h-56 bg-slate-200 rounded-2xl w-full" />
     </div>
   );
 }
 
-function ErrorState({ message, onRetry, onUseMock }) {
+function ErrorState({ message, onRetry }) {
   return (
-    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 w-full">
+    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-3 w-full">
       <IconAlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-      <div>
-        <h3 className="text-base font-bold text-rose-900">Falha ao Conectar com o Google Apps Script</h3>
-        <p className="text-xs text-rose-700 mt-1 max-w-xl mx-auto">{message}</p>
-      </div>
-      
-      <div className="flex flex-wrap gap-3 justify-center pt-2">
-        <button onClick={onRetry} className="px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-md hover:bg-rose-700">
-          Tentar Novamente
-        </button>
-        <button onClick={onUseMock} className="px-5 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-900">
-          Usar Dados Demonstrativos
-        </button>
-      </div>
+      <p className="text-sm text-rose-800 font-medium">{message}</p>
+      <button onClick={onRetry} className="px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-md">
+        Tentar Novamente
+      </button>
     </div>
   );
 }
