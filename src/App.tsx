@@ -23,7 +23,7 @@ const IconRefreshCw = ({ className = "w-3.5 h-3.5" }) => (
 
 const IconLink2 = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 005.656-5.656l-1.1 1.1" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
   </svg>
 );
 
@@ -88,12 +88,6 @@ const IconShieldAlert = ({ className = "w-3.5 h-3.5" }) => (
   </svg>
 );
 
-const IconAlertTriangle = ({ className = "w-3 h-3" }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-  </svg>
-);
-
 const IconAlertCircle = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -112,22 +106,28 @@ const IconChevronDown = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+const IconCheckCircle2 = ({ className = "w-4 h-4" }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 // ==========================================
-// HISTÓRICO COMPLETO 12 MESES
+// HISTÓRICO COM 3 CANAIS (Shopee, Meli, Venda Externa)
 // ==========================================
 const HISTORICO_12_MESES = [
-  { mes: "05/2025", faturamento: 180000.00, lucro: 14400.00, margem: 8.00, shopee: 110000, meli: 70000 },
-  { mes: "06/2025", faturamento: 195000.00, lucro: 16575.00, margem: 8.50, shopee: 120000, meli: 75000 },
-  { mes: "07/2025", faturamento: 205000.00, lucro: 18040.00, margem: 8.80, shopee: 125000, meli: 80000 },
-  { mes: "08/2025", faturamento: 220000.00, lucro: 19800.00, margem: 9.00, shopee: 135000, meli: 85000 },
-  { mes: "09/2025", faturamento: 215000.00, lucro: 18705.00, margem: 8.70, shopee: 130000, meli: 85000 },
-  { mes: "10/2025", faturamento: 230000.00, lucro: 20470.00, margem: 8.90, shopee: 140000, meli: 90000 },
-  { mes: "11/2025", faturamento: 260000.00, lucro: 23920.00, margem: 9.20, shopee: 160000, meli: 100000 },
-  { mes: "12/2025", faturamento: 310000.00, lucro: 29450.00, margem: 9.50, shopee: 190000, meli: 120000 },
-  { mes: "01/2026", faturamento: 210000.00, lucro: 18500.00, margem: 8.81, shopee: 130000, meli: 80000 },
-  { mes: "02/2026", faturamento: 245000.00, lucro: 22100.00, margem: 9.02, shopee: 150000, meli: 95000 },
-  { mes: "03/2026", faturamento: 280000.00, lucro: 24760.00, margem: 8.84, shopee: 170000, meli: 110000 },
-  { mes: "04/2026", faturamento: 300939.97, lucro: 21545.65, margem: 7.16, shopee: 185000, meli: 115939.97 }
+  { mes: "05/2025", faturamento: 180000.00, lucro: 14400.00, margem: 8.00, shopee: 100000, meli: 60000, externa: 20000 },
+  { mes: "06/2025", faturamento: 195000.00, lucro: 16575.00, margem: 8.50, shopee: 110000, meli: 65000, externa: 20000 },
+  { mes: "07/2025", faturamento: 205000.00, lucro: 18040.00, margem: 8.80, shopee: 115000, meli: 68000, externa: 22000 },
+  { mes: "08/2025", faturamento: 220000.00, lucro: 19800.00, margem: 9.00, shopee: 125000, meli: 70000, externa: 25000 },
+  { mes: "09/2025", faturamento: 215000.00, lucro: 18705.00, margem: 8.70, shopee: 120000, meli: 70000, externa: 25000 },
+  { mes: "10/2025", faturamento: 230000.00, lucro: 20470.00, margem: 8.90, shopee: 130000, meli: 75000, externa: 25000 },
+  { mes: "11/2025", faturamento: 260000.00, lucro: 23920.00, margem: 9.20, shopee: 145000, meli: 85000, externa: 30000 },
+  { mes: "12/2025", faturamento: 310000.00, lucro: 29450.00, margem: 9.50, shopee: 170000, meli: 105000, externa: 35000 },
+  { mes: "01/2026", faturamento: 210000.00, lucro: 18500.00, margem: 8.81, shopee: 115000, meli: 70000, externa: 25000 },
+  { mes: "02/2026", faturamento: 245000.00, lucro: 22100.00, margem: 9.02, shopee: 135000, meli: 82000, externa: 28000 },
+  { mes: "03/2026", faturamento: 280000.00, lucro: 24760.00, margem: 8.84, shopee: 155000, meli: 95000, externa: 30000 },
+  { mes: "04/2026", faturamento: 300939.97, lucro: 21545.65, margem: 7.16, shopee: 165000, meli: 105939.97, externa: 30000 }
 ];
 
 const formatBRL = (val) => {
@@ -197,20 +197,22 @@ export default function App() {
             totalPedidos: 4386
           },
           drePorPlataforma: [
-            { plataforma: "Shopee RAFA", faturamentoBruto: 185000, taxasPlataforma: 26418, imposto: 20350, cpv: 125000, lucroLiquido: 13232, margemLiquida: 7.15, pedidos: 2710 },
-            { plataforma: "Mercado Livre", faturamentoBruto: 115939.97, taxasPlataforma: 16541.91, imposto: 12750, cpv: 78331.01, lucroLiquido: 8313.65, margemLiquida: 7.17, pedidos: 1676 }
+            { plataforma: "Shopee RAFA", faturamentoBruto: 165000.00, taxasPlataforma: 23550, imposto: 18150, cpv: 111500, lucroLiquido: 11800, margemLiquida: 7.15, pedidos: 2410 },
+            { plataforma: "Mercado Livre", faturamentoBruto: 105939.97, taxasPlataforma: 15120, imposto: 11650, cpv: 71500, lucroLiquido: 7669.97, margemLiquida: 7.23, pedidos: 1530 },
+            { plataforma: "Venda Externa", faturamentoBruto: 30000.00, taxasPlataforma: 4289.91, imposto: 3300, cpv: 20331.01, lucroLiquido: 2075.68, margemLiquida: 6.91, pedidos: 446 }
           ],
           topProdutosCurvaABC: [
-            { sku: "2LB05", produto: "Creme Facial Anti-olheira Com Filtro Solar", marca: "La Belle Paris", quantidadeVendida: 120, faturamentoBruto: 1618.80, lucroLiquido: 92.40, margemLiquida: 5.71 },
-            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml Anti-idade", marca: "La Belle Paris", quantidadeVendida: 95, faturamentoBruto: 4275.00, lucroLiquido: 2137.50, margemLiquida: 50.00 },
-            { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", quantidadeVendida: 78, faturamentoBruto: 3510.00, lucroLiquido: 1579.50, margemLiquida: 45.00 },
-            { sku: "BATOM-MATTE-01", produto: "Batom Matte Longa Duração Nude Rose", marca: "Glamour Makeup", quantidadeVendida: 49, faturamentoBruto: 1225.00, lucroLiquido: 110.25, margemLiquida: 9.00 }
+            { sku: "2LB05", produto: "Creme Facial Anti-olheira Com Filtro Solar", marca: "La Belle Paris", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84 },
+            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml Anti-idade", marca: "La Belle Paris", quantidadeVendida: 240, faturamentoBruto: 98000.00, lucroLiquido: 8330.00, margemLiquida: 8.50 },
+            { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", quantidadeVendida: 180, faturamentoBruto: 55000.00, lucroLiquido: 2475.00, margemLiquida: 4.50 },
+            { sku: "BATOM-MATTE-01", produto: "Batom Matte Longa Duração Nude Rose", marca: "Glamour Makeup", quantidadeVendida: 95, faturamentoBruto: 22939.97, lucroLiquido: 940.65, margemLiquida: 4.10 }
           ]
         };
         localCache.current[competencia] = mockData;
         setData(mockData);
       }
     } catch (err) {
+      console.error("Erro no fetch:", err);
       setError("Não foi possível conectar ao Google Apps Script.");
     } finally {
       setLoading(false);
@@ -227,7 +229,6 @@ export default function App() {
     return data?.metadados?.competenciasDisponiveis || listaHistorico.map(h => h.mes);
   }, [data, listaHistorico]);
 
-  // VISÃO CONSOLIDADA ACUMULADA DE TODOS OS MESES
   const dadosConsolidados = useMemo(() => {
     let fatBrutoTotal = 0;
     let lucroLiquidoTotal = 0;
@@ -267,37 +268,41 @@ export default function App() {
     };
   }, [kpisExibidos]);
 
-  // CONSOLIDAÇÃO DRE POR PLATAFORMA (RESPEITA MÊS OU CONSOLIDADO GLOBAL)
   const dreExibida = useMemo(() => {
     const lista = data?.drePorPlataforma || [];
     if (viewMode === 'mensal') return lista;
 
-    // Se estiver em modo CONSOLIDADO GLOBAL:
-    const mapPlat = {};
-    listaHistorico.forEach(m => {
-      const shopeeFat = m.shopee || 185000;
-      const meliFat = m.meli || 115939.97;
+    const mapPlat = {
+      "Shopee RAFA": { plataforma: "Shopee RAFA", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 },
+      "Mercado Livre": { plataforma: "Mercado Livre", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 },
+      "Venda Externa": { plataforma: "Venda Externa", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 }
+    };
 
-      if (!mapPlat["Shopee RAFA"]) {
-        mapPlat["Shopee RAFA"] = { plataforma: "Shopee RAFA", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 };
-      }
-      if (!mapPlat["Mercado Livre"]) {
-        mapPlat["Mercado Livre"] = { plataforma: "Mercado Livre", faturamentoBruto: 0, lucroLiquido: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, pedidos: 0 };
-      }
+    listaHistorico.forEach(m => {
+      const shopeeFat = m.shopee || 165000;
+      const meliFat = m.meli || 105939.97;
+      const extFat = m.externa || 30000;
 
       mapPlat["Shopee RAFA"].faturamentoBruto += shopeeFat;
       mapPlat["Shopee RAFA"].lucroLiquido += shopeeFat * 0.0715;
       mapPlat["Shopee RAFA"].taxasPlataforma += shopeeFat * 0.1428;
       mapPlat["Shopee RAFA"].imposto += shopeeFat * 0.11;
       mapPlat["Shopee RAFA"].cpv += shopeeFat * 0.6757;
-      mapPlat["Shopee RAFA"].pedidos += 2710;
+      mapPlat["Shopee RAFA"].pedidos += 2410;
 
       mapPlat["Mercado Livre"].faturamentoBruto += meliFat;
-      mapPlat["Mercado Livre"].lucroLiquido += meliFat * 0.0717;
+      mapPlat["Mercado Livre"].lucroLiquido += meliFat * 0.0723;
       mapPlat["Mercado Livre"].taxasPlataforma += meliFat * 0.1428;
       mapPlat["Mercado Livre"].imposto += meliFat * 0.11;
       mapPlat["Mercado Livre"].cpv += meliFat * 0.6757;
-      mapPlat["Mercado Livre"].pedidos += 1676;
+      mapPlat["Mercado Livre"].pedidos += 1530;
+
+      mapPlat["Venda Externa"].faturamentoBruto += extFat;
+      mapPlat["Venda Externa"].lucroLiquido += extFat * 0.0691;
+      mapPlat["Venda Externa"].taxasPlataforma += extFat * 0.1428;
+      mapPlat["Venda Externa"].imposto += extFat * 0.11;
+      mapPlat["Venda Externa"].cpv += extFat * 0.6757;
+      mapPlat["Venda Externa"].pedidos += 446;
     });
 
     return Object.values(mapPlat).map(p => ({
@@ -322,7 +327,7 @@ export default function App() {
   return (
     <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0">
       
-      {/* SIDEBAR FIXA GOOGLE AI STUDIO STYLE */}
+      {/* SIDEBAR FIXA COMPLETA */}
       <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 border-r border-slate-800 fixed left-0 top-0 bottom-0 h-screen z-30 shadow-2xl">
         <div className="p-6 space-y-6 overflow-y-auto">
           <div className="flex items-center space-x-3">
@@ -376,7 +381,12 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="p-6 border-t border-slate-800 bg-slate-900">
+        <div className="p-6 border-t border-slate-800 bg-slate-900 space-y-2">
+          <div className="flex items-center space-x-1.5 text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 p-2 rounded-xl border border-emerald-800/40">
+            <IconCheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span>Vendas Válidas Ativas</span>
+          </div>
+
           <button onClick={() => setShowApiModal(!showApiModal)} className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-white bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
             <span className="flex items-center gap-2"><IconLink2 className="w-4 h-4 text-emerald-400" /> Endpoint API</span>
             <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded text-slate-300">GAS</span>
@@ -387,7 +397,6 @@ export default function App() {
       {/* ÁREA DE CONTEÚDO */}
       <div className="md:pl-64 lg:pl-72 flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50 overflow-x-hidden">
         
-        {/* BARRA SUPERIOR COM BOTÃO DE VISÃO CONSOLIDADA GLOBAL */}
         <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">
@@ -400,7 +409,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* BOTÃO GLOBAL QUE AFETA TODAS AS ABAS */}
           <div className="flex items-center space-x-3">
             <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs">
               <button
@@ -460,7 +468,6 @@ export default function App() {
                   setSearchQuery={setSearchQuery}
                   filterLowMargin={filterLowMargin}
                   setFilterLowMargin={setFilterLowMargin}
-                  viewMode={viewMode}
                   factor={viewMode === 'consolidado' ? 12 : 1}
                 />
               )}
@@ -472,9 +479,7 @@ export default function App() {
   );
 }
 
-// ==========================================
-// ABA 1: VISÃO GERAL + GRÁFICO COM TOOLTIP HOVER
-// ==========================================
+// ABA 1: VISÃO GERAL
 function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
 
@@ -507,7 +512,6 @@ function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, 
         </div>
       </div>
 
-      {/* GRÁFICO COM TOOLTIP FLUTUANTE NO HOVER */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
@@ -563,9 +567,7 @@ function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, 
   );
 }
 
-// ==========================================
-// GRÁFICO COM HOVER TOOLTIP FLUTUANTE
-// ==========================================
+// GRÁFICO DE EVOLUÇÃO
 function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) {
   const [hoveredIdx, setHoveredIndex] = useState(null);
 
@@ -591,10 +593,8 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
     if (pts.length === 0) return '';
     let d = `M ${pts[0].x} ${pts[0].y}`;
     for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i];
-      const p1 = pts[i + 1];
-      const cx = (p0.x + p1.x) / 2;
-      d += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+      const cx = (pts[i].x + pts[i + 1].x) / 2;
+      d += ` C ${cx} ${pts[i].y}, ${cx} ${pts[i + 1].y}, ${pts[i + 1].x} ${pts[i + 1].y}`;
     }
     return d;
   };
@@ -609,7 +609,7 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
       <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3">
         <div>
           <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução Mensal (Passe o mouse para ver os valores)</h3>
-          <p className="text-xs text-slate-400">Clique em um ponto para filtrar a competência</p>
+          <p className="text-xs text-slate-400">Clique em um ponto para selecionar a competência</p>
         </div>
 
         <div className="flex items-center space-x-4 text-xs font-semibold">
@@ -618,7 +618,6 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
         </div>
       </div>
 
-      {/* BALÃO FLUTUANTE (TOOLTIP NO HOVER) */}
       {activePoint && (
         <div
           className="absolute z-20 bg-slate-900 text-white p-3 rounded-xl shadow-2xl text-xs space-y-1 border border-slate-700 pointer-events-none transition-all"
@@ -670,12 +669,12 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
 }
 
 // ==========================================
-// ABA 2: CANAIS / DRE COM GRÁFICO MULTI-LINHAS
+// ABA 2: CANAIS / DRE COM GRÁFICO CORRIGIDO (Shopee, Mercado Livre, Venda Externa)
 // ==========================================
 function DREPlataformasTab({ dre, historico12Meses, viewMode }) {
   return (
     <div className="space-y-6 w-full">
-      {/* GRÁFICO DE EVOLUÇÃO DE FATURAMENTO POR PLATAFORMA */}
+      {/* GRÁFICO MULTI-CANAL CORRIGIDO */}
       <GraficoCanaisPorPlataforma historico={historico12Meses} />
 
       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -723,22 +722,37 @@ function DREPlataformasTab({ dre, historico12Meses, viewMode }) {
   );
 }
 
-// GRÁFICO DE LINHAS MULTI-CANAL
+// GRÁFICO DE BARRAS/LINHAS MULTI-CANAL COM ESCALA CORRIGIDA
 function GraficoCanaisPorPlataforma({ historico }) {
-  const maxVal = Math.max(...historico.map(d => d.shopee)) * 1.25;
+  // Pega o teto de faturamento de todos os 3 canais sem estouro de limite
+  const maxVal = Math.max(
+    ...historico.flatMap(d => [d.shopee || 0, d.meli || 0, d.externa || 0])
+  ) * 1.25;
+
   const svgWidth = 800;
-  const svgHeight = 200;
-  const paddingX = 40;
-  const paddingY = 30;
+  const svgHeight = 220;
+  const paddingX = 45;
+  const paddingY = 35;
+
+  const getY = (val) => {
+    if (!maxVal || maxVal <= 0) return svgHeight - paddingY;
+    const ratio = Math.min(Math.max(val / maxVal, 0), 1);
+    return svgHeight - paddingY - ratio * (svgHeight - 2 * paddingY);
+  };
 
   const pointsShopee = historico.map((d, i) => ({
     x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
-    y: svgHeight - paddingY - (d.shopee / maxVal) * (svgHeight - 2 * paddingY)
+    y: getY(d.shopee || 0)
   }));
 
   const pointsMeli = historico.map((d, i) => ({
     x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
-    y: svgHeight - paddingY - (d.meli / maxVal) * (svgHeight - 2 * paddingY)
+    y: getY(d.meli || 0)
+  }));
+
+  const pointsExterna = historico.map((d, i) => ({
+    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
+    y: getY(d.externa || 0)
   }));
 
   const generatePath = (pts) => {
@@ -754,26 +768,32 @@ function GraficoCanaisPorPlataforma({ historico }) {
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full">
       <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3">
         <div>
-          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução do Faturamento por Plataforma</h3>
-          <p className="text-xs text-slate-400">Comparativo mensal entre Shopee e Mercado Livre</p>
+          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução do Faturamento por Canal</h3>
+          <p className="text-xs text-slate-400">Comparativo mensal entre Shopee, Mercado Livre e Vendas Externas</p>
         </div>
-        <div className="flex items-center space-x-4 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-orange-500 rounded-full inline-block" /> Shopee</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-amber-500 rounded-full inline-block" /> Mercado Livre</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-blue-500 rounded-full inline-block" /> Venda Externa</span>
         </div>
       </div>
 
       <div className="w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
+          <line x1={paddingX} y1={paddingY} x2={svgWidth - paddingX} y2={paddingY} stroke="#f1f5f9" strokeDasharray="4 4" />
           <line x1={paddingX} y1={svgHeight - paddingY} x2={svgWidth - paddingX} y2={svgHeight - paddingY} stroke="#e2e8f0" strokeWidth="1.5" />
+
+          {/* CURVAS DOS 3 CANAIS */}
           <path d={generatePath(pointsShopee)} fill="none" stroke="#f97316" strokeWidth="3" />
           <path d={generatePath(pointsMeli)} fill="none" stroke="#f59e0b" strokeWidth="3" />
+          <path d={generatePath(pointsExterna)} fill="none" stroke="#3b82f6" strokeWidth="3" />
 
           {pointsShopee.map((pt, i) => (
             <g key={i}>
               <circle cx={pt.x} cy={pt.y} r="4" fill="#f97316" stroke="#ffffff" strokeWidth="1.5" />
               <circle cx={pointsMeli[i].x} cy={pointsMeli[i].y} r="4" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.5" />
-              <text x={pt.x} y={svgHeight - 10} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">{historico[i].mes}</text>
+              <circle cx={pointsExterna[i].x} cy={pointsExterna[i].y} r="4" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" />
+              <text x={pt.x} y={svgHeight - 10} textAnchor="middle" className="text-[9px] fill-slate-500 font-bold">{historico[i].mes}</text>
             </g>
           ))}
         </svg>
@@ -783,15 +803,49 @@ function GraficoCanaisPorPlataforma({ historico }) {
 }
 
 // ==========================================
-// ABA 3: CURVA ABC COM CONSOLIDAÇÃO POR MARCA E DRILL-DOWN
+// ABA 3: CURVA ABC REAL COM PARETO (CLASSE A, CLASSE B, CLASSE C)
 // ==========================================
 function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin, factor }) {
   const [expandedBrand, setExpandedBrand] = useState(null);
 
+  // CLASSIFICAÇÃO DE PARETO (CLASSE A: Top 80% / CLASSE B: Próximos 15% / CLASSE C: Restante 5%)
+  const produtosComPareto = useMemo(() => {
+    if (!produtos || produtos.length === 0) return [];
+    
+    // 1. Ordena do maior faturamento para o menor
+    const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto * factor) - (a.faturamentoBruto * factor));
+    const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto * factor), 0);
+
+    let acumulado = 0;
+    return sorted.map(p => {
+      const fat = p.faturamentoBruto * factor;
+      acumulado += fat;
+      const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
+      
+      let classe = 'C';
+      if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) {
+        classe = 'A';
+      } else if (percAcumulado <= 95) {
+        classe = 'B';
+      } else {
+        classe = 'C';
+      }
+
+      return {
+        ...p,
+        faturamentoBruto: fat,
+        lucroLiquido: p.lucroLiquido * factor,
+        quantidadeVendida: p.quantidadeVendida * factor,
+        classe,
+        percAcumulado
+      };
+    });
+  }, [produtos, factor]);
+
   // AGRUPAMENTO DE PRODUTOS POR MARCA
   const marcasAgrupadas = useMemo(() => {
     const map = {};
-    produtos.forEach(p => {
+    produtosComPareto.forEach(p => {
       const brand = p.marca || "Outras Marcas";
       if (!map[brand]) {
         map[brand] = {
@@ -802,21 +856,18 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
           produtos: []
         };
       }
-      const fat = p.faturamentoBruto * factor;
-      const luc = p.lucroLiquido * factor;
-      const qtd = p.quantidadeVendida * factor;
 
-      map[brand].faturamento += fat;
-      map[brand].lucro += luc;
-      map[brand].quantidade += qtd;
-      map[brand].produtos.push({ ...p, faturamentoBruto: fat, lucroLiquido: luc, quantidadeVendida: qtd });
+      map[brand].faturamento += p.faturamentoBruto;
+      map[brand].lucro += p.lucroLiquido;
+      map[brand].quantidade += p.quantidadeVendida;
+      map[brand].produtos.push(p);
     });
 
     return Object.values(map).map(b => ({
       ...b,
       margemMedia: b.faturamento > 0 ? (b.lucro / b.faturamento) * 100 : 0
-    })).sort((a, b) => b.lucro - a.lucro); // Ordena da marca mais rentável para a menos
-  }, [produtos, factor]);
+    })).sort((a, b) => b.lucro - a.lucro);
+  }, [produtosComPareto]);
 
   return (
     <div className="space-y-6 w-full">
@@ -845,7 +896,7 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
       </div>
 
       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-        Consolidação por Marca (Clique para expandir o detalhamento por SKU)
+        Curva ABC por Marca (Clique para expandir os SKUs e a Classificação Pareto A/B/C)
       </h3>
 
       {marcasAgrupadas.length === 0 ? (
@@ -870,7 +921,7 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
                     </div>
                     <div>
                       <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
-                      <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) cadastrados • {Math.round(b.quantidade)} un vendidas</p>
+                      <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) • {Math.round(b.quantidade)} un vendidas</p>
                     </div>
                   </div>
 
@@ -888,20 +939,35 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
                   </div>
                 </div>
 
-                {/* DRILL-DOWN DOS PRODUTOS DA MARCA */}
+                {/* DRILL-DOWN DOS PRODUTOS DA MARCA COM CLASSIFICAÇÃO A/B/C */}
                 {isExpanded && (
                   <div className="p-5 bg-slate-50/50 space-y-3">
                     <h5 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Produtos da Marca {b.marca}:</h5>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {b.produtos.map((prod, idx) => {
                         const isLow = prod.margemLiquida < 10;
+                        const isClasseA = prod.classe === 'A';
+                        const isClasseB = prod.classe === 'B';
+
                         return (
                           <div key={idx} className={`bg-white p-4 rounded-xl border ${isLow ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200'}`}>
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border text-slate-700">SKU: {prod.sku}</span>
-                                <h6 className="text-xs font-bold text-slate-900 mt-1">{prod.produto}</h6>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border text-slate-700">SKU: {prod.sku}</span>
+                                  
+                                  {/* BADGE DE CLASSIFICAÇÃO CURVA A, B OU C */}
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${
+                                    isClasseA ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                                    isClasseB ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                                    'bg-slate-100 text-slate-600 border-slate-300'
+                                  }`}>
+                                    Classe {prod.classe}
+                                  </span>
+                                </div>
+                                <h6 className="text-xs font-bold text-slate-900 mt-1.5">{prod.produto}</h6>
                               </div>
+
                               <span className={`px-2 py-0.5 rounded-lg text-xs font-black ${isLow ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-50 text-emerald-700'}`}>
                                 {formatPercent(prod.margemLiquida)}
                               </span>
