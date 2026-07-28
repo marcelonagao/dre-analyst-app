@@ -107,7 +107,7 @@ const IconChevronRight = ({ className = "w-4 h-4" }) => (
 );
 
 // ==========================================
-// MOCK DE DADOS FINANCEIROS
+// MOCK DE FALLBACK LOCAL
 // ==========================================
 const MOCK_DATA_BY_MONTH = {
   "04/2026": {
@@ -211,16 +211,6 @@ const MOCK_DATA_BY_MONTH = {
         lucroLiquido: 3740.00,
         margemLiquida: 44.00,
         pedidos: 180
-      },
-      {
-        plataforma: "Mercado Livre",
-        faturamentoBruto: 5300.00,
-        taxasPlataforma: 795.00,
-        imposto: 583.00,
-        cpv: 1590.00,
-        lucroLiquido: 2332.00,
-        margemLiquida: 44.00,
-        pedidos: 118
       }
     ],
     topProdutosCurvaABC: [
@@ -275,10 +265,10 @@ const formatDate = (isoString) => {
 };
 
 // ==========================================
-// COMPONENTE PRINCIPAL (SIDEBAR + CONTENT FULL WIDTH)
+// COMPONENTE PRINCIPAL (FULL SCREEN)
 // ==========================================
 export default function App() {
-  const [apiUrl, setApiUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState('https://script.google.com/macros/s/AKfycbwIcyAxQYoQrWJWi8-xdtAAQwGMDbn7m7PWVMKwl_rfBzdFj4HT2JuugLN02sj_gvnO/exec');
   const [showApiModal, setShowApiModal] = useState(false);
   const [selectedCompetencia, setSelectedCompetencia] = useState('04/2026');
   const [activeTab, setActiveTab] = useState('visao-geral');
@@ -289,24 +279,44 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowMargin, setFilterLowMargin] = useState(false);
 
+  // FETCH ROBUSTO COM SUPORTE AO GOOGLE APPS SCRIPT
   const fetchData = async (competencia) => {
     setLoading(true);
     setError(null);
 
+    const cleanUrl = apiUrl.trim();
+
     try {
-      if (apiUrl) {
-        const response = await fetch(`${apiUrl}?competencia=${competencia}`);
-        if (!response.ok) throw new Error(`Erro HTTP: status ${response.status}`);
-        const json = await response.json();
-        setData(json);
+      if (cleanUrl) {
+        const fullUrl = `${cleanUrl}?competencia=${encodeURIComponent(competencia)}`;
+        
+        const response = await fetch(fullUrl, {
+          method: 'GET',
+          redirect: 'follow',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Servidor retornou código de erro HTTP ${response.status}`);
+        }
+
+        const textResult = await response.text();
+        let parsedJson;
+
+        try {
+          parsedJson = JSON.parse(textResult);
+        } catch (e) {
+          throw new Error("O Google Apps Script retornou HTML em vez de JSON. Verifique as permissões de implantação no Google Script (Quem tem acesso: Qualquer Pessoa).");
+        }
+
+        setData(parsedJson);
       } else {
         await new Promise((resolve) => setTimeout(resolve, 300));
         const mockResponse = MOCK_DATA_BY_MONTH[competencia] || MOCK_DATA_BY_MONTH["04/2026"];
         setData(mockResponse);
       }
     } catch (err) {
-      console.error("Falha ao carregar dados:", err);
-      setError("Não foi possível carregar os dados financeiros.");
+      console.error("Erro na integração com a API:", err);
+      setError(err.message || "Não foi possível conectar à API do Google Apps Script.");
     } finally {
       setLoading(false);
     }
@@ -314,7 +324,7 @@ export default function App() {
 
   useEffect(() => {
     fetchData(selectedCompetencia);
-  }, [selectedCompetencia, apiUrl]);
+  }, [selectedCompetencia]);
 
   const filteredABC = useMemo(() => {
     if (!data?.topProdutosCurvaABC) return [];
@@ -340,15 +350,12 @@ export default function App() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased">
+    <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden">
       
-      {/* ========================================== */}
-      {/* BARRA LATERAL (SIDEBAR DESKTOP / NOTEBOOK) */}
-      {/* ========================================== */}
+      {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 shadow-2xl border-r border-slate-800 sticky top-0 h-screen overflow-y-auto z-20">
         
         <div className="p-6 space-y-6">
-          {/* Logo Executivo */}
           <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
               <IconBarChart3 className="w-6 h-6" />
@@ -361,7 +368,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Seletor de Mês no Sidebar */}
           <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80 space-y-1.5">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Competência Ativa</span>
             <div className="flex items-center justify-between">
@@ -391,7 +397,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Menus de Navegação */}
           <nav className="space-y-1.5">
             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-1">
               Menu Principal
@@ -439,30 +444,20 @@ export default function App() {
                 <IconPackage className="w-4 h-4" />
                 <span>Curva ABC Produtos</span>
               </div>
-              {data?.topProdutosCurvaABC?.some(p => p.margemLiquida < 10) && (
-                <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-              )}
             </button>
           </nav>
         </div>
 
-        {/* Rodapé da Sidebar */}
         <div className="p-6 border-t border-slate-800 space-y-3">
           <button
             onClick={() => setShowApiModal(!showApiModal)}
             className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/50 transition-colors"
           >
             <span className="flex items-center gap-2">
-              <IconLink2 className="w-4 h-4 text-emerald-400" /> Endpoint API
+              <IconLink2 className="w-4 h-4 text-emerald-400" /> Configurar API
             </span>
             <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded text-slate-300">GAS</span>
           </button>
-
-          {data?.metadados?.ultimaAtualizacao && (
-            <p className="text-[10px] text-slate-500 text-center">
-              Atualizado: {formatDate(data.metadados.ultimaAtualizacao)}
-            </p>
-          )}
         </div>
       </aside>
 
@@ -478,26 +473,22 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <select
-            value={selectedCompetencia}
-            onChange={(e) => setSelectedCompetencia(e.target.value)}
-            className="bg-slate-800 text-emerald-400 font-bold text-xs rounded-lg px-2 py-1 border border-slate-700"
-          >
-            {data?.metadados?.competenciasDisponiveis?.map((comp) => (
-              <option key={comp} value={comp}>{comp}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={selectedCompetencia}
+          onChange={(e) => setSelectedCompetencia(e.target.value)}
+          className="bg-slate-800 text-emerald-400 font-bold text-xs rounded-lg px-2 py-1 border border-slate-700"
+        >
+          {data?.metadados?.competenciasDisponiveis?.map((comp) => (
+            <option key={comp} value={comp}>{comp}</option>
+          ))}
+        </select>
       </header>
 
-      {/* ========================================== */}
-      {/* ÁREA DE CONTEÚDO PRINCIPAL (FULL WIDTH)    */}
-      {/* ========================================== */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen bg-slate-50">
+      {/* ÁREA DE CONTEÚDO 100% LARGURA DA TELA */}
+      <div className="flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50">
         
-        {/* BARRA SUPERIOR EXECUTIVA */}
-        <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs">
+        {/* BARRA SUPERIOR EXECUTIVA (SEM MARGENS) */}
+        <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">
               {activeTab === 'visao-geral' && 'Visão Geral Executiva'}
@@ -508,32 +499,59 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => fetchData(selectedCompetencia)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 rounded-xl border border-slate-200 transition-colors"
+            >
+              <IconRefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+              <span>Atualizar</span>
+            </button>
+
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> Status: Online
             </span>
           </div>
         </header>
 
-        {/* Modal Expansível de URL da API */}
         {showApiModal && (
           <div className="m-6 p-4 bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 text-xs">
-            <label className="block mb-1.5 font-bold text-emerald-400">URL do Google Apps Script (Web App):</label>
-            <input
-              type="text"
-              placeholder="https://script.google.com/macros/s/.../exec"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-            />
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-bold text-emerald-400">URL da Web App do Google Apps Script:</label>
+              <button
+                onClick={() => { setApiUrl(''); fetchData(selectedCompetencia); }}
+                className="text-[10px] text-slate-400 hover:text-white underline"
+              >
+                Resetar para Dados Demonstrativos
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="https://script.google.com/macros/s/.../exec"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+                className="flex-1 p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+              <button
+                onClick={() => fetchData(selectedCompetencia)}
+                className="px-4 py-2 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs"
+              >
+                Conectar
+              </button>
+            </div>
           </div>
         )}
 
-        {/* CORPO DE CONTEÚDO QUE PREENCHE A TELA INTEIRA */}
+        {/* CORPO DE CONTEÚDO */}
         <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto w-full">
           {loading ? (
             <SkeletonLoader />
           ) : error ? (
-            <ErrorState message={error} onRetry={() => fetchData(selectedCompetencia)} />
+            <ErrorState
+              message={error}
+              onRetry={() => fetchData(selectedCompetencia)}
+              onUseMock={() => { setApiUrl(''); fetchData(selectedCompetencia); }}
+            />
           ) : (
             <>
               {activeTab === 'visao-geral' && <VisaoGeralTab data={data} deducoesTotais={deducoesTotais} />}
@@ -550,46 +568,13 @@ export default function App() {
             </>
           )}
         </main>
-
-        {/* BOTTOM NAV PARA CELULAR */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2.5 px-3 flex justify-around items-center z-30 shadow-lg">
-          <button
-            onClick={() => setActiveTab('visao-geral')}
-            className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'visao-geral' ? 'text-emerald-600 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <IconPieChart />
-            <span className="text-[10px]">Visão Geral</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('dre')}
-            className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'dre' ? 'text-emerald-600 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <IconLayers />
-            <span className="text-[10px]">DRE Canais</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('abc')}
-            className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'abc' ? 'text-emerald-600 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <IconPackage />
-            <span className="text-[10px]">Curva ABC</span>
-          </button>
-        </nav>
       </div>
     </div>
   );
 }
 
 // ==========================================
-// ABA 1: VISÃO GERAL (GRADE TOTALMENTE EXPANDIDA)
+// ABA 1: VISÃO GERAL (NÚMEROS AJUSTADOS)
 // ==========================================
 function VisaoGeralTab({ data, deducoesTotais }) {
   const kpis = data?.kpisGerais || {};
@@ -602,18 +587,22 @@ function VisaoGeralTab({ data, deducoesTotais }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         
         {/* CARD LUCRO LÍQUIDO */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
           <div>
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1.5">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+              <span className="text-xs uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1.5 shrink-0">
                 <IconTrendingUp className="w-4 h-4 text-emerald-400" /> Lucro Líquido
               </span>
-              <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">
+              <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 shrink-0">
                 Margem {formatPercent(kpis.margemLiquidaMedia)}
               </span>
             </div>
-            <div className="my-4">
-              <h2 className="text-4xl font-extrabold text-white tracking-tight">{formatBRL(kpis.lucroLiquido)}</h2>
+            
+            {/* FONTE RESPONSIVA CORRIGIDA PARA NÃO ESTOURAR */}
+            <div className="my-3 overflow-hidden">
+              <h2 className="text-2xl lg:text-3xl xl:text-4xl font-black text-white tracking-tight truncate">
+                {formatBRL(kpis.lucroLiquido)}
+              </h2>
             </div>
           </div>
           
@@ -629,48 +618,52 @@ function VisaoGeralTab({ data, deducoesTotais }) {
         </div>
 
         {/* CARD FATURAMENTO BRUTO */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Faturamento Bruto</span>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><IconDollarSign className="w-6 h-6" /></div>
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl shrink-0"><IconDollarSign className="w-5 h-5" /></div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 block tracking-tight">{formatBRL(kpis.faturamentoBruto)}</span>
+          <div className="overflow-hidden">
+            <span className="text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
+              {formatBRL(kpis.faturamentoBruto)}
+            </span>
             <span className="text-xs text-slate-400 mt-1 block">Receita Bruta Total Processada</span>
           </div>
         </div>
 
         {/* CARD VOLUME E TICKET MÉDIO */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Volume de Vendas</span>
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><IconShoppingBag className="w-6 h-6" /></div>
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0"><IconShoppingBag className="w-5 h-5" /></div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 block tracking-tight">{kpis.totalPedidos || 0} <span className="text-sm font-normal text-slate-500">pedidos</span></span>
-            <span className="text-xs text-slate-600 mt-2 block font-medium">Ticket Médio: <strong className="text-slate-900 font-bold">{formatBRL(ticketMedio)}</strong></span>
+          <div className="overflow-hidden">
+            <span className="text-2xl lg:text-3xl font-black text-slate-900 block tracking-tight truncate">
+              {kpis.totalPedidos || 0} <span className="text-sm font-normal text-slate-500">pedidos</span>
+            </span>
+            <span className="text-xs text-slate-600 mt-2 block font-medium truncate">
+              Ticket Médio: <strong className="text-slate-900 font-bold">{formatBRL(ticketMedio)}</strong>
+            </span>
           </div>
         </div>
       </div>
 
       {/* PAINEL DE DEDUÇÕES LARGURA TOTAL */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl"><IconReceipt className="w-5 h-5" /></div>
             <div>
-              <h3 className="text-base font-bold uppercase text-slate-800 tracking-wider">Detalhamento de Deduções & Custos Operacionais</h3>
+              <h3 className="text-base font-bold uppercase text-slate-800 tracking-wider">Detalhamento de Deduções & Custos</h3>
               <p className="text-xs text-slate-400">Total consumido pela operação do e-commerce</p>
             </div>
           </div>
-          <span className="text-base font-black text-rose-600 bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">
+          <span className="text-sm font-black text-rose-600 bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">
             Total Deduções: {formatBRL(deducoesTotais.total)}
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* CPV */}
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-700">CPV (Custo dos Produtos)</span>
@@ -682,7 +675,6 @@ function VisaoGeralTab({ data, deducoesTotais }) {
             <span className="text-xs text-slate-400 block text-right font-semibold">{formatPercent(deducoesTotais.cpvPerc)} do faturamento</span>
           </div>
 
-          {/* TAXAS PLATAFORMA */}
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-700">Taxas de Plataformas</span>
@@ -694,7 +686,6 @@ function VisaoGeralTab({ data, deducoesTotais }) {
             <span className="text-xs text-slate-400 block text-right font-semibold">{formatPercent(deducoesTotais.taxasPerc)} do faturamento</span>
           </div>
 
-          {/* IMPOSTOS */}
           <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-700">Impostos e Tributos</span>
@@ -705,7 +696,6 @@ function VisaoGeralTab({ data, deducoesTotais }) {
             </div>
             <span className="text-xs text-slate-400 block text-right font-semibold">{formatPercent(deducoesTotais.impostosPerc)} do faturamento</span>
           </div>
-
         </div>
       </div>
     </div>
@@ -718,11 +708,9 @@ function VisaoGeralTab({ data, deducoesTotais }) {
 function DREPlataformasTab({ dre }) {
   return (
     <div className="space-y-4 w-full">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-          Canais Cadastrados ({dre.length})
-        </h3>
-      </div>
+      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Canais Cadastrados ({dre.length})
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {dre.map((plat, idx) => (
@@ -771,8 +759,6 @@ function DREPlataformasTab({ dre }) {
 function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin }) {
   return (
     <div className="space-y-4 w-full">
-      
-      {/* BARRA DE PESQUISA E FILTROS */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="relative flex-1">
           <IconSearch className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -796,7 +782,6 @@ function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, s
         </button>
       </div>
 
-      {/* GRADE DE PRODUTOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
         {produtos.map((prod, idx) => {
           const isLowMargin = prod.margemLiquida < 10;
@@ -856,14 +841,23 @@ function SkeletonLoader() {
   );
 }
 
-function ErrorState({ message, onRetry }) {
+function ErrorState({ message, onRetry, onUseMock }) {
   return (
-    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-3 w-full">
+    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center space-y-4 w-full">
       <IconAlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
-      <p className="text-sm text-rose-800 font-medium">{message}</p>
-      <button onClick={onRetry} className="px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-md">
-        Tentar Novamente
-      </button>
+      <div>
+        <h3 className="text-base font-bold text-rose-900">Falha ao Conectar com o Google Apps Script</h3>
+        <p className="text-xs text-rose-700 mt-1 max-w-xl mx-auto">{message}</p>
+      </div>
+      
+      <div className="flex flex-wrap gap-3 justify-center pt-2">
+        <button onClick={onRetry} className="px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-md hover:bg-rose-700">
+          Tentar Novamente
+        </button>
+        <button onClick={onUseMock} className="px-5 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl shadow-md hover:bg-slate-900">
+          Usar Dados Demonstrativos
+        </button>
+      </div>
     </div>
   );
 }
