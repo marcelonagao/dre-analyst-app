@@ -202,7 +202,7 @@ export default function App() {
                   dre={dreExibida} 
                   historico12Meses={listaHistorico} 
                   viewMode={viewMode} 
-                  produtos={data?.topProdutosCurvaABC || []} // <-- NOVA LINHA ADICIONADA AQUI
+                  produtos={data?.topProdutosCurvaABC || []} 
                 />
               )}
               {activeTab === 'abc' && (

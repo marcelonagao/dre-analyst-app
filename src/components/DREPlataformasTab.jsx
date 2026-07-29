@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
-import { IconStore, IconChevronDown, IconChevronRight, IconAlertTriangle, IconPackage } from './Icons';
+import { IconStore, IconChevronDown, IconChevronRight, IconTrendingUp, IconPackage, IconAlertTriangle } from './Icons';
 
-export default function DREPlataformasTab({ dre, historico12Meses, viewMode, produtos }) {
+export default function DREPlataformasTab({ dre, historico12Meses, viewMode, produtos = [] }) {
   const [expandedChannel, setExpandedChannel] = useState(null);
 
   return (
@@ -15,17 +15,17 @@ export default function DREPlataformasTab({ dre, historico12Meses, viewMode, pro
       </h3>
 
       {/* CARDS DE CANAIS EXPANSÍVEIS (ACCORDION) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start">
         {dre.map((plat, idx) => {
           const isExpanded = expandedChannel === plat.plataforma;
 
           return (
-            <div key={idx} className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 ${isExpanded ? 'border-emerald-400 shadow-emerald-100 lg:col-span-2' : 'border-slate-200/80'}`}>
+            <div key={idx} className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 flex flex-col ${isExpanded ? 'border-emerald-400 shadow-emerald-100 lg:col-span-2' : 'border-slate-200/80'}`}>
               
               {/* CABEÇALHO DO CANAL (CLICÁVEL) */}
               <div 
                 onClick={() => setExpandedChannel(isExpanded ? null : plat.plataforma)}
-                className="p-6 cursor-pointer hover:bg-slate-50/50 transition-colors flex flex-col justify-between h-full"
+                className="p-6 cursor-pointer hover:bg-slate-50/50 transition-colors"
               >
                 <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
                   <div className="flex items-center space-x-3">
@@ -48,6 +48,7 @@ export default function DREPlataformasTab({ dre, historico12Meses, viewMode, pro
                   </div>
                 </div>
 
+                {/* TOTAIS DO CANAL */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/90 p-4 rounded-xl border border-slate-100 text-xs">
                   <div><span className="text-[10px] text-slate-400 uppercase font-bold block">Faturamento Bruto</span><span className="font-black text-slate-800 text-sm">{formatBRL(plat.faturamentoBruto)}</span></div>
                   <div><span className="text-[10px] text-slate-400 uppercase font-bold block">Lucro Líquido</span><span className="font-black text-emerald-600 text-sm">{formatBRL(plat.lucroLiquido)}</span></div>
@@ -81,9 +82,12 @@ function DeepDiveCanal({ plataforma, margemAtual, produtos }) {
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
   const [reducaoBaixaMargem, setReducaoBaixaMargem] = useState(-30);
 
+  // Proteção contra array vazio ou indefinido
+  const safeProdutos = Array.isArray(produtos) ? produtos : [];
+
   // Pega os 2 melhores e os 2 piores produtos para análise
-  const topProdutos = [...produtos].sort((a, b) => b.margemLiquida - a.margemLiquida).slice(0, 2);
-  const pioresProdutos = [...produtos].sort((a, b) => a.margemLiquida - b.margemLiquida).slice(0, 2);
+  const topProdutos = [...safeProdutos].sort((a, b) => b.margemLiquida - a.margemLiquida).slice(0, 2);
+  const pioresProdutos = [...safeProdutos].sort((a, b) => a.margemLiquida - b.margemLiquida).slice(0, 2);
 
   // Cálculo Simulado da Nova Margem
   const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
@@ -111,41 +115,45 @@ function DeepDiveCanal({ plataforma, margemAtual, produtos }) {
           <div className="space-y-4">
             <p className="text-xs text-slate-500">Estes são os itens que mais impactam a margem de <strong>{formatPercent(margemAtual)}</strong> neste canal.</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Mais Rentáveis */}
-              <div className="bg-white border border-emerald-200 rounded-xl p-4 shadow-sm">
-                <h5 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-3">🔥 Puxando a Margem para Cima</h5>
-                <div className="space-y-3">
-                  {topProdutos.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2">
-                      <div className="truncate pr-2">
-                        <span className="font-bold text-slate-800 block truncate">{p.produto}</span>
-                        <span className="text-[9px] text-slate-400">{p.marca}</span>
+            {safeProdutos.length === 0 ? (
+               <div className="p-4 bg-white border border-slate-200 rounded-xl text-center text-xs text-slate-400">Nenhum produto encontrado para análise.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Mais Rentáveis */}
+                <div className="bg-white border border-emerald-200 rounded-xl p-4 shadow-sm">
+                  <h5 className="text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-3">🔥 Puxando a Margem para Cima</h5>
+                  <div className="space-y-3">
+                    {topProdutos.map((p, i) => (
+                      <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2">
+                        <div className="truncate pr-2">
+                          <span className="font-bold text-slate-800 block truncate">{p.produto}</span>
+                          <span className="text-[9px] text-slate-400">{p.marca}</span>
+                        </div>
+                        <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold shrink-0">{formatPercent(p.margemLiquida)}</span>
                       </div>
-                      <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold shrink-0">{formatPercent(p.margemLiquida)}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-               {/* Menos Rentáveis */}
-               <div className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm">
-                <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-wider mb-3">⚠️ Puxando a Margem para Baixo</h5>
-                <div className="space-y-3">
-                  {pioresProdutos.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2">
-                      <div className="truncate pr-2">
-                        <span className="font-bold text-slate-800 block truncate">{p.produto}</span>
-                        <span className="text-[9px] text-slate-400">{p.marca}</span>
+                {/* Menos Rentáveis */}
+                <div className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm">
+                  <h5 className="text-[10px] font-black text-rose-600 uppercase tracking-wider mb-3">⚠️ Puxando a Margem para Baixo</h5>
+                  <div className="space-y-3">
+                    {pioresProdutos.map((p, i) => (
+                      <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2">
+                        <div className="truncate pr-2">
+                          <span className="font-bold text-slate-800 block truncate">{p.produto}</span>
+                          <span className="text-[9px] text-slate-400">{p.marca}</span>
+                        </div>
+                        <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-md font-bold shrink-0 flex items-center gap-1">
+                          <IconAlertTriangle className="w-3 h-3"/> {formatPercent(p.margemLiquida)}
+                        </span>
                       </div>
-                      <span className="bg-rose-100 text-rose-800 px-2 py-1 rounded-md font-bold shrink-0 flex items-center gap-1">
-                        <IconAlertTriangle className="w-3 h-3"/> {formatPercent(p.margemLiquida)}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -192,44 +200,48 @@ function DeepDiveCanal({ plataforma, margemAtual, produtos }) {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Giro de Estoque & Sugestão de Reposição</h4>
             </div>
             
-            <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px]">
-                  <tr>
-                    <th className="p-3">SKU / Produto</th>
-                    <th className="p-3 text-center">Venda Diária</th>
-                    <th className="p-3 text-center">Estoque Atual</th>
-                    <th className="p-3 text-center">Dias Restantes</th>
-                    <th className="p-3 text-right">Sugestão Compra</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {produtos.slice(0, 5).map((p, i) => {
-                    const isRuptura = p.diasDeEstoque < 15;
-                    return (
-                      <tr key={i} className={`hover:bg-slate-50 ${isRuptura ? 'bg-rose-50/30' : ''}`}>
-                        <td className="p-3">
-                          <span className="font-bold text-slate-800 block truncate max-w-[200px]">{p.produto}</span>
-                          <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
-                        </td>
-                        <td className="p-3 text-center font-medium">{p.vendaDiaria || 0} un/dia</td>
-                        <td className="p-3 text-center font-bold">{p.estoqueAtual || 0} un</td>
-                        <td className="p-3 text-center">
-                          <span className={`px-2 py-1 rounded-md font-bold ${isRuptura ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>
-                            {p.diasDeEstoque || 0} dias
-                          </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className={`font-black ${p.sugestaoCompra > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                            {p.sugestaoCompra > 0 ? `+ ${p.sugestaoCompra} un` : 'Estoque OK'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            {safeProdutos.length === 0 ? (
+               <div className="p-4 bg-white border border-slate-200 rounded-xl text-center text-xs text-slate-400">Nenhum dado de estoque disponível.</div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px]">
+                    <tr>
+                      <th className="p-3">SKU / Produto</th>
+                      <th className="p-3 text-center">Venda Diária</th>
+                      <th className="p-3 text-center">Estoque Atual</th>
+                      <th className="p-3 text-center">Dias Restantes</th>
+                      <th className="p-3 text-right">Sugestão Compra</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {safeProdutos.slice(0, 5).map((p, i) => {
+                      const isRuptura = p.diasDeEstoque < 15;
+                      return (
+                        <tr key={i} className={`hover:bg-slate-50 ${isRuptura ? 'bg-rose-50/30' : ''}`}>
+                          <td className="p-3">
+                            <span className="font-bold text-slate-800 block truncate max-w-[200px]">{p.produto}</span>
+                            <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
+                          </td>
+                          <td className="p-3 text-center font-medium">{p.vendaDiaria || 0} un/dia</td>
+                          <td className="p-3 text-center font-bold">{p.estoqueAtual || 0} un</td>
+                          <td className="p-3 text-center">
+                            <span className={`px-2 py-1 rounded-md font-bold ${isRuptura ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>
+                              {p.diasDeEstoque || 0} dias
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <span className={`font-black ${p.sugestaoCompra > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              {p.sugestaoCompra > 0 ? `+ ${p.sugestaoCompra} un` : 'Estoque OK'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <p className="text-[10px] text-slate-400 italic text-right">* Sugestão calculada para cobrir 30 dias + Lead Time do fornecedor.</p>
           </div>
         )}
