@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatBRL, formatPercent } from '../utils/formatters';
+import { formatBRL, formatPercent } from '../utils/formatters.js';
 import { IconStore } from './Icons';
 
 export default function DREPlataformasTab({ dre, historico12Meses, viewMode }) {

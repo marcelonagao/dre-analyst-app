@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatBRL, formatPercent } from '../utils/formatters';
+import { formatBRL, formatPercent } from '../utils/formatters.js';
 import { IconTrendingUp, IconDollarSign, IconShoppingBag, IconReceipt } from './Icons';
 
 export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia }) {

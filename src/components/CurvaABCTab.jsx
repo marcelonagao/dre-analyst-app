@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { formatBRL, formatPercent } from '../utils/formatters';
+import { formatBRL, formatPercent } from '../utils/formatters.js';
 import { IconSearch, IconShieldAlert, IconChevronDown, IconChevronRight } from './Icons';
 
 export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin, factor }) {
