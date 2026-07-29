@@ -198,7 +198,12 @@ export default function App() {
                 />
               )}
               {activeTab === 'dre' && (
-                <DREPlataformasTab dre={dreExibida} historico12Meses={listaHistorico} viewMode={viewMode} />
+                <DREPlataformasTab 
+                  dre={dreExibida} 
+                  historico12Meses={listaHistorico} 
+                  viewMode={viewMode} 
+                  produtos={data?.topProdutosCurvaABC || []} // <-- NOVA LINHA ADICIONADA AQUI
+                />
               )}
               {activeTab === 'abc' && (
                 <CurvaABCTab
