@@ -5,8 +5,7 @@ import DREPlataformasTab from './components/DREPlataformasTab';
 import CurvaABCTab from './components/CurvaABCTab';
 import {
   IconBarChart3, IconCalendar, IconRefreshCw, IconLink2,
-  IconPieChart, IconLayers, IconPackage, IconChevronRight,
-  IconCheckCircle2, IconAlertCircle
+  IconPieChart, IconLayers, IconPackage, IconCheckCircle2, IconAlertCircle
 } from './components/Icons';
 
 export default function App() {
@@ -29,10 +28,9 @@ export default function App() {
   const [filterLowMargin, setFilterLowMargin] = useState(false);
 
   return (
-    // Adicionado 'pb-20 md:pb-0' para dar espaço à barra inferior no mobile
     <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0 pb-20 md:pb-0">
       
-      {/* 🖥️ SIDEBAR DESKTOP (Invisível no Celular) */}
+      {/* 🖥️ SIDEBAR DESKTOP */}
       <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 border-r border-slate-800 fixed left-0 top-0 bottom-0 h-screen z-30 shadow-2xl">
         <div className="p-6 space-y-6 overflow-y-auto">
           <div className="flex items-center space-x-3">
@@ -60,9 +58,6 @@ export default function App() {
                   ))}
                 </select>
               </div>
-              <button onClick={() => fetchData(selectedCompetencia, true)} className="p-1.5 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white" aria-label="Atualizar">
-                <IconRefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
-              </button>
             </div>
           </div>
 
@@ -78,6 +73,14 @@ export default function App() {
               <div className="flex items-center space-x-3"><IconPackage className="w-4 h-4" /><span>Curva ABC Produtos</span></div>
             </button>
           </nav>
+        </div>
+
+        {/* Indicador de Vendas Válidas no rodapé da Sidebar */}
+        <div className="p-6 border-t border-slate-800 bg-slate-900">
+          <div className="flex items-center justify-center space-x-1.5 text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/40">
+            <IconCheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Filtro de Vendas Válidas Ativo</span>
+          </div>
         </div>
       </aside>
 
@@ -95,27 +98,43 @@ export default function App() {
               Modo Global: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado 12 Meses' : `Mês ${selectedCompetencia}`}</strong>
             </p>
           </div>
+          
           <div className="flex items-center space-x-3">
-            <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs">
+            {/* Toggle Mês vs Consolidado */}
+            <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex space-x-1 text-xs mr-2">
               <button onClick={() => setViewMode('mensal')} className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'mensal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>Mês ({selectedCompetencia})</button>
               <button onClick={() => setViewMode('consolidado')} className={`px-3 py-1.5 rounded-lg font-bold transition-all ${viewMode === 'consolidado' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>Visão Consolidada</button>
             </div>
-            <button onClick={() => fetchData(selectedCompetencia, true)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200">
+
+            {/* BOTÃO DE CONFIGURAR API (GAS) - AGORA SEMPRE VISÍVEL */}
+            <button onClick={() => setShowApiModal(!showApiModal)} className={`p-2 rounded-xl border transition-colors ${showApiModal ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`} title="Configurar API (GAS)">
+              <IconLink2 className="w-4 h-4" />
+            </button>
+
+            {/* BOTÃO DE ATUALIZAR */}
+            <button onClick={() => fetchData(selectedCompetencia, true)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200" title="Forçar Atualização">
               <IconRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
             </button>
           </div>
         </header>
 
-        {/* 📱 HEADER MOBILE (Invisível no PC) */}
+        {/* 📱 HEADER MOBILE */}
         <header className="md:hidden bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 bg-slate-900 text-emerald-400 rounded-lg"><IconBarChart3 className="w-5 h-5" /></div>
               <h1 className="text-sm font-black text-slate-900 tracking-tight">Controller</h1>
             </div>
-            <button onClick={() => fetchData(selectedCompetencia, true)} className="p-2 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
-              <IconRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-            </button>
+            
+            {/* BOTÕES MOBILE: API E ATUALIZAR */}
+            <div className="flex items-center space-x-2">
+              <button onClick={() => setShowApiModal(!showApiModal)} className={`p-2 rounded-lg border ${showApiModal ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <IconLink2 className="w-4 h-4" />
+              </button>
+              <button onClick={() => fetchData(selectedCompetencia, true)} className="p-2 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                <IconRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+              </button>
+            </div>
           </div>
           
           <div className="flex items-center justify-between gap-2">
@@ -135,6 +154,32 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {/* MODAL DE CONFIGURAÇÃO DA API (Aparece logo abaixo do header quando ativado) */}
+        {showApiModal && (
+          <div className="m-4 md:m-8 p-5 bg-slate-900 text-white rounded-2xl shadow-xl border border-slate-800 text-xs animate-fadeIn">
+            <div className="flex justify-between items-center mb-3">
+              <label className="font-bold text-emerald-400 text-sm">URL do Google Apps Script (Web App):</label>
+              <button onClick={() => setShowApiModal(false)} className="text-slate-400 hover:text-white">Fechar ✕</button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input 
+                type="text" 
+                placeholder="https://script.google.com/macros/s/.../exec" 
+                value={apiUrl} 
+                onChange={(e) => setApiUrl(e.target.value)} 
+                className="flex-1 p-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
+              />
+              <button 
+                onClick={() => { fetchData(selectedCompetencia, true); setShowApiModal(false); }} 
+                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl transition-colors"
+              >
+                Conectar API
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-3">* Deixe em branco e clique em conectar para usar os dados demonstrativos locais.</p>
+          </div>
+        )}
 
         <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto w-full relative">
           {loading ? (
@@ -170,7 +215,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* 📱 BOTTOM NAVIGATION BAR MOBILE (Invisível no PC) */}
+      {/* 📱 BOTTOM NAVIGATION BAR MOBILE */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex items-center justify-around px-2 py-2 shadow-[0_-8px_15px_-3px_rgba(0,0,0,0.1)]">
         <button onClick={() => setActiveTab('visao-geral')} className={`flex flex-col items-center space-y-1 p-2 w-full transition-colors ${activeTab === 'visao-geral' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <IconPieChart className="w-5 h-5" />
