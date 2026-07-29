@@ -5,8 +5,10 @@ import DREPlataformasTab from './components/DREPlataformasTab';
 import CurvaABCTab from './components/CurvaABCTab';
 import {
   IconBarChart3, IconCalendar, IconRefreshCw, IconLink2,
-  IconPieChart, IconLayers, IconPackage, IconCheckCircle2, IconAlertCircle
+  IconPieChart, IconLayers, IconPackage, IconCheckCircle2, IconAlertCircle, IconBrain
 } from './components/Icons';
+import InteligenciaTab from './components/InteligenciaTab';
+
 
 export default function App() {
   const {
@@ -71,6 +73,9 @@ export default function App() {
             </button>
             <button onClick={() => setActiveTab('abc')} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === 'abc' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
               <div className="flex items-center space-x-3"><IconPackage className="w-4 h-4" /><span>Curva ABC Produtos</span></div>
+            </button>
+            <button onClick={() => setActiveTab('inteligencia')} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === 'inteligencia' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <div className="flex items-center space-x-3"><IconBrain className="w-4 h-4" /><span>Inteligência & Compras</span></div>
             </button>
           </nav>
         </div>
@@ -215,6 +220,12 @@ export default function App() {
                   factor={viewMode === 'consolidado' ? 12 : 1}
                 />
               )}
+              {activeTab === 'inteligencia' && (
+                <InteligenciaTab 
+                  produtos={data?.topProdutosCurvaABC || []} 
+                  margemAtual={kpisExibidos.margemLiquidaMedia} 
+                />
+              )}
             </>
           )}
         </main>
@@ -233,6 +244,10 @@ export default function App() {
         <button onClick={() => setActiveTab('abc')} className={`flex flex-col items-center space-y-1 p-2 w-full transition-colors ${activeTab === 'abc' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <IconPackage className="w-5 h-5" />
           <span className="text-[9px] font-bold uppercase tracking-wider">Produtos</span>
+        </button>
+        <button onClick={() => setActiveTab('inteligencia')} className={`flex flex-col items-center space-y-1 p-2 w-full transition-colors ${activeTab === 'inteligencia' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+          <IconBrain className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider">Inteligência & Compras</span>
         </button>
       </nav>
 
