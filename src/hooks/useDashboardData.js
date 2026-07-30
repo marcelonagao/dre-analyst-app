@@ -19,6 +19,8 @@ export function useDashboardData() {
   const [apiUrl, setApiUrl] = useState('');
   const [selectedCompetencia, setSelectedCompetencia] = useState('04/2026');
   const [viewMode, setViewMode] = useState('mensal'); // 'mensal' | 'consolidado'
+  const [channelFilter, setChannelFilter] = useState('todos'); // 'todos' | 'online' | 'externa'
+  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,21 +50,9 @@ export function useDashboardData() {
       } else {
         await new Promise((resolve) => setTimeout(resolve, 200));
         const mockData = {
-          metadados: {
-            competenciaAtual: competencia,
-            competenciasDisponiveis: HISTORICO_12_MESES.map(h => h.mes),
-            ultimaAtualizacao: new Date().toISOString()
-          },
+          metadados: { competenciaAtual: competencia, competenciasDisponiveis: HISTORICO_12_MESES.map(h => h.mes) },
           historicoMensal: HISTORICO_12_MESES,
-          kpisGerais: {
-            faturamentoBruto: 300939.97,
-            totalTaxas: 42959.91,
-            totalImpostos: 33100.00,
-            totalCpv: 203331.01,
-            lucroLiquido: 21545.65,
-            margemLiquidaMedia: 7.16,
-            totalPedidos: 4386
-          },
+          kpisGerais: { faturamentoBruto: 300939.97, totalTaxas: 42959.91, totalImpostos: 33100.00, totalCpv: 203331.01, lucroLiquido: 21545.65, margemLiquidaMedia: 7.16, totalPedidos: 4386 },
           drePorPlataforma: [
             { plataforma: "Shopee RAFA", faturamentoBruto: 165000.00, taxasPlataforma: 23550, imposto: 18150, cpv: 111500, lucroLiquido: 11800, margemLiquida: 7.15, pedidos: 2410 },
             { plataforma: "Mercado Livre", faturamentoBruto: 105939.97, taxasPlataforma: 15120, imposto: 11650, cpv: 71500, lucroLiquido: 7669.97, margemLiquida: 7.23, pedidos: 1530 },
@@ -72,7 +62,8 @@ export function useDashboardData() {
             { sku: "2LB05", produto: "Creme Facial Anti-olheira", marca: "La Belle Paris", plataforma: "Shopee RAFA", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84, estoqueAtual: 150, leadTime: 15, vendaDiaria: 10.6, diasDeEstoque: 14, sugestaoCompra: 327 },
             { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml", marca: "La Belle Paris", plataforma: "Mercado Livre", quantidadeVendida: 240, faturamentoBruto: 98000.00, lucroLiquido: 8330.00, margemLiquida: 8.50, estoqueAtual: 400, leadTime: 15, vendaDiaria: 8, diasDeEstoque: 50, sugestaoCompra: 0 },
             { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", plataforma: "Mercado Livre", quantidadeVendida: 180, faturamentoBruto: 55000.00, lucroLiquido: 2475.00, margemLiquida: 4.50, estoqueAtual: 20, leadTime: 20, vendaDiaria: 6, diasDeEstoque: 3, sugestaoCompra: 280 },
-            { sku: "BATOM-MATTE-01", produto: "Batom Matte Nude Rose", marca: "Glamour Makeup", plataforma: "Shopee RAFA", quantidadeVendida: 95, faturamentoBruto: 22939.97, lucroLiquido: 940.65, margemLiquida: 4.10, estoqueAtual: 0, leadTime: 10, vendaDiaria: 3.1, diasDeEstoque: 0, sugestaoCompra: 124 }
+            { sku: "BATOM-MATTE-01", produto: "Batom Matte Nude Rose", marca: "Glamour Makeup", plataforma: "Shopee RAFA", quantidadeVendida: 95, faturamentoBruto: 22939.97, lucroLiquido: 940.65, margemLiquida: 4.10, estoqueAtual: 0, leadTime: 10, vendaDiaria: 3.1, diasDeEstoque: 0, sugestaoCompra: 124 },
+            { sku: "KIT-REV-01", produto: "Kit Revenda 50 Unidades Creme", marca: "La Belle Paris", plataforma: "Venda Externa", quantidadeVendida: 5, faturamentoBruto: 25000.00, lucroLiquido: 1500.00, margemLiquida: 6.00, estoqueAtual: 10, leadTime: 5, vendaDiaria: 0.5, diasDeEstoque: 20, sugestaoCompra: 5 }
           ]
         };
         localCache.current[competencia] = mockData;
@@ -91,38 +82,56 @@ export function useDashboardData() {
   }, [selectedCompetencia]);
 
   const listaHistorico = useMemo(() => data?.historicoMensal || HISTORICO_12_MESES, [data]);
+  const competenciasList = useMemo(() => data?.metadados?.competenciasDisponiveis || listaHistorico.map(h => h.mes), [data, listaHistorico]);
 
-  const competenciasList = useMemo(() => {
-    return data?.metadados?.competenciasDisponiveis || listaHistorico.map(h => h.mes);
-  }, [data, listaHistorico]);
+  // 1. DRE Filtrada por Canal
+  const dreExibida = useMemo(() => {
+    const lista = data?.drePorPlataforma || [];
+    const numMeses = viewMode === 'consolidado' ? (listaHistorico.length || 1) : 1;
+    
+    let mapPlat = {};
+    lista.forEach(pBase => {
+      // Aplica o filtro Global
+      const isOnline = pBase.plataforma.includes('Shopee') || pBase.plataforma.includes('Mercado Livre');
+      const isExterna = pBase.plataforma.includes('Externa');
+      
+      if (channelFilter === 'online' && !isOnline) return;
+      if (channelFilter === 'externa' && !isExterna) return;
 
-  const dadosConsolidados = useMemo(() => {
-    let fatBrutoTotal = 0;
-    let lucroLiquidoTotal = 0;
-
-    listaHistorico.forEach(m => {
-      fatBrutoTotal += m.faturamento || 0;
-      lucroLiquidoTotal += m.lucro || 0;
+      mapPlat[pBase.plataforma] = {
+        plataforma: pBase.plataforma,
+        faturamentoBruto: (pBase.faturamentoBruto || 0) * numMeses,
+        lucroLiquido: (pBase.lucroLiquido || 0) * numMeses,
+        taxasPlataforma: (pBase.taxasPlataforma || 0) * numMeses,
+        imposto: (pBase.imposto || 0) * numMeses,
+        cpv: (pBase.cpv || 0) * numMeses,
+        pedidos: (pBase.pedidos || 0) * numMeses,
+      };
+      mapPlat[pBase.plataforma].margemLiquida = mapPlat[pBase.plataforma].faturamentoBruto > 0 
+        ? (mapPlat[pBase.plataforma].lucroLiquido / mapPlat[pBase.plataforma].faturamentoBruto) * 100 
+        : 0;
     });
 
-    const margemMedia = fatBrutoTotal > 0 ? (lucroLiquidoTotal / fatBrutoTotal) * 100 : 0;
-    const fatorMult = listaHistorico.length || 1;
+    return Object.values(mapPlat);
+  }, [viewMode, data, listaHistorico, channelFilter]);
 
-    return {
-      faturamentoBruto: fatBrutoTotal,
-      lucroLiquido: lucroLiquidoTotal,
-      margemLiquidaMedia: margemMedia,
-      totalTaxas: (data?.kpisGerais?.totalTaxas || 42959.91) * fatorMult,
-      totalImpostos: (data?.kpisGerais?.totalImpostos || 33100.00) * fatorMult,
-      totalCpv: (data?.kpisGerais?.totalCpv || 203331.01) * fatorMult,
-      totalPedidos: (data?.kpisGerais?.totalPedidos || 4386) * fatorMult
-    };
-  }, [listaHistorico, data]);
-
+  // 2. KPIs Dinâmicos baseados na DRE Filtrada
   const kpisExibidos = useMemo(() => {
-    if (viewMode === 'consolidado') return dadosConsolidados;
-    return data?.kpisGerais || {};
-  }, [viewMode, data, dadosConsolidados]);
+    let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
+    
+    dreExibida.forEach(p => {
+      faturamentoBruto += p.faturamentoBruto;
+      lucroLiquido += p.lucroLiquido;
+      totalTaxas += p.taxasPlataforma;
+      totalImpostos += p.imposto;
+      totalCpv += p.cpv;
+      totalPedidos += p.pedidos;
+    });
+
+    const margemLiquidaMedia = faturamentoBruto > 0 ? (lucroLiquido / faturamentoBruto) * 100 : 0;
+
+    return { faturamentoBruto, lucroLiquido, margemLiquidaMedia, totalTaxas, totalImpostos, totalCpv, totalPedidos };
+  }, [dreExibida]);
 
   const deducoesTotais = useMemo(() => {
     const { totalCpv = 0, totalTaxas = 0, totalImpostos = 0, faturamentoBruto = 1 } = kpisExibidos;
@@ -135,60 +144,34 @@ export function useDashboardData() {
     };
   }, [kpisExibidos]);
 
-  // Agregação de DRE 100% Dinâmica
-  const dreExibida = useMemo(() => {
-    const lista = data?.drePorPlataforma || [];
-    if (viewMode === 'mensal') return lista;
-
-    const mapPlat = {};
-    lista.forEach(p => {
-      mapPlat[p.plataforma] = {
-        plataforma: p.plataforma,
-        faturamentoBruto: 0,
-        lucroLiquido: 0,
-        taxasPlataforma: 0,
-        imposto: 0,
-        cpv: 0,
-        pedidos: 0
-      };
-    });
-
-    const numMeses = listaHistorico.length || 1;
-
-    Object.keys(mapPlat).forEach(key => {
-      const pBase = lista.find(item => item.plataforma === key) || {};
-      mapPlat[key].faturamentoBruto = (pBase.faturamentoBruto || 0) * numMeses;
-      mapPlat[key].lucroLiquido = (pBase.lucroLiquido || 0) * numMeses;
-      mapPlat[key].taxasPlataforma = (pBase.taxasPlataforma || 0) * numMeses;
-      mapPlat[key].imposto = (pBase.imposto || 0) * numMeses;
-      mapPlat[key].cpv = (pBase.cpv || 0) * numMeses;
-      mapPlat[key].pedidos = (pBase.pedidos || 0) * numMeses;
-      mapPlat[key].margemLiquida = mapPlat[key].faturamentoBruto > 0 
-        ? (mapPlat[key].lucroLiquido / mapPlat[key].faturamentoBruto) * 100 
-        : 0;
-    });
-
-    return Object.values(mapPlat);
-  }, [viewMode, data, listaHistorico]);
-
-  // Agrupa os produtos pela plataforma para o Drill-down da DRE
-  const produtosPorPlataforma = useMemo(() => {
+  // 3. Produtos Filtrados por Canal
+  const produtosFiltradosGlobais = useMemo(() => {
     const produtos = data?.topProdutosCurvaABC || [];
+    return produtos.filter(p => {
+      const isOnline = p.plataforma.includes('Shopee') || p.plataforma.includes('Mercado Livre');
+      const isExterna = p.plataforma.includes('Externa');
+      
+      if (channelFilter === 'online' && !isOnline) return false;
+      if (channelFilter === 'externa' && !isExterna) return false;
+      return true;
+    });
+  }, [data, channelFilter]);
+
+  const produtosPorPlataforma = useMemo(() => {
     const agrupado = {};
-    
-    produtos.forEach(p => {
+    produtosFiltradosGlobais.forEach(p => {
       const plat = p.plataforma || "Desconhecida";
       if (!agrupado[plat]) agrupado[plat] = [];
       agrupado[plat].push(p);
     });
-    
     return agrupado;
-  }, [data]);
+  }, [produtosFiltradosGlobais]);
 
   return {
     apiUrl, setApiUrl,
     selectedCompetencia, setSelectedCompetencia,
     viewMode, setViewMode,
+    channelFilter, setChannelFilter, // <-- Exportamos o controle do filtro
     data, loading, error,
     fetchData,
     listaHistorico,
@@ -196,6 +179,7 @@ export function useDashboardData() {
     kpisExibidos,
     deducoesTotais,
     dreExibida,
-    produtosPorPlataforma // <-- ADICIONE AQUI
+    produtosFiltradosGlobais, // <-- Nova lista filtrada para ABC e Inteligência
+    produtosPorPlataforma
   };
 }
