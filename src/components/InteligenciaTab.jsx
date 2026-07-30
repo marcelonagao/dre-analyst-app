@@ -10,22 +10,44 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
   // Simulador visual de margem
   const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
 
-  // Motor Dinâmico: Recalcula as necessidades de compra baseado nos sliders do simulador
+  // 1. CLASSIFICADOR ABC EMBUTIDO
+  // Precisamos classificar os produtos aqui para que o simulador saiba quem é A, B ou C
+  const produtosComClasse = useMemo(() => {
+    if (!produtos || produtos.length === 0) return [];
+    const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto || 0) - (a.faturamentoBruto || 0));
+    const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto || 0), 0);
+    
+    let acumulado = 0;
+    return sorted.map(p => {
+      const fat = p.faturamentoBruto || 0;
+      acumulado += fat;
+      const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
+      
+      let classe = 'C';
+      if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
+      else if (percAcumulado <= 95) classe = 'B';
+
+      return { ...p, classe };
+    });
+  }, [produtos]);
+
+  // 2. MOTOR DINÂMICO DE COMPRAS
   const comprasPorMarca = useMemo(() => {
     const map = {};
     let totalItensComprar = 0;
     let totalEstoqueFisico = 0;
-    let valorTotalEstoque = 0; // Novo KPI para o CEO
+    let valorTotalEstoque = 0;
     let valorTotalComprar = 0;
 
-    // Fatores multiplicadores baseados nos sliders do simulador
+    // Fatores multiplicadores baseados nos sliders
     const fatorAumentoA = 1 + (aumentoAltaMargem / 100);
     const fatorReducaoC = 1 + (reducaoBaixaMargem / 100);
 
-    produtos.forEach(p => {
-      // Cálculo de Custo Unitário (Proxy caso não venha da API)
-      const precoVenda = p.faturamentoBruto / p.quantidadeVendida;
-      const custoUnitario = p.custoUnitario || (precoVenda * 0.45); // Assumindo 45% de CPV médio se não houver
+    // Iteramos sobre a lista que JÁ POSSUI a classificação (produtosComClasse)
+    produtosComClasse.forEach(p => {
+      // Cálculo de Custo Unitário (Proxy)
+      const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
+      const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
 
       totalEstoqueFisico += p.estoqueAtual || 0;
       valorTotalEstoque += (p.estoqueAtual || 0) * custoUnitario;
@@ -35,10 +57,10 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
       if (p.classe === 'A') novaVendaDiaria *= fatorAumentoA;
       if (p.classe === 'C') novaVendaDiaria *= Math.max(0, fatorReducaoC);
 
-      // Recálculo da Sugestão de Compra: (Venda Diária * (Lead Time + Cobertura 30 dias)) - Estoque Atual
-      const coberturaDesejada = p.leadTime + 30; 
+      // Recálculo da Sugestão de Compra
+      const coberturaDesejada = (p.leadTime || 0) + 30; 
       let novaSugestaoCompra = Math.ceil((novaVendaDiaria * coberturaDesejada) - (p.estoqueAtual || 0));
-      novaSugestaoCompra = Math.max(0, novaSugestaoCompra); // Não sugere compra negativa
+      novaSugestaoCompra = Math.max(0, novaSugestaoCompra);
 
       if (novaSugestaoCompra > 0) {
         totalItensComprar += novaSugestaoCompra;
@@ -61,12 +83,11 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
 
     const marcas = Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar);
     return { marcas, totalItensComprar, totalEstoqueFisico, valorTotalEstoque, valorTotalComprar };
-  }, [produtos, aumentoAltaMargem, reducaoBaixaMargem]);
+  }, [produtosComClasse, aumentoAltaMargem, reducaoBaixaMargem]);
 
   return (
     <div className="space-y-6 w-full">
       
-      {/* KPIs GLOBAIS DE ESTOQUE (AGORA COM VALORES FINANCEIROS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
           <div className="p-4 bg-slate-100 text-slate-600 rounded-2xl w-fit"><IconPackage className="w-6 h-6" /></div>
@@ -91,7 +112,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </div>
       </div>
 
-      {/* SIMULADOR GLOBAL */}
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 md:p-8 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center space-x-3">
@@ -127,7 +147,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </div>
       </div>
 
-      {/* SUGESTÃO DE COMPRAS POR MARCA */}
       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-4">
         Sugestão de Compras por Fornecedor (Atualizado com Simulação)
       </h3>
