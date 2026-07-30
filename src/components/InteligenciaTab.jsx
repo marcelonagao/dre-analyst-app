@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
-import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight } from './Icons';
+// IMPORT CORRIGIDO: Adicionado o IconPackage aqui 👇
+import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage } from './Icons';
 
 export default function InteligenciaTab({ produtos, margemAtual }) {
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
