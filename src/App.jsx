@@ -21,7 +21,8 @@ export default function App() {
     competenciasList,
     kpisExibidos,
     deducoesTotais,
-    dreExibida
+    dreExibida,
+    produtosPorPlataforma // <-- ADICIONE ESTA LINHA AQUI
   } = useDashboardData();
 
   const [showApiModal, setShowApiModal] = useState(false);
@@ -207,7 +208,7 @@ export default function App() {
                   dre={dreExibida} 
                   historico12Meses={listaHistorico} 
                   viewMode={viewMode} 
-                  produtos={data?.topProdutosCurvaABC || []} 
+                  produtosPorPlataforma={produtosPorPlataforma} // <-- SUBSTITUA A PROP AQUI
                 />
               )}
               {activeTab === 'abc' && (

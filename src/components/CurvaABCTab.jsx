@@ -5,27 +5,43 @@ import { IconSearch, IconShieldAlert, IconChevronDown, IconChevronRight, IconAle
 export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin, factor }) {
   const [expandedBrand, setExpandedBrand] = useState(null);
 
-  const produtosComPareto = useMemo(() => {
-    if (!produtos || produtos.length === 0) return [];
+ // 1. PRIMEIRO: Filtramos os produtos pela busca e margem
+ const produtosFiltrados = useMemo(() => {
+  if (!produtos) return [];
+  return produtos.filter((item) => {
+    const matchesSearch =
+      item.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.marca.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto * factor) - (a.faturamentoBruto * factor));
-    const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto * factor), 0);
+    const matchesMargin = filterLowMargin ? item.margemLiquida < 10 : true;
+    return matchesSearch && matchesMargin;
+  });
+}, [produtos, searchQuery, filterLowMargin]);
 
-    let acumulado = 0;
-    return sorted.map(p => {
-      const fat = p.faturamentoBruto * factor;
-      acumulado += fat;
-      const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
-      
-      let classe = 'C';
-      if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
-      else if (percAcumulado <= 95) classe = 'B';
+// 2. DEPOIS: Calculamos o Pareto usando a lista já filtrada
+const produtosComPareto = useMemo(() => {
+  if (produtosFiltrados.length === 0) return [];
+  
+  // ATENÇÃO: Mudamos de [...produtos] para [...produtosFiltrados]
+  const sorted = [...produtosFiltrados].sort((a, b) => (b.faturamentoBruto * factor) - (a.faturamentoBruto * factor));
+  const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto * factor), 0);
 
-      return {
-        ...p, faturamentoBruto: fat, lucroLiquido: p.lucroLiquido * factor, quantidadeVendida: p.quantidadeVendida * factor, classe
-      };
-    });
-  }, [produtos, factor]);
+  let acumulado = 0;
+  return sorted.map(p => {
+    const fat = p.faturamentoBruto * factor;
+    acumulado += fat;
+    const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
+    
+    let classe = 'C';
+    if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
+    else if (percAcumulado <= 95) classe = 'B';
+
+    return {
+      ...p, faturamentoBruto: fat, lucroLiquido: p.lucroLiquido * factor, quantidadeVendida: p.quantidadeVendida * factor, classe
+    };
+  });
+}, [produtosFiltrados, factor]);
 
   const marcasAgrupadas = useMemo(() => {
     const map = {};

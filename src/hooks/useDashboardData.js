@@ -69,10 +69,10 @@ export function useDashboardData() {
             { plataforma: "Venda Externa", faturamentoBruto: 30000.00, taxasPlataforma: 4289.91, imposto: 3300, cpv: 20331.01, lucroLiquido: 2075.68, margemLiquida: 6.91, pedidos: 446 }
           ],
           topProdutosCurvaABC: [
-            { sku: "2LB05", produto: "Creme Facial Anti-olheira", marca: "La Belle Paris", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84, estoqueAtual: 150, leadTime: 15, vendaDiaria: 10.6, diasDeEstoque: 14, sugestaoCompra: 327 },
-            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml", marca: "La Belle Paris", quantidadeVendida: 240, faturamentoBruto: 98000.00, lucroLiquido: 8330.00, margemLiquida: 8.50, estoqueAtual: 400, leadTime: 15, vendaDiaria: 8, diasDeEstoque: 50, sugestaoCompra: 0 },
-            { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", quantidadeVendida: 180, faturamentoBruto: 55000.00, lucroLiquido: 2475.00, margemLiquida: 4.50, estoqueAtual: 20, leadTime: 20, vendaDiaria: 6, diasDeEstoque: 3, sugestaoCompra: 280 },
-            { sku: "BATOM-MATTE-01", produto: "Batom Matte Nude Rose", marca: "Glamour Makeup", quantidadeVendida: 95, faturamentoBruto: 22939.97, lucroLiquido: 940.65, margemLiquida: 4.10, estoqueAtual: 0, leadTime: 10, vendaDiaria: 3.1, diasDeEstoque: 0, sugestaoCompra: 124 }
+            { sku: "2LB05", produto: "Creme Facial Anti-olheira", marca: "La Belle Paris", plataforma: "Shopee RAFA", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84, estoqueAtual: 150, leadTime: 15, vendaDiaria: 10.6, diasDeEstoque: 14, sugestaoCompra: 327 },
+            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C 30ml", marca: "La Belle Paris", plataforma: "Mercado Livre", quantidadeVendida: 240, faturamentoBruto: 98000.00, lucroLiquido: 8330.00, margemLiquida: 8.50, estoqueAtual: 400, leadTime: 15, vendaDiaria: 8, diasDeEstoque: 50, sugestaoCompra: 0 },
+            { sku: "PROT-SPF50", produto: "Protetor Solar Toque Seco FPS 50", marca: "SunCare Pro", plataforma: "Mercado Livre", quantidadeVendida: 180, faturamentoBruto: 55000.00, lucroLiquido: 2475.00, margemLiquida: 4.50, estoqueAtual: 20, leadTime: 20, vendaDiaria: 6, diasDeEstoque: 3, sugestaoCompra: 280 },
+            { sku: "BATOM-MATTE-01", produto: "Batom Matte Nude Rose", marca: "Glamour Makeup", plataforma: "Shopee RAFA", quantidadeVendida: 95, faturamentoBruto: 22939.97, lucroLiquido: 940.65, margemLiquida: 4.10, estoqueAtual: 0, leadTime: 10, vendaDiaria: 3.1, diasDeEstoque: 0, sugestaoCompra: 124 }
           ]
         };
         localCache.current[competencia] = mockData;
@@ -171,6 +171,20 @@ export function useDashboardData() {
     return Object.values(mapPlat);
   }, [viewMode, data, listaHistorico]);
 
+  // Agrupa os produtos pela plataforma para o Drill-down da DRE
+  const produtosPorPlataforma = useMemo(() => {
+    const produtos = data?.topProdutosCurvaABC || [];
+    const agrupado = {};
+    
+    produtos.forEach(p => {
+      const plat = p.plataforma || "Desconhecida";
+      if (!agrupado[plat]) agrupado[plat] = [];
+      agrupado[plat].push(p);
+    });
+    
+    return agrupado;
+  }, [data]);
+
   return {
     apiUrl, setApiUrl,
     selectedCompetencia, setSelectedCompetencia,
@@ -181,6 +195,7 @@ export function useDashboardData() {
     competenciasList,
     kpisExibidos,
     deducoesTotais,
-    dreExibida
+    dreExibida,
+    produtosPorPlataforma // <-- ADICIONE AQUI
   };
 }
