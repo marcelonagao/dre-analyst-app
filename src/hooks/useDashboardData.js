@@ -170,8 +170,12 @@ export function useDashboardData() {
   const produtosFiltradosGlobais = useMemo(() => {
     const produtos = data?.topProdutosCurvaABC || [];
     return produtos.filter(p => {
-      const isOnline = p.plataforma.includes('Shopee') || p.plataforma.includes('Mercado Livre');
-      const isExterna = p.plataforma.includes('Externa');
+      // PROTEÇÃO: Se a plataforma vier vazia do backend, assume string vazia em vez de undefined
+      const plat = p.plataforma || ""; 
+      
+      const isOnline = plat.includes('Shopee') || plat.includes('Mercado Livre');
+      const isExterna = plat.includes('Externa');
+      
       if (channelFilter === 'online' && !isOnline) return false;
       if (channelFilter === 'externa' && !isExterna) return false;
       return true;
