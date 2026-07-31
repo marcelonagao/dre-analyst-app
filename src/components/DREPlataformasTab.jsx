@@ -18,8 +18,9 @@ export default function DREPlataformasTab({ dre, historico12Meses, viewMode, pro
         {dre.map((plat, idx) => {
           const isExpanded = expandedChannel === plat.plataforma;
           
-          // Pega os produtos do canal e aplica o fator (Mensal x1 ou Consolidado x12)
-          const prodsCanalRaw = produtosPorPlataforma[plat.plataforma] || [];
+          // AQUI ESTÁ A VARIÁVEL QUE HAVIA SUMIDO:
+          const prodsCanal = produtosPorPlataforma[plat.plataforma] || [];
+          
           const topProdutos = [...prodsCanal].sort((a, b) => b.margemLiquida - a.margemLiquida).slice(0, 3);
           const pioresProdutos = [...prodsCanal].sort((a, b) => a.margemLiquida - b.margemLiquida).slice(0, 3);
 
@@ -109,14 +110,10 @@ export default function DREPlataformasTab({ dre, historico12Meses, viewMode, pro
 function GraficoCanaisPorPlataforma({ historico }) {
   const [hoveredIdx, setHoveredIndex] = useState(null);
 
-  // Extrai todas as lojas únicas que existem no histórico filtrado
   const storeNames = Array.from(new Set(historico.flatMap(h => Object.keys(h.lojas || {}))));
-  
   const COLORS = ['#f97316', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
 
-  const maxVal = Math.max(
-    ...historico.flatMap(h => Object.values(h.lojas || {})), 1
-  ) * 1.25;
+  const maxVal = Math.max(...historico.flatMap(h => Object.values(h.lojas || {})), 1) * 1.25;
 
   const svgWidth = 800;
   const svgHeight = 220;
@@ -165,7 +162,6 @@ function GraficoCanaisPorPlataforma({ historico }) {
         </div>
       </div>
 
-      {/* TOOLTIP FLUTUANTE */}
       {hoveredIdx !== null && (
         <div className="absolute z-20 bg-slate-900 text-white p-3 rounded-xl shadow-2xl text-xs space-y-2 border border-slate-700 pointer-events-none transition-all"
           style={{ left: `${Math.min(Math.max(lines[0].points[hoveredIdx].x - 80, 20), svgWidth - 180)}px`, top: '40px', minWidth: '180px' }}>

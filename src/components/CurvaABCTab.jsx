@@ -2,45 +2,42 @@ import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconSearch, IconShieldAlert, IconChevronDown, IconChevronRight, IconAlertTriangle } from './Icons';
 
-export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin}) {
+export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin }) {
   const [expandedBrand, setExpandedBrand] = useState(null);
 
- // 1. PRIMEIRO: Filtramos os produtos pela busca e margem
- const produtosFiltrados = useMemo(() => {
-  if (!produtos) return [];
-  return produtos.filter((item) => {
-    const matchesSearch =
-      item.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.marca.toLowerCase().includes(searchQuery.toLowerCase());
+  const produtosFiltrados = useMemo(() => {
+    if (!produtos) return [];
+    return produtos.filter((item) => {
+      const matchesSearch =
+        item.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.marca.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesMargin = filterLowMargin ? item.margemLiquida < 10 : true;
+      return matchesSearch && matchesMargin;
+    });
+  }, [produtos, searchQuery, filterLowMargin]);
+
+  const produtosComPareto = useMemo(() => {
+    if (produtosFiltrados.length === 0) return [];
     
-    const matchesMargin = filterLowMargin ? item.margemLiquida < 10 : true;
-    return matchesSearch && matchesMargin;
-  });
-}, [produtos, searchQuery, filterLowMargin]);
+    // SEM O FACTOR: Usa o valor real que veio do backend
+    const sorted = [...produtosFiltrados].sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
+    const totalFat = sorted.reduce((acc, p) => acc + p.faturamentoBruto, 0);
 
-// 2. DEPOIS: Calculamos o Pareto usando a lista já filtrada
-const produtosComPareto = useMemo(() => {
-  if (produtosFiltrados.length === 0) return [];
-  
-  // ATENÇÃO: Mudamos de [...produtos] para [...produtosFiltrados]
-  const sorted = [...produtosFiltrados].sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
-  const totalFat = sorted.reduce((acc, p) => acc + p.faturamentoBruto, 0);
+    let acumulado = 0;
+    return sorted.map(p => {
+      const fat = p.faturamentoBruto;
+      acumulado += fat;
+      const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
+      
+      let classe = 'C';
+      if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
+      else if (percAcumulado <= 95) classe = 'B';
 
-  let acumulado = 0;
-  return sorted.map(p => {
-    const fat = p.faturamentoBruto;
-    acumulado += fat;
-    const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
-    
-    let classe = 'C';
-    if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
-    else if (percAcumulado <= 95) classe = 'B';
-
-    return {
-      ...p, classe};
-  });
-}, [produtosFiltrados]);
+      return { ...p, classe };
+    });
+  }, [produtosFiltrados]);
 
   const marcasAgrupadas = useMemo(() => {
     const map = {};
