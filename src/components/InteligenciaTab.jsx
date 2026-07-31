@@ -1,17 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
-import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage } from './Icons';
+import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle } from './Icons';
 
 export default function InteligenciaTab({ produtos, margemAtual }) {
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
   const [reducaoBaixaMargem, setReducaoBaixaMargem] = useState(-30);
   const [expandedBrand, setExpandedBrand] = useState(null);
 
-  // Simulador visual de margem
   const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
 
-  // 1. CLASSIFICADOR ABC EMBUTIDO
-  // Precisamos classificar os produtos aqui para que o simulador saiba quem é A, B ou C
   const produtosComClasse = useMemo(() => {
     if (!produtos || produtos.length === 0) return [];
     const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto || 0) - (a.faturamentoBruto || 0));
@@ -31,33 +28,49 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     });
   }, [produtos]);
 
-  // 2. MOTOR DINÂMICO DE COMPRAS
+  // NOVO: Análise de Estoque Parado vs Rodando
+  const analiseEstoque = useMemo(() => {
+    let totalFisico = 0, valorTotal = 0;
+    let fisicoRodando = 0, valorRodando = 0;
+    let fisicoParado = 0, valorParado = 0;
+
+    produtosComClasse.forEach(p => {
+      const qtd = p.estoqueAtual || 0;
+      if (qtd <= 0) return;
+
+      const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
+      const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
+      const valor = qtd * custoUnitario;
+
+      totalFisico += qtd;
+      valorTotal += valor;
+
+      if (p.quantidadeVendida > 0) {
+        fisicoRodando += qtd; valorRodando += valor;
+      } else {
+        fisicoParado += qtd; valorParado += valor;
+      }
+    });
+
+    return { totalFisico, valorTotal, fisicoRodando, valorRodando, fisicoParado, valorParado };
+  }, [produtosComClasse]);
+
   const comprasPorMarca = useMemo(() => {
     const map = {};
     let totalItensComprar = 0;
-    let totalEstoqueFisico = 0;
-    let valorTotalEstoque = 0;
     let valorTotalComprar = 0;
 
-    // Fatores multiplicadores baseados nos sliders
     const fatorAumentoA = 1 + (aumentoAltaMargem / 100);
     const fatorReducaoC = 1 + (reducaoBaixaMargem / 100);
 
-    // Iteramos sobre a lista que JÁ POSSUI a classificação (produtosComClasse)
     produtosComClasse.forEach(p => {
-      // Cálculo de Custo Unitário (Proxy)
       const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
       const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
-
-      totalEstoqueFisico += p.estoqueAtual || 0;
-      valorTotalEstoque += (p.estoqueAtual || 0) * custoUnitario;
       
-      // Simulação do novo Run Rate (Venda Diária)
       let novaVendaDiaria = p.vendaDiaria || 0;
       if (p.classe === 'A') novaVendaDiaria *= fatorAumentoA;
       if (p.classe === 'C') novaVendaDiaria *= Math.max(0, fatorReducaoC);
 
-      // Recálculo da Sugestão de Compra
       const coberturaDesejada = (p.leadTime || 0) + 30; 
       let novaSugestaoCompra = Math.ceil((novaVendaDiaria * coberturaDesejada) - (p.estoqueAtual || 0));
       novaSugestaoCompra = Math.max(0, novaSugestaoCompra);
@@ -71,54 +84,61 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         
         map[brand].totalComprar += novaSugestaoCompra;
         map[brand].valorComprar += novaSugestaoCompra * custoUnitario;
-        
-        map[brand].produtos.push({
-          ...p,
-          vendaDiariaSimulada: novaVendaDiaria,
-          sugestaoCompraSimulada: novaSugestaoCompra,
-          custoUnitario
-        });
+        map[brand].produtos.push({ ...p, vendaDiariaSimulada: novaVendaDiaria, sugestaoCompraSimulada: novaSugestaoCompra, custoUnitario });
       }
     });
 
     const marcas = Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar);
-    return { marcas, totalItensComprar, totalEstoqueFisico, valorTotalEstoque, valorTotalComprar };
+    return { marcas, totalItensComprar, valorTotalComprar };
   }, [produtosComClasse, aumentoAltaMargem, reducaoBaixaMargem]);
 
   return (
     <div className="space-y-6 w-full">
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-          <div className="p-4 bg-slate-100 text-slate-600 rounded-2xl w-fit"><IconPackage className="w-6 h-6" /></div>
+      {/* KPIs GLOBAIS DE ESTOQUE (RODANDO VS PARADO) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="flex items-center space-x-2 mb-2">
+            <IconPackage className="w-4 h-4 text-slate-400" />
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estoque Total</span>
+          </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Estoque Físico Global</p>
-            <div className="flex items-end gap-3">
-              <h3 className="text-2xl font-black text-slate-800">{comprasPorMarca.totalEstoqueFisico} <span className="text-sm font-medium text-slate-500">un</span></h3>
-              <span className="text-sm font-bold text-slate-400 mb-1">≈ {formatBRL(comprasPorMarca.valorTotalEstoque)}</span>
-            </div>
+            <h3 className="text-2xl font-black text-slate-800">{analiseEstoque.totalFisico} <span className="text-xs font-medium text-slate-500">un</span></h3>
+            <span className="text-xs font-bold text-slate-400">{formatBRL(analiseEstoque.valorTotal)}</span>
           </div>
         </div>
-        
-        <div className="bg-amber-50 rounded-2xl p-6 shadow-sm border border-amber-200 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-          <div className="p-4 bg-amber-100 text-amber-600 rounded-2xl w-fit"><IconShoppingCart className="w-6 h-6" /></div>
+
+        <div className="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-200 flex flex-col justify-between">
+          <div className="flex items-center space-x-2 mb-2">
+            <IconRefreshCw className="w-4 h-4 text-emerald-500" />
+            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Estoque Rodando (Giro)</span>
+          </div>
           <div>
-            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">Necessidade de Compra (Simulada)</p>
-            <div className="flex items-end gap-3">
-              <h3 className="text-2xl font-black text-amber-900">{comprasPorMarca.totalItensComprar} <span className="text-sm font-medium text-amber-700">un</span></h3>
-              <span className="text-sm font-bold text-amber-600 mb-1">≈ {formatBRL(comprasPorMarca.valorTotalComprar)}</span>
-            </div>
+            <h3 className="text-2xl font-black text-emerald-900">{analiseEstoque.fisicoRodando} <span className="text-xs font-medium text-emerald-700">un</span></h3>
+            <span className="text-xs font-bold text-emerald-600">{formatBRL(analiseEstoque.valorRodando)}</span>
+          </div>
+        </div>
+
+        <div className="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200 flex flex-col justify-between">
+          <div className="flex items-center space-x-2 mb-2">
+            <IconAlertTriangle className="w-4 h-4 text-rose-500" />
+            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Estoque Parado (0 Vendas)</span>
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-rose-900">{analiseEstoque.fisicoParado} <span className="text-xs font-medium text-rose-700">un</span></h3>
+            <span className="text-xs font-bold text-rose-600">{formatBRL(analiseEstoque.valorParado)}</span>
           </div>
         </div>
       </div>
 
+      {/* SIMULADOR GLOBAL */}
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 md:p-8 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><IconBrain className="w-5 h-5" /></div>
             <div>
               <h4 className="text-base font-black text-blue-900">Simulador Global de Margem & Compras</h4>
-              <p className="text-xs text-blue-700 mt-1">Ajuste o volume para ver o impacto na margem global e nas necessidades de compra de estoque.</p>
+              <p className="text-xs text-blue-700 mt-1">Ajuste o volume para ver o impacto na margem global e nas necessidades de compra.</p>
             </div>
           </div>
           <div className="text-right bg-white p-4 rounded-xl border border-blue-200 shadow-sm min-w-[160px]">
