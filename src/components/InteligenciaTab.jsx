@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
-import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle } from './Icons';
+import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw } from './Icons';
 
 export default function InteligenciaTab({ produtos, margemAtual }) {
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
