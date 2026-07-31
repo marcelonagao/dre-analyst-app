@@ -182,7 +182,13 @@ export default function App() {
                 <VisaoGeralTab kpis={kpisExibidos} deducoesTotais={deducoesTotais} historico12Meses={listaHistorico} onSelectMonth={(m) => { setSelectedCompetencia(m); setViewMode('mensal'); }} selectedCompetencia={selectedCompetencia} />
               )}
               {activeTab === 'dre' && (
-                <DREPlataformasTab dre={dreExibida} historico12Meses={listaHistorico} viewMode={viewMode} produtosPorPlataforma={produtosPorPlataforma} />
+                <DREPlataformasTab 
+                  dre={dreExibida} 
+                  historico12Meses={listaHistorico} 
+                  viewMode={viewMode} 
+                  produtosPorPlataforma={produtosPorPlataforma}
+                  factor={viewMode === 'consolidado' ? 12 : 1} // <--- ADICIONE ESTA LINHA
+                />
               )}
               {activeTab === 'abc' && (
                 <CurvaABCTab produtos={produtosFiltradosGlobais} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterLowMargin={filterLowMargin} setFilterLowMargin={setFilterLowMargin} factor={viewMode === 'consolidado' ? 12 : 1} />
