@@ -187,11 +187,10 @@ export default function App() {
                   historico12Meses={listaHistorico} 
                   viewMode={viewMode} 
                   produtosPorPlataforma={produtosPorPlataforma}
-                  factor={viewMode === 'consolidado' ? 12 : 1} // <--- ADICIONE ESTA LINHA
                 />
               )}
               {activeTab === 'abc' && (
-                <CurvaABCTab produtos={produtosFiltradosGlobais} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterLowMargin={filterLowMargin} setFilterLowMargin={setFilterLowMargin} factor={viewMode === 'consolidado' ? 12 : 1} />
+                <CurvaABCTab produtos={produtosFiltradosGlobais} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterLowMargin={filterLowMargin} setFilterLowMargin={setFilterLowMargin} />
               )}
               {activeTab === 'inteligencia' && (
                 <InteligenciaTab produtos={produtosFiltradosGlobais} margemAtual={kpisExibidos.margemLiquidaMedia} />

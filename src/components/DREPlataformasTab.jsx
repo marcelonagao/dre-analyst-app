@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconStore, IconChevronDown, IconChevronRight, IconAlertTriangle } from './Icons';
 
-export default function DREPlataformasTab({ dre, historico12Meses, viewMode, produtosPorPlataforma = {}, factor = 1 }) {
+export default function DREPlataformasTab({ dre, historico12Meses, viewMode, produtosPorPlataforma = {} }) {
   const [expandedChannel, setExpandedChannel] = useState(null);
 
   return (
@@ -20,13 +20,6 @@ export default function DREPlataformasTab({ dre, historico12Meses, viewMode, pro
           
           // Pega os produtos do canal e aplica o fator (Mensal x1 ou Consolidado x12)
           const prodsCanalRaw = produtosPorPlataforma[plat.plataforma] || [];
-          const prodsCanal = prodsCanalRaw.map(p => ({
-            ...p,
-            faturamentoBruto: p.faturamentoBruto * factor,
-            lucroLiquido: p.lucroLiquido * factor,
-            quantidadeVendida: p.quantidadeVendida * factor
-          }));
-
           const topProdutos = [...prodsCanal].sort((a, b) => b.margemLiquida - a.margemLiquida).slice(0, 3);
           const pioresProdutos = [...prodsCanal].sort((a, b) => a.margemLiquida - b.margemLiquida).slice(0, 3);
 

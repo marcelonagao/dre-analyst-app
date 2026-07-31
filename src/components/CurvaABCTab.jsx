@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconSearch, IconShieldAlert, IconChevronDown, IconChevronRight, IconAlertTriangle } from './Icons';
 
-export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin, factor }) {
+export default function CurvaABCTab({ produtos, searchQuery, setSearchQuery, filterLowMargin, setFilterLowMargin}) {
   const [expandedBrand, setExpandedBrand] = useState(null);
 
  // 1. PRIMEIRO: Filtramos os produtos pela busca e margem
@@ -24,12 +24,12 @@ const produtosComPareto = useMemo(() => {
   if (produtosFiltrados.length === 0) return [];
   
   // ATENÇÃO: Mudamos de [...produtos] para [...produtosFiltrados]
-  const sorted = [...produtosFiltrados].sort((a, b) => (b.faturamentoBruto * factor) - (a.faturamentoBruto * factor));
-  const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto * factor), 0);
+  const sorted = [...produtosFiltrados].sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
+  const totalFat = sorted.reduce((acc, p) => acc + p.faturamentoBruto, 0);
 
   let acumulado = 0;
   return sorted.map(p => {
-    const fat = p.faturamentoBruto * factor;
+    const fat = p.faturamentoBruto;
     acumulado += fat;
     const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
     
@@ -38,10 +38,9 @@ const produtosComPareto = useMemo(() => {
     else if (percAcumulado <= 95) classe = 'B';
 
     return {
-      ...p, faturamentoBruto: fat, lucroLiquido: p.lucroLiquido * factor, quantidadeVendida: p.quantidadeVendida * factor, classe
-    };
+      ...p, classe};
   });
-}, [produtosFiltrados, factor]);
+}, [produtosFiltrados]);
 
   const marcasAgrupadas = useMemo(() => {
     const map = {};
