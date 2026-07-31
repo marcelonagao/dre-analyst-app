@@ -5,35 +5,63 @@ import { IconTrendingUp, IconDollarSign, IconShoppingBag, IconReceipt } from './
 export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
 
+  // Componente interno para mostrar o Badge de MoM (Month over Month)
+  const VariationBadge = ({ valor }) => {
+    if (valor === undefined || valor === 0) return null;
+    const isPositivo = valor > 0;
+    return (
+      <span className={`inline-flex items-center text-[10px] font-black px-1.5 py-0.5 rounded ${isPositivo ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+        {isPositivo ? '↑' : '↓'} {Math.abs(valor).toFixed(1)}% vs anterior
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6 w-full">
+      
+      {/* 1. CARDS DE KPI COM VARIAÇÃO MOM */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <span className="text-xs uppercase font-bold text-emerald-400 flex items-center gap-1.5"><IconTrendingUp /> Lucro Líquido</span>
-            <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full">Margem {formatPercent(kpis.margemLiquidaMedia)}</span>
+            <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">Margem {formatPercent(kpis.margemLiquidaMedia)}</span>
           </div>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white truncate">{formatBRL(kpis.lucroLiquido)}</h2>
+          <div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white truncate">{formatBRL(kpis.lucroLiquido)}</h2>
+            <div className="mt-1"><VariationBadge valor={kpis.variacaoLucro} /></div>
+          </div>
         </div>
+
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase">Faturamento Bruto</span>
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl"><IconDollarSign /></div>
           </div>
-          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate">{formatBRL(kpis.faturamentoBruto)}</span>
+          <div>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{formatBRL(kpis.faturamentoBruto)}</span>
+            <div className="mt-1 flex items-center gap-2">
+              <VariationBadge valor={kpis.variacaoFat} />
+              <span className="text-[10px] text-slate-400">Total Processado</span>
+            </div>
+          </div>
         </div>
+
         <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase">Volume de Vendas</span>
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl"><IconShoppingBag /></div>
           </div>
-          <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate">{Math.round(kpis.totalPedidos || 0)} pedidos</span>
-          <span className="text-xs text-slate-500 mt-1 block">Ticket Médio: <strong>{formatBRL(ticketMedio)}</strong></span>
+          <div>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{Math.round(kpis.totalPedidos || 0)} pedidos</span>
+            <span className="text-[11px] text-slate-500 mt-1 block">Ticket Médio: <strong>{formatBRL(ticketMedio)}</strong></span>
+          </div>
         </div>
       </div>
 
+      {/* 2. GRÁFICO (AGORA RESPEITA O FILTRO DE CANAL) */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
+      {/* 3. PAINEL DE DEDUÇÕES */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
@@ -71,19 +99,21 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
 
 function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) {
   const [hoveredIdx, setHoveredIndex] = useState(null);
-  const maxVal = Math.max(...historico.map(d => d.faturamento)) * 1.25;
+  
+  // Evita estouro ou erro NaN se a lista estiver vazia ou zerada
+  const maxVal = Math.max(...historico.map(d => d.faturamento || 0), 1) * 1.25;
   const svgWidth = 900; const svgHeight = 220; const paddingX = 45; const paddingY = 35;
 
   const pointsFat = historico.map((d, i) => ({
-    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
-    y: svgHeight - paddingY - (d.faturamento / maxVal) * (svgHeight - 2 * paddingY),
-    val: d.faturamento, mes: d.mes, margem: d.margem, lucro: d.lucro
+    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (Math.max(historico.length - 1, 1)),
+    y: svgHeight - paddingY - ((d.faturamento || 0) / maxVal) * (svgHeight - 2 * paddingY),
+    val: d.faturamento || 0, mes: d.mes, margem: d.margem || 0, lucro: d.lucro || 0
   }));
 
   const pointsLucro = historico.map((d, i) => ({
-    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (historico.length - 1),
-    y: svgHeight - paddingY - (d.lucro / maxVal) * (svgHeight - 2 * paddingY),
-    val: d.lucro
+    x: paddingX + (i * (svgWidth - 2 * paddingX)) / (Math.max(historico.length - 1, 1)),
+    y: svgHeight - paddingY - ((d.lucro || 0) / maxVal) * (svgHeight - 2 * paddingY),
+    val: d.lucro || 0
   }));
 
   const generatePath = (pts) => {
