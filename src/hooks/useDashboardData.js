@@ -207,10 +207,17 @@ export function useDashboardData() {
     });
 
     // 3. Recalcula os KPIs derivados (Margem, Venda Diária, Sugestão de Compra)
-    const diasPeriodo = viewMode === 'consolidado' ? (Math.max(competenciasList.length, 1) * 30) : 30;
+    
+    // CORREÇÃO: Conta apenas os meses que tiveram faturamento > 0 no canal filtrado
+    const mesesAtivos = listaHistorico.filter(m => m.faturamento > 0).length;
+    
+    // Se for consolidado, multiplica os meses ativos por 30. Se for mensal, usa 30 dias.
+    const diasPeriodo = viewMode === 'consolidado' ? (Math.max(mesesAtivos, 1) * 30) : 30;
 
     return Object.values(map).map(p => {
       const margem = p.faturamentoBruto > 0 ? (p.lucroLiquido / p.faturamentoBruto) * 100 : 0;
+      
+      // Agora a divisão é exata (ex: 7 meses * 30 = 210 dias)
       const vendaDiaria = p.quantidadeVendida / diasPeriodo;
       const diasDeEstoque = vendaDiaria > 0 ? (p.estoqueAtual / vendaDiaria) : 999;
       
@@ -229,7 +236,7 @@ export function useDashboardData() {
       };
     }).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 
-  }, [data, channelFilter, viewMode, competenciasList]);
+  }, [data, channelFilter, viewMode, listaHistorico]); // <-- Adicione listaHistorico nas dependências aqui
 
   const produtosPorPlataforma = useMemo(() => {
     return viewMode === 'consolidado' ? (data?.produtosPorPlataformaConsolidado || {}) : (data?.produtosPorPlataforma || {});
