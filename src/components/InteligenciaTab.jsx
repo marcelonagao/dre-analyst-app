@@ -3,13 +3,14 @@ import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw } from './Icons';
 
 export default function InteligenciaTab({ produtos, margemAtual }) {
-  const [abaPrincipal, setAbaPrincipal] = useState('compras'); // 'compras' | 'parado'
+  const [abaPrincipal, setAbaPrincipal] = useState('compras'); 
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
   const [reducaoBaixaMargem, setReducaoBaixaMargem] = useState(-30);
   const [expandedBrand, setExpandedBrand] = useState(null);
 
   const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
 
+  // 1. CLASSIFICADOR ABC
   const produtosComClasse = useMemo(() => {
     if (!produtos || produtos.length === 0) return [];
     const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto || 0) - (a.faturamentoBruto || 0));
@@ -29,6 +30,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     });
   }, [produtos]);
 
+  // 2. ANÁLISE DE ESTOQUE PARADO VS RODANDO
   const analiseEstoque = useMemo(() => {
     let totalFisico = 0, valorTotal = 0;
     let fisicoRodando = 0, valorRodando = 0;
@@ -55,7 +57,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     return { totalFisico, valorTotal, fisicoRodando, valorRodando, fisicoParado, valorParado };
   }, [produtosComClasse]);
 
-  // MOTOR DE COMPRAS (Para a aba de Compras)
+  // 3. MOTOR DE COMPRAS (Agrupado por Marca)
   const comprasPorMarca = useMemo(() => {
     const map = {};
     let totalItensComprar = 0;
@@ -85,7 +87,12 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         
         map[brand].totalComprar += novaSugestaoCompra;
         map[brand].valorComprar += novaSugestaoCompra * custoUnitario;
-        map[brand].produtos.push({ ...p, vendaDiariaSimulada: novaVendaDiaria, sugestaoCompraSimulada: novaSugestaoCompra, custoUnitario });
+        map[brand].produtos.push({ 
+          ...p, 
+          vendaDiariaSimulada: novaVendaDiaria, 
+          sugestaoCompraSimulada: novaSugestaoCompra, 
+          custoUnitario 
+        });
       }
     });
 
@@ -93,15 +100,14 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     return { marcas, totalItensComprar, valorTotalComprar };
   }, [produtosComClasse, aumentoAltaMargem, reducaoBaixaMargem]);
 
-  // MOTOR DE ESTOQUE PARADO (Para a aba de Ações)
+  // 4. MOTOR DE ESTOQUE PARADO
   const estoqueParadoPorMarca = useMemo(() => {
     const map = {};
     
     produtosComClasse.forEach(p => {
       const qtd = p.estoqueAtual || 0;
       if (qtd > 0 && p.quantidadeVendida === 0) {
-        const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
-        const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
+        const custoUnitario = p.custoUnitario || 0;
         const valorParado = qtd * custoUnitario;
 
         const brand = p.marca || "Outras Marcas";
@@ -113,7 +119,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
       }
     });
 
-    // Ordena as marcas pelo Valor Financeiro Parado (Maior para Menor)
     return Object.values(map).sort((a, b) => b.valorTotalParado - a.valorTotalParado);
   }, [produtosComClasse]);
 
@@ -125,7 +130,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
           <div className="flex items-center space-x-2 mb-2">
             <IconPackage className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estoque Total</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estoque Físico Total</span>
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-800">{analiseEstoque.totalFisico} <span className="text-xs font-medium text-slate-500">un</span></h3>
@@ -156,7 +161,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </div>
       </div>
 
-      {/* NAVEGAÇÃO INTERNA DA ABA DE INTELIGÊNCIA */}
+      {/* NAVEGAÇÃO INTERNA */}
       <div className="flex space-x-2 border-b border-slate-200 pb-2">
         <button onClick={() => {setAbaPrincipal('compras'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'compras' ? 'border-blue-500 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
           Planejamento & Compras
@@ -166,9 +171,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </button>
       </div>
 
-      {/* ========================================== */}
-      {/* VISÃO 1: PLANEJAMENTO E COMPRAS            */}
-      {/* ========================================== */}
+      {/* VISÃO 1: PLANEJAMENTO E COMPRAS */}
       {abaPrincipal === 'compras' && (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 md:p-8 space-y-6">
@@ -207,7 +210,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
           </div>
 
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-4">
-            Sugestão de Compras por Fornecedor (Atualizado com Simulação)
+            Sugestão de Compras por Fornecedor
           </h3>
 
           {comprasPorMarca.marcas.length === 0 ? (
@@ -225,7 +228,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
                         <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl font-black text-xs border border-amber-200">FORNECEDOR</div>
                         <div>
                           <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
-                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) precisam de reposição</p>
+                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) Base precisam de reposição</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -242,7 +245,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
                         <table className="w-full text-left text-xs whitespace-nowrap">
                           <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[10px]">
                             <tr>
-                              <th className="p-4">SKU / Produto</th>
+                              <th className="p-4">SKU Base / Produto Físico</th>
                               <th className="p-4 text-center">Venda Diária (Simulada)</th>
                               <th className="p-4 text-center">Estoque Atual</th>
                               <th className="p-4 text-center">Custo Unitário</th>
@@ -282,9 +285,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* VISÃO 2: AÇÕES DE ESTOQUE PARADO           */}
-      {/* ========================================== */}
+      {/* VISÃO 2: AÇÕES DE ESTOQUE PARADO */}
       {abaPrincipal === 'parado' && (
         <div className="space-y-6 animate-fadeIn">
           <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-6 space-y-2">
@@ -294,7 +295,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
             </h4>
             <p className="text-xs text-rose-700">
               Os produtos abaixo possuem estoque físico, mas <strong>não tiveram nenhuma venda</strong> no período selecionado. 
-              Eles estão ordenados pelo <strong>Valor Financeiro (R$)</strong> que está travado na prateleira.
             </p>
           </div>
 
@@ -306,7 +306,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
             <div className="space-y-4 w-full">
               {estoqueParadoPorMarca.map((b) => {
                 const isExpanded = expandedBrand === b.marca;
-                // Ordena os produtos parados do mais caro para o mais barato
                 const produtosOrdenados = [...b.produtos].sort((p1, p2) => p2.valorParado - p1.valorParado);
 
                 return (
@@ -316,7 +315,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
                         <div className="p-2.5 bg-rose-50 text-rose-700 rounded-xl font-black text-xs border border-rose-200">MARCA</div>
                         <div>
                           <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
-                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) encalhados</p>
+                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) Base encalhados</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -333,7 +332,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
                         <table className="w-full text-left text-xs whitespace-nowrap">
                           <thead className="bg-rose-50/50 text-slate-500 uppercase font-bold text-[10px]">
                             <tr>
-                              <th className="p-4">SKU / Produto</th>
+                              <th className="p-4">SKU Base / Produto</th>
                               <th className="p-4 text-center">Estoque Parado</th>
                               <th className="p-4 text-center">Custo Unitário</th>
                               <th className="p-4 text-right text-rose-700">Valor Congelado</th>
