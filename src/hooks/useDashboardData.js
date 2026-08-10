@@ -40,7 +40,10 @@ export function useDashboardData() {
 
     try {
       if (cleanUrl) {
-        const response = await fetch(`${cleanUrl}?competencia=${encodeURIComponent(competencia)}`);
+        const response = await fetch(`${cleanUrl}?competencia=${encodeURIComponent(competencia)}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
         if (!response.ok) throw new Error(`HTTP Error`);
         const parsedJson = await response.json();
         localCache.current[competencia] = parsedJson;
