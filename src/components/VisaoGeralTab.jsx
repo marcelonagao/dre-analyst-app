@@ -6,7 +6,9 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
 
   // Lógica de separação (EBITDA vs Margem de Contribuição)
-  const isVisaoGlobal = channelFilter === 'todos';
+  const filtroAtual = channelFilter || 'todos';
+  const isVisaoGlobal = filtroAtual === 'todos';
+  
   const custosFixos = isVisaoGlobal ? (kpis.custosFixos || 0) : 0;
   const lucroReal = (kpis.lucroLiquido || 0) - custosFixos;
   const labelLucro = isVisaoGlobal ? "Lucro Líquido (EBITDA)" : "Margem de Contribuição";
@@ -38,10 +40,10 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
             <div className="mt-1"><VariationBadge valor={kpis.variacaoLucro} /></div>
           </div>
           
-          {/* Mostra sempre na visão global, revelando a saúde operacional real */}
+          {/* Mostra SEMPRE na visão global, revelando a saúde operacional real */}
           {isVisaoGlobal && (
             <span className="text-[10px] text-slate-400 mt-2 block border-t border-slate-700/50 pt-2">
-              Margem Bruta: {formatBRL(kpis.lucroLiquido)} | OPEX: <strong className="text-rose-400">-{formatBRL(custosFixos)}</strong>
+              Margem Bruta: {formatBRL(kpis.lucroLiquido || 0)} | OPEX (Fixo): <strong className="text-rose-400">-{formatBRL(custosFixos)}</strong>
             </span>
           )}
         </div>
@@ -145,7 +147,7 @@ function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) 
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 space-y-4 w-full relative">
       <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3">
         <div>
-          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução Mensal (Passe o mouse para ver os valores)</h3>
+          <h3 className="text-sm font-bold uppercase text-slate-800 tracking-wider">Evolução Mensal (Passe o rato para ver os valores)</h3>
         </div>
         <div className="flex items-center space-x-4 text-xs font-semibold">
           <div className="flex items-center space-x-1.5"><span className="w-3 h-3 bg-pink-500 rounded-full inline-block" /><span className="text-slate-700">Faturamento</span></div>

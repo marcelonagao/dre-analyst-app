@@ -179,8 +179,15 @@ export default function App() {
           ) : (
             <>
               {activeTab === 'visao-geral' && (
-                <VisaoGeralTab kpis={kpisExibidos} deducoesTotais={deducoesTotais} historico12Meses={listaHistorico} onSelectMonth={(m) => { setSelectedCompetencia(m); setViewMode('mensal'); }} selectedCompetencia={selectedCompetencia} />
-              )}
+  <VisaoGeralTab 
+    kpis={kpisExibidos} 
+    deducoesTotais={deducoesTotais} 
+    historico12Meses={listaHistorico} 
+    onSelectMonth={(m) => { setSelectedCompetencia(m); setViewMode('mensal'); }} 
+    selectedCompetencia={selectedCompetencia}
+    channelFilter={channelFilter} /* <-- ESTA LINHA É CRUCIAL */
+  />
+)}
               {activeTab === 'dre' && (
                 <DREPlataformasTab 
                   dre={dreExibida} 
