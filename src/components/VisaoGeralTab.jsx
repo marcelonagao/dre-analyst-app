@@ -77,14 +77,14 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
       {/* 2. GRÁFICO RESPEITANDO O FILTRO */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
-      {/* 3. PAINEL DE DEDUÇÕES */}
+      {/* 3. PAINEL DE DEDUÇÕES (Mantido igual) */}
       <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-slate-100 text-slate-700 rounded-xl"><IconReceipt className="w-5 h-5" /></div>
             <div>
-              <h3 className="text-base font-bold uppercase text-slate-800 tracking-wider">Detalhamento de Deduções & Custos</h3>
-              <p className="text-xs text-slate-400">Total consumido pela operação do e-commerce</p>
+              <h3 className="text-base font-bold uppercase text-slate-800 tracking-wider">Detalhamento de Deduções & Custos (Variáveis)</h3>
+              <p className="text-xs text-slate-400">Total consumido diretamente pelas vendas</p>
             </div>
           </div>
           <span className="text-sm font-black text-rose-600 bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">
@@ -109,6 +109,42 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
           </div>
         </div>
       </div>
+
+      {/* 4. RAIO-X DO OPEX (Só aparece na Visão Global e Modo Mensal) */}
+      {isVisaoGlobal && kpis.detalhamentoOpex && kpis.detalhamentoOpex.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-200/80 space-y-6 w-full animate-fadeIn">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-bold uppercase text-slate-800 tracking-wider">Raio-X do OPEX (Despesas Operacionais)</h3>
+              <p className="text-xs text-slate-400">Composição dos custos fixos da empresa neste mês</p>
+            </div>
+            <span className="text-sm font-black text-rose-800 bg-rose-100 px-4 py-2 rounded-xl border border-rose-200">
+              Total OPEX: {formatBRL(custosFixos)}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {kpis.detalhamentoOpex.map((item, idx) => {
+              const pesoNoOpex = custosFixos > 0 ? (item.valor / custosFixos) * 100 : 0;
+              return (
+                <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-center space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-600 truncate mr-2" title={item.categoria}>{item.categoria}</span>
+                    <span className="text-sm font-black text-slate-900">{formatBRL(item.valor)}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-slate-800 h-full rounded-full" style={{ width: `${Math.min(pesoNoOpex, 100)}%` }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{pesoNoOpex.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

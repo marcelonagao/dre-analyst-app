@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 const HISTORICO_12_MESES = []; // Mock limpo, vamos focar na API Real
 
 export function useDashboardData() {
-  const [apiUrl, setApiUrl] = useState('//script.google.com/macros/s/AKfycbx3b9QNkUNxlFdmHxOTZ5j4wtwN9h7qJ9UgGTRGqH4HidWm0ZxeuUcT4ZnZCNqpQ8dd/exec');
+  const [apiUrl, setApiUrl] = useState('https://script.google.com/macros/s/AKfycbzHqgfRQXYrEzvpmnc7Iuo9Sy9al1U7dsJVJoMAMjF3iQAJqLXGezGy02rxylpVmuNL/exec');
   const [selectedCompetencia, setSelectedCompetencia] = useState('');
   const [viewMode, setViewMode] = useState('mensal'); 
   const [channelFilter, setChannelFilter] = useState('todos'); 
@@ -121,7 +121,6 @@ export function useDashboardData() {
   const kpisExibidos = useMemo(() => {
     let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
     
-    // MODO BLINDADO: Se for visão global, confiamos 100% nos totais já somados pelo backend
     if (channelFilter === 'todos') {
        if (viewMode === 'mensal' && data?.kpisGerais) {
          faturamentoBruto = data.kpisGerais.faturamentoBruto || 0;
@@ -132,26 +131,22 @@ export function useDashboardData() {
          totalPedidos = data.kpisGerais.totalPedidos || 0;
        } else if (viewMode === 'consolidado') {
          listaHistorico.forEach(m => {
-            faturamentoBruto += m.faturamento || 0;
-            lucroLiquido += m.lucro || 0;
-            totalTaxas += m.taxas || 0;
-            totalImpostos += m.impostos || 0;
-            totalCpv += m.cpv || 0;
-            totalPedidos += m.pedidos || 0;
+            faturamentoBruto += m.faturamento || 0; lucroLiquido += m.lucro || 0;
+            totalTaxas += m.taxas || 0; totalImpostos += m.impostos || 0;
+            totalCpv += m.cpv || 0; totalPedidos += m.pedidos || 0;
          });
        }
     } else {
-       // Se filtrou por canal, soma a DRE dinamicamente
        dreExibida.forEach(p => {
-         faturamentoBruto += p.faturamentoBruto; 
-         lucroLiquido += p.lucroLiquido; 
+         faturamentoBruto += p.faturamentoBruto; lucroLiquido += p.lucroLiquido; 
          totalTaxas += p.taxasPlataforma; totalImpostos += p.imposto;
          totalCpv += p.cpv; totalPedidos += p.pedidos;
        });
     }
 
     const margemLiquidaMedia = faturamentoBruto > 0 ? (lucroLiquido / faturamentoBruto) * 100 : 0;
-
+    
+    // Cálculos de variação MoM
     let variacaoFat = 0, variacaoLucro = 0;
     if (viewMode === 'mensal' && listaHistorico.length > 1) {
       const idxAtual = listaHistorico.findIndex(h => h.mes === selectedCompetencia);
@@ -166,12 +161,16 @@ export function useDashboardData() {
     const baseCustosFixos = data?.kpisGerais?.custosFixos || 0;
     const custosFixos = viewMode === 'consolidado' ? (baseCustosFixos * Math.max(mesesAtivos, 1)) : baseCustosFixos;
 
+    // NOVO: Puxa o detalhamento do OPEX apenas se for visão global mensal
+    // No modo consolidado anual, precisaríamos somar todos os meses (podemos fazer no futuro).
+    const detalhamentoOpex = (channelFilter === 'todos' && viewMode === 'mensal') ? (data?.kpisGerais?.detalhamentoOpex || []) : [];
+
     return { 
       faturamentoBruto, lucroLiquido, margemLiquidaMedia, totalTaxas, 
-      totalImpostos, totalCpv, totalPedidos, variacaoFat, variacaoLucro, custosFixos 
+      totalImpostos, totalCpv, totalPedidos, variacaoFat, variacaoLucro, custosFixos,
+      detalhamentoOpex // <--- Exportando para a tela
     };
   }, [dreExibida, viewMode, listaHistorico, selectedCompetencia, data, channelFilter]);
-
   const deducoesTotais = useMemo(() => {
     const { totalCpv = 0, totalTaxas = 0, totalImpostos = 0, faturamentoBruto = 1 } = kpisExibidos;
     return {
