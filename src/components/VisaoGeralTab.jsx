@@ -2,8 +2,15 @@ import React, { useState } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconTrendingUp, IconDollarSign, IconShoppingBag, IconReceipt } from './Icons';
 
-export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia }) {
+export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, onSelectMonth, selectedCompetencia, channelFilter }) {
   const ticketMedio = kpis.totalPedidos ? kpis.faturamentoBruto / kpis.totalPedidos : 0;
+
+  // Lógica de separação (EBITDA vs Margem de Contribuição)
+  const isVisaoGlobal = channelFilter === 'todos';
+  const custosFixos = isVisaoGlobal ? (kpis.custosFixos || 0) : 0;
+  const lucroReal = (kpis.lucroLiquido || 0) - custosFixos;
+  const labelLucro = isVisaoGlobal ? "Lucro Líquido (EBITDA)" : "Margem de Contribuição";
+  const margemReal = kpis.faturamentoBruto > 0 ? (lucroReal / kpis.faturamentoBruto) * 100 : 0;
 
   // Componente interno para mostrar o Badge de MoM (Month over Month)
   const VariationBadge = ({ valor }) => {
@@ -19,8 +26,9 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
   return (
     <div className="space-y-6 w-full">
       
-      {/* CARD DE LUCRO ATUALIZADO */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
+      {/* 1. CARDS DE KPI COM VARIAÇÃO MOM E CUSTOS FIXOS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <span className="text-xs uppercase font-bold text-emerald-400 flex items-center gap-1.5"><IconTrendingUp /> {labelLucro}</span>
             <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">Margem {formatPercent(margemReal)}</span>
@@ -30,15 +38,41 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
             <div className="mt-1"><VariationBadge valor={kpis.variacaoLucro} /></div>
           </div>
           
-          {/* AGORA MOSTRA SEMPRE NA VISÃO GLOBAL, MESMO SE FOR ZERO */}
+          {/* Mostra sempre na visão global, revelando a saúde operacional real */}
           {isVisaoGlobal && (
             <span className="text-[10px] text-slate-400 mt-2 block border-t border-slate-700/50 pt-2">
-              Margem Bruta: {formatBRL(kpis.lucroLiquido)} | OPEX (Fixo): <strong className="text-rose-400">-{formatBRL(custosFixos || 0)}</strong>
+              Margem Bruta: {formatBRL(kpis.lucroLiquido)} | OPEX: <strong className="text-rose-400">-{formatBRL(custosFixos)}</strong>
             </span>
           )}
         </div>
 
-      {/* 2. GRÁFICO (AGORA RESPEITA O FILTRO DE CANAL) */}
+        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase">Faturamento Bruto</span>
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl"><IconDollarSign /></div>
+          </div>
+          <div>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{formatBRL(kpis.faturamentoBruto)}</span>
+            <div className="mt-1 flex items-center gap-2">
+              <VariationBadge valor={kpis.variacaoFat} />
+              <span className="text-[10px] text-slate-400">Total Processado</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase">Volume de Vendas</span>
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl"><IconShoppingBag /></div>
+          </div>
+          <div>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{Math.round(kpis.totalPedidos || 0)} pedidos</span>
+            <span className="text-[11px] text-slate-500 mt-1 block">Ticket Médio: <strong>{formatBRL(ticketMedio)}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. GRÁFICO RESPEITANDO O FILTRO */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
 
       {/* 3. PAINEL DE DEDUÇÕES */}
@@ -80,7 +114,6 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
 function GraficoLinha12Meses({ historico, onSelectMonth, selectedCompetencia }) {
   const [hoveredIdx, setHoveredIndex] = useState(null);
   
-  // Evita estouro ou erro NaN se a lista estiver vazia ou zerada
   const maxVal = Math.max(...historico.map(d => d.faturamento || 0), 1) * 1.25;
   const svgWidth = 900; const svgHeight = 220; const paddingX = 45; const paddingY = 35;
 

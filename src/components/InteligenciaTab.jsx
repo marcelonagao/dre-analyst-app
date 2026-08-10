@@ -3,15 +3,16 @@ import { formatBRL, formatPercent } from '../utils/formatters';
 import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw } from './Icons';
 
 export default function InteligenciaTab({ produtos, margemAtual }) {
-  const [abaPrincipal, setAbaPrincipal] = useState('compras'); 
+  // ABAS: 'posicao' | 'compras' | 'parado'
+  const [abaPrincipal, setAbaPrincipal] = useState('posicao'); 
   const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
   const [reducaoBaixaMargem, setReducaoBaixaMargem] = useState(-30);
   const [expandedBrand, setExpandedBrand] = useState(null);
 
   const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
 
-  // 1. CLASSIFICADOR ABC
-  const produtosComClasse = useMemo(() => {
+  // 1. CLASSIFICADOR ABC & STATUS
+  const produtosComClasseEStatus = useMemo(() => {
     if (!produtos || produtos.length === 0) return [];
     const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto || 0) - (a.faturamentoBruto || 0));
     const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto || 0), 0);
@@ -26,17 +27,29 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
       if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
       else if (percAcumulado <= 95) classe = 'B';
 
-      return { ...p, classe };
+      // Lógica de Status (Padrão Farmácia / ERP)
+      let status = { label: 'Saudável', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' };
+      if (p.estoqueAtual <= 0) {
+        status = { label: 'Esgotado', color: 'bg-rose-100 text-rose-700 border-rose-300' };
+      } else if (p.quantidadeVendida === 0) {
+        status = { label: 'Parado', color: 'bg-slate-100 text-slate-600 border-slate-300' };
+      } else if (p.diasDeEstoque < p.leadTime) {
+        status = { label: 'Risco Ruptura', color: 'bg-orange-100 text-orange-800 border-orange-300' };
+      } else if (p.diasDeEstoque > p.leadTime + 45) {
+        status = { label: 'Excesso', color: 'bg-amber-100 text-amber-800 border-amber-300' };
+      }
+
+      return { ...p, classe, statusEstoque: status };
     });
   }, [produtos]);
 
-  // 2. ANÁLISE DE ESTOQUE PARADO VS RODANDO
+  // 2. ANÁLISE MACRO DE ESTOQUE
   const analiseEstoque = useMemo(() => {
     let totalFisico = 0, valorTotal = 0;
     let fisicoRodando = 0, valorRodando = 0;
     let fisicoParado = 0, valorParado = 0;
 
-    produtosComClasse.forEach(p => {
+    produtosComClasseEStatus.forEach(p => {
       const qtd = p.estoqueAtual || 0;
       if (qtd <= 0) return;
 
@@ -55,18 +68,33 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     });
 
     return { totalFisico, valorTotal, fisicoRodando, valorRodando, fisicoParado, valorParado };
-  }, [produtosComClasse]);
+  }, [produtosComClasseEStatus]);
 
-  // 3. MOTOR DE COMPRAS (Agrupado por Marca)
+  // 3. AGRUPAMENTO PARA A POSIÇÃO DE ESTOQUE (Tabela Alpha 7)
+  const posicaoPorMarca = useMemo(() => {
+    const map = {};
+    produtosComClasseEStatus.forEach(p => {
+      const brand = p.marca || "Outras Marcas";
+      if (!map[brand]) map[brand] = { marca: brand, valorTotal: 0, produtos: [] };
+      
+      const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
+      const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
+      const imobilizado = (p.estoqueAtual || 0) * custoUnitario;
+
+      map[brand].valorTotal += imobilizado;
+      map[brand].produtos.push({ ...p, custoUnitario, imobilizado });
+    });
+    return Object.values(map).sort((a, b) => b.valorTotal - a.valorTotal);
+  }, [produtosComClasseEStatus]);
+
+  // 4. MOTOR DE COMPRAS (Agrupado por Marca)
   const comprasPorMarca = useMemo(() => {
     const map = {};
-    let totalItensComprar = 0;
-    let valorTotalComprar = 0;
-
+    let totalItensComprar = 0, valorTotalComprar = 0;
     const fatorAumentoA = 1 + (aumentoAltaMargem / 100);
     const fatorReducaoC = 1 + (reducaoBaixaMargem / 100);
 
-    produtosComClasse.forEach(p => {
+    produtosComClasseEStatus.forEach(p => {
       const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
       const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
       
@@ -87,40 +115,29 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         
         map[brand].totalComprar += novaSugestaoCompra;
         map[brand].valorComprar += novaSugestaoCompra * custoUnitario;
-        map[brand].produtos.push({ 
-          ...p, 
-          vendaDiariaSimulada: novaVendaDiaria, 
-          sugestaoCompraSimulada: novaSugestaoCompra, 
-          custoUnitario 
-        });
+        map[brand].produtos.push({ ...p, vendaDiariaSimulada: novaVendaDiaria, sugestaoCompraSimulada: novaSugestaoCompra, custoUnitario });
       }
     });
 
-    const marcas = Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar);
-    return { marcas, totalItensComprar, valorTotalComprar };
-  }, [produtosComClasse, aumentoAltaMargem, reducaoBaixaMargem]);
+    return { marcas: Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar), totalItensComprar, valorTotalComprar };
+  }, [produtosComClasseEStatus, aumentoAltaMargem, reducaoBaixaMargem]);
 
-  // 4. MOTOR DE ESTOQUE PARADO
+  // 5. MOTOR DE ESTOQUE PARADO
   const estoqueParadoPorMarca = useMemo(() => {
     const map = {};
-    
-    produtosComClasse.forEach(p => {
+    produtosComClasseEStatus.forEach(p => {
       const qtd = p.estoqueAtual || 0;
       if (qtd > 0 && p.quantidadeVendida === 0) {
         const custoUnitario = p.custoUnitario || 0;
         const valorParado = qtd * custoUnitario;
-
         const brand = p.marca || "Outras Marcas";
         if (!map[brand]) map[brand] = { marca: brand, totalItens: 0, valorTotalParado: 0, produtos: [] };
-        
-        map[brand].totalItens += qtd;
-        map[brand].valorTotalParado += valorParado;
+        map[brand].totalItens += qtd; map[brand].valorTotalParado += valorParado;
         map[brand].produtos.push({ ...p, valorParado, custoUnitario });
       }
     });
-
     return Object.values(map).sort((a, b) => b.valorTotalParado - a.valorTotalParado);
-  }, [produtosComClasse]);
+  }, [produtosComClasseEStatus]);
 
   return (
     <div className="space-y-6 w-full">
@@ -134,7 +151,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-800">{analiseEstoque.totalFisico} <span className="text-xs font-medium text-slate-500">un</span></h3>
-            <span className="text-xs font-bold text-slate-400">{formatBRL(analiseEstoque.valorTotal)}</span>
+            <span className="text-xs font-bold text-slate-400">Total Imobilizado: {formatBRL(analiseEstoque.valorTotal)}</span>
           </div>
         </div>
 
@@ -145,7 +162,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
           </div>
           <div>
             <h3 className="text-2xl font-black text-emerald-900">{analiseEstoque.fisicoRodando} <span className="text-xs font-medium text-emerald-700">un</span></h3>
-            <span className="text-xs font-bold text-emerald-600">{formatBRL(analiseEstoque.valorRodando)}</span>
+            <span className="text-xs font-bold text-emerald-600">Capital Ativo: {formatBRL(analiseEstoque.valorRodando)}</span>
           </div>
         </div>
 
@@ -156,118 +173,164 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
           </div>
           <div>
             <h3 className="text-2xl font-black text-rose-900">{analiseEstoque.fisicoParado} <span className="text-xs font-medium text-rose-700">un</span></h3>
-            <span className="text-xs font-bold text-rose-600">{formatBRL(analiseEstoque.valorParado)}</span>
+            <span className="text-xs font-bold text-rose-600">Capital Congelado: {formatBRL(analiseEstoque.valorParado)}</span>
           </div>
         </div>
       </div>
 
-      {/* NAVEGAÇÃO INTERNA */}
-      <div className="flex space-x-2 border-b border-slate-200 pb-2">
+      {/* SUB-NAVEGAÇÃO INTERNA */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+        <button onClick={() => {setAbaPrincipal('posicao'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'posicao' ? 'border-slate-800 text-slate-900 bg-slate-200/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
+          Posição Físico-Financeira
+        </button>
         <button onClick={() => {setAbaPrincipal('compras'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'compras' ? 'border-blue-500 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-          Planejamento & Compras
+          Motor de Compras
         </button>
         <button onClick={() => {setAbaPrincipal('parado'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'parado' ? 'border-rose-500 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-          Ações de Estoque Parado
+          Capital Congelado
         </button>
       </div>
 
-      {/* VISÃO 1: PLANEJAMENTO E COMPRAS */}
+      {/* ========================================================================= */}
+      {/* VISÃO 1: POSIÇÃO DE ESTOQUE (ESTILO ALPHA 7) */}
+      {/* ========================================================================= */}
+      {abaPrincipal === 'posicao' && (
+        <div className="space-y-4 animate-fadeIn">
+          {posicaoPorMarca.map((b) => {
+            const isExpanded = expandedBrand === b.marca;
+            return (
+              <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center space-x-3 w-1/2">
+                    <div className="p-2 bg-slate-100 text-slate-600 rounded-lg font-black text-[10px] border border-slate-200">MARCA</div>
+                    <div className="truncate">
+                      <h4 className="text-sm font-bold text-slate-800 truncate">{b.marca}</h4>
+                      <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs listados</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end space-x-4 w-1/2">
+                    <div className="text-right">
+                      <span className="text-[9px] uppercase text-slate-400 font-bold block">Imobilizado Total</span>
+                      <span className="text-sm font-black text-slate-700">{formatBRL(b.valorTotal)}</span>
+                    </div>
+                    {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
+                    <table className="w-full text-left text-xs whitespace-nowrap">
+                      <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[9px]">
+                        <tr>
+                          <th className="p-3 pl-4">Produto / SKU Base</th>
+                          <th className="p-3 text-center">Físico</th>
+                          <th className="p-3 text-right">Custo Unit.</th>
+                          <th className="p-3 text-right">Valor Imobilizado</th>
+                          <th className="p-3 text-center">Dias Estoque</th>
+                          <th className="p-3 text-center pr-4">Status Logístico</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {b.produtos.map((p, i) => (
+                          <tr key={i} className="hover:bg-white transition-colors">
+                            <td className="p-3 pl-4 max-w-[250px] truncate">
+                              <span className="font-bold text-slate-700 block truncate" title={p.produto}>{p.produto}</span>
+                              <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
+                            </td>
+                            <td className="p-3 text-center font-black text-slate-600">{p.estoqueAtual} un</td>
+                            <td className="p-3 text-right text-slate-500">{formatBRL(p.custoUnitario)}</td>
+                            <td className="p-3 text-right font-bold text-slate-700">{formatBRL(p.imobilizado)}</td>
+                            <td className="p-3 text-center font-medium text-slate-500">{p.diasDeEstoque > 900 ? '∞' : p.diasDeEstoque} dias</td>
+                            <td className="p-3 pr-4 text-center">
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold border ${p.statusEstoque.color}`}>
+                                {p.statusEstoque.label}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VISÃO 2: PLANEJAMENTO E COMPRAS (MOTOR DE REPOSIÇÃO) */}
+      {/* ========================================================================= */}
       {abaPrincipal === 'compras' && (
         <div className="space-y-6 animate-fadeIn">
-          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 md:p-8 space-y-6">
+          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><IconBrain className="w-5 h-5" /></div>
-                <div>
-                  <h4 className="text-base font-black text-blue-900">Simulador Global de Margem & Compras</h4>
-                  <p className="text-xs text-blue-700 mt-1">Ajuste o volume para ver o impacto na margem global e nas necessidades de compra.</p>
-                </div>
+              <div>
+                <h4 className="text-sm font-black text-blue-900 flex items-center gap-2"><IconBrain className="w-5 h-5 text-blue-600" /> Simulador de Abastecimento</h4>
+                <p className="text-xs text-blue-700 mt-1">Ajuste o mix para gerar a Ordem de Compra baseada no Lead Time.</p>
               </div>
-              <div className="text-right bg-white p-4 rounded-xl border border-blue-200 shadow-sm min-w-[160px]">
-                <span className="text-[10px] uppercase font-bold text-blue-500 block">Margem Simulada</span>
-                <span className={`text-3xl font-black ${margemSimulada >= 15 ? 'text-emerald-500' : 'text-blue-700'}`}>
-                  {formatPercent(margemSimulada)}
-                </span>
+              <div className="text-right bg-white p-3 rounded-xl border border-blue-200 shadow-sm">
+                <span className="text-[9px] uppercase font-bold text-blue-500 block">Orçamento Total Projetado</span>
+                <span className="text-xl font-black text-blue-700">{formatBRL(comprasPorMarca.valorTotalComprar)}</span>
               </div>
             </div>
             
-            <div className="space-y-5 pt-4 border-t border-blue-200/50 max-w-3xl">
+            <div className="space-y-4 pt-4 border-t border-blue-200/50">
               <div>
                 <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
-                  <span>Aumentar volume de produtos Classe A (Alta Margem)</span>
+                  <span>Aumentar repasse de produtos Classe A</span>
                   <span className="text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">+{aumentoAltaMargem}%</span>
                 </div>
                 <input type="range" className="w-full accent-emerald-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" min="0" max="100" value={aumentoAltaMargem} onChange={(e) => setAumentoAltaMargem(Number(e.target.value))} />
               </div>
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
-                  <span>Reduzir volume de produtos Classe C (Baixa Margem)</span>
-                  <span className="text-rose-600 bg-rose-100 px-2 py-0.5 rounded">{reducaoBaixaMargem}%</span>
-                </div>
-                <input type="range" className="w-full accent-rose-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" min="-100" max="0" value={reducaoBaixaMargem} onChange={(e) => setReducaoBaixaMargem(Number(e.target.value))} />
-              </div>
             </div>
           </div>
 
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-4">
-            Sugestão de Compras por Fornecedor
-          </h3>
-
           {comprasPorMarca.marcas.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">
-              Estoque saudável após simulação. Nenhuma sugestão de compra no momento.
-            </div>
+            <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">Estoque saudável. Nenhuma compra sugerida.</div>
           ) : (
             <div className="space-y-4 w-full">
               {comprasPorMarca.marcas.map((b) => {
                 const isExpanded = expandedBrand === b.marca;
                 return (
-                  <div key={b.marca} className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden transition-all">
-                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/80 transition-colors border-b border-slate-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl font-black text-xs border border-amber-200">FORNECEDOR</div>
-                        <div>
-                          <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
-                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) Base precisam de reposição</p>
+                  <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                      <div className="flex items-center space-x-3 w-1/2">
+                        <div className="p-2 bg-amber-50 text-amber-700 rounded-lg font-black text-[10px] border border-amber-200">FORNECEDOR</div>
+                        <div className="truncate">
+                          <h4 className="text-sm font-bold text-slate-800 truncate">{b.marca}</h4>
+                          <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs para reposição</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center justify-end space-x-4 w-1/2">
                         <div className="text-right">
-                          <span className="text-[10px] uppercase text-slate-400 font-bold block">Orçamento Est.</span>
+                          <span className="text-[9px] uppercase text-slate-400 font-bold block">Comprar (R$)</span>
                           <span className="text-sm font-black text-amber-600">{formatBRL(b.valorComprar)}</span>
                         </div>
-                        {isExpanded ? <IconChevronDown className="w-5 h-5 text-slate-400" /> : <IconChevronRight className="w-5 h-5 text-slate-400" />}
+                        {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
                       </div>
                     </div>
 
                     {isExpanded && (
-                      <div className="p-0 bg-slate-50/50 overflow-x-auto">
+                      <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
                         <table className="w-full text-left text-xs whitespace-nowrap">
-                          <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[10px]">
+                          <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[9px]">
                             <tr>
-                              <th className="p-4">SKU Base / Produto Físico</th>
-                              <th className="p-4 text-center">Venda Diária (Simulada)</th>
-                              <th className="p-4 text-center">Estoque Atual</th>
-                              <th className="p-4 text-center">Custo Unitário</th>
-                              <th className="p-4 text-right text-amber-700">Sugestão Compra</th>
+                              <th className="p-3 pl-4">Produto</th>
+                              <th className="p-3 text-center">Físico</th>
+                              <th className="p-3 text-center">Run Rate/dia</th>
+                              <th className="p-3 text-right">Custo Un.</th>
+                              <th className="p-3 text-right text-amber-700 pr-4">Sugestão Compra</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200">
                             {b.produtos.map((p, i) => (
                               <tr key={i} className="hover:bg-white">
-                                <td className="p-4">
-                                  <span className="font-bold text-slate-800 block truncate max-w-[250px]">{p.produto}</span>
-                                  <span className="flex items-center gap-2 mt-1">
-                                    <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
-                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${p.classe === 'A' ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : p.classe === 'B' ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>Classe {p.classe}</span>
-                                  </span>
-                                </td>
-                                <td className="p-4 text-center font-medium">
-                                  {p.vendaDiariaSimulada.toFixed(1)} un/dia
-                                </td>
-                                <td className="p-4 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
-                                <td className="p-4 text-center text-slate-500">{formatBRL(p.custoUnitario)}</td>
-                                <td className="p-4 text-right">
+                                <td className="p-3 pl-4 max-w-[200px] truncate"><span className="font-bold text-slate-700 block truncate">{p.produto}</span><span className="text-[9px] text-slate-400 font-mono">{p.sku}</span></td>
+                                <td className="p-3 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
+                                <td className="p-3 text-center text-slate-500">{p.vendaDiariaSimulada.toFixed(1)} un</td>
+                                <td className="p-3 text-right text-slate-500">{formatBRL(p.custoUnitario)}</td>
+                                <td className="p-3 text-right pr-4">
                                   <span className="font-black text-amber-600 block">+ {p.sugestaoCompraSimulada} un</span>
                                   <span className="text-[9px] text-slate-400 block">{formatBRL(p.sugestaoCompraSimulada * p.custoUnitario)}</span>
                                 </td>
@@ -285,75 +348,56 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
         </div>
       )}
 
-      {/* VISÃO 2: AÇÕES DE ESTOQUE PARADO */}
+      {/* ========================================================================= */}
+      {/* VISÃO 3: CAPITAL CONGELADO (AÇÕES DE ESTOQUE PARADO) */}
+      {/* ========================================================================= */}
       {abaPrincipal === 'parado' && (
         <div className="space-y-6 animate-fadeIn">
-          <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-6 space-y-2">
-            <h4 className="text-sm font-black text-rose-900 flex items-center gap-2">
-              <IconAlertTriangle className="w-5 h-5 text-rose-600" />
-              Plano de Ação: Capital Congelado
-            </h4>
-            <p className="text-xs text-rose-700">
-              Os produtos abaixo possuem estoque físico, mas <strong>não tiveram nenhuma venda</strong> no período selecionado. 
-            </p>
-          </div>
-
           {estoqueParadoPorMarca.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">
-              Excelente! Não há capital congelado em estoque parado neste período.
-            </div>
+             <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">Sem estoque parado neste período!</div>
           ) : (
             <div className="space-y-4 w-full">
               {estoqueParadoPorMarca.map((b) => {
                 const isExpanded = expandedBrand === b.marca;
-                const produtosOrdenados = [...b.produtos].sort((p1, p2) => p2.valorParado - p1.valorParado);
-
                 return (
-                  <div key={b.marca} className="bg-white rounded-2xl shadow-sm border border-rose-200/60 overflow-hidden transition-all">
-                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-5 flex items-center justify-between cursor-pointer hover:bg-rose-50/30 transition-colors border-b border-slate-100">
+                  <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-rose-200/60 overflow-hidden transition-all">
+                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-rose-50/30">
                       <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-rose-50 text-rose-700 rounded-xl font-black text-xs border border-rose-200">MARCA</div>
+                        <div className="p-2 bg-rose-50 text-rose-700 rounded-lg font-black text-[10px] border border-rose-200">MARCA</div>
                         <div>
-                          <h4 className="text-base font-extrabold text-slate-900">{b.marca}</h4>
-                          <p className="text-xs text-slate-400">{b.produtos.length} SKU(s) Base encalhados</p>
+                          <h4 className="text-sm font-bold text-slate-900">{b.marca}</h4>
+                          <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs sem giro</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
-                          <span className="text-[10px] uppercase text-rose-400 font-bold block">Capital Congelado</span>
+                          <span className="text-[9px] uppercase text-rose-400 font-bold block">Capital Preso</span>
                           <span className="text-sm font-black text-rose-600">{formatBRL(b.valorTotalParado)}</span>
                         </div>
-                        {isExpanded ? <IconChevronDown className="w-5 h-5 text-slate-400" /> : <IconChevronRight className="w-5 h-5 text-slate-400" />}
+                        {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
                       </div>
                     </div>
 
                     {isExpanded && (
-                      <div className="p-0 bg-slate-50/50 overflow-x-auto">
+                      <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
                         <table className="w-full text-left text-xs whitespace-nowrap">
-                          <thead className="bg-rose-50/50 text-slate-500 uppercase font-bold text-[10px]">
+                          <thead className="bg-rose-50/50 text-slate-500 uppercase font-bold text-[9px]">
                             <tr>
-                              <th className="p-4">SKU Base / Produto</th>
-                              <th className="p-4 text-center">Estoque Parado</th>
-                              <th className="p-4 text-center">Custo Unitário</th>
-                              <th className="p-4 text-right text-rose-700">Valor Congelado</th>
-                              <th className="p-4 text-center">Ação Sugerida</th>
+                              <th className="p-3 pl-4">Produto</th>
+                              <th className="p-3 text-center">Físico Parado</th>
+                              <th className="p-3 text-right">Valor Congelado</th>
+                              <th className="p-3 text-center pr-4">Ação Sugerida</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200">
-                            {produtosOrdenados.map((p, i) => (
+                            {b.produtos.map((p, i) => (
                               <tr key={i} className="hover:bg-white">
-                                <td className="p-4">
-                                  <span className="font-bold text-slate-800 block truncate max-w-[250px]">{p.produto}</span>
-                                  <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
-                                </td>
-                                <td className="p-4 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
-                                <td className="p-4 text-center text-slate-500">{formatBRL(p.custoUnitario)}</td>
-                                <td className="p-4 text-right font-black text-rose-600">
-                                  {formatBRL(p.valorParado)}
-                                </td>
-                                <td className="p-4 text-center">
-                                  <span className="px-2 py-1 rounded-md font-bold text-[9px] uppercase tracking-wider bg-slate-800 text-white">
-                                    {p.valorParado > 500 ? 'Liquidação Agressiva' : 'Criar Kit (Bundling)'}
+                                <td className="p-3 pl-4 max-w-[250px] truncate"><span className="font-bold text-slate-800 block truncate">{p.produto}</span><span className="text-[9px] text-slate-400 font-mono">{p.sku}</span></td>
+                                <td className="p-3 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
+                                <td className="p-3 text-right font-black text-rose-600">{formatBRL(p.valorParado)}</td>
+                                <td className="p-3 text-center pr-4">
+                                  <span className="px-2 py-1 rounded-md font-bold text-[9px] uppercase bg-slate-800 text-white">
+                                    {p.valorParado > 500 ? 'Liquidação' : 'Bundling (Kits)'}
                                   </span>
                                 </td>
                               </tr>
