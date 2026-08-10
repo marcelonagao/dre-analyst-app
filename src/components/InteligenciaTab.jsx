@@ -1,11 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { formatBRL, formatPercent } from '../utils/formatters';
-import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw, IconSearch } from './Icons';
+// Importamos apenas os ícones que já tínhamos certeza que existiam
+import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw } from './Icons';
 
-// Ícone extra para exportação
-const IconDownload = ({ className }) => (
+// Ícones embutidos para garantir que não vai dar erro de compilação
+const IconDownloadLocal = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+);
+
+const IconSearchLocal = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
 
@@ -73,14 +80,12 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
 
   // 3. AGRUPAMENTO, FILTRO E ORDENAÇÃO (Posição de Estoque)
   const posicaoPorMarca = useMemo(() => {
-    // A. Filtra os produtos primeiro
     const produtosFiltrados = produtosComClasseEStatus.filter(p => {
       const matchesSearch = p.produto.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'Todos' || p.statusEstoque.label === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
-    // B. Agrupa por Marca
     const map = {};
     produtosFiltrados.forEach(p => {
       const brand = p.marca || "Outras Marcas";
@@ -89,7 +94,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
       map[brand].produtos.push(p);
     });
 
-    // C. Ordena os produtos dentro de cada marca
     Object.values(map).forEach(b => {
       b.produtos.sort((p1, p2) => {
         if (sortConfig === 'imobilizado_desc') return p2.imobilizado - p1.imobilizado;
@@ -100,7 +104,6 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
       });
     });
 
-    // D. Retorna as marcas ordenadas pelo Valor Imobilizado daquele filtro
     return Object.values(map).sort((a, b) => b.valorTotal - a.valorTotal);
   }, [produtosComClasseEStatus, searchTerm, statusFilter, sortConfig]);
 
@@ -109,19 +112,19 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     let csv = "Marca;SKU;Produto;Físico;Custo Unitário (R$);Valor Imobilizado (R$);Dias de Cobertura;Status Logístico\n";
     posicaoPorMarca.forEach(b => {
       b.produtos.forEach(p => {
-        const nomeLimpo = p.produto.replace(/"/g, '""'); // Evita quebra de CSV com aspas
+        const nomeLimpo = p.produto.replace(/"/g, '""'); 
         csv += `"${b.marca}";"${p.sku}";"${nomeLimpo}";${p.estoqueAtual};${p.custoUnitario.toFixed(2)};${p.imobilizado.toFixed(2)};${p.diasDeEstoque};"${p.statusEstoque.label}"\n`;
       });
     });
 
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // \uFEFF força o UTF-8 no Excel (acentos corretos)
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); 
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `Relatorio_Estoque_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
-  // ... (Restante do Motor de Compras e Estoque Parado mantido igual)
+  // 5. MOTOR DE COMPRAS
   const comprasPorMarca = useMemo(() => {
     const map = {};
     let totalItensComprar = 0, valorTotalComprar = 0;
@@ -153,6 +156,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
     return { marcas: Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar), totalItensComprar, valorTotalComprar };
   }, [produtosComClasseEStatus, aumentoAltaMargem, reducaoBaixaMargem]);
 
+  // 6. MOTOR DE ESTOQUE PARADO
   const estoqueParadoPorMarca = useMemo(() => {
     const map = {};
     produtosComClasseEStatus.forEach(p => {
@@ -232,7 +236,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
               
               {/* Busca */}
               <div className="relative flex-1 max-w-xs">
-                <IconSearch className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <IconSearchLocal className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input type="text" placeholder="Buscar SKU ou Produto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none" />
               </div>
 
@@ -261,7 +265,7 @@ export default function InteligenciaTab({ produtos, margemAtual }) {
 
             {/* Botão de Exportar CSV */}
             <button onClick={exportarCSV} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
-              <IconDownload className="w-4 h-4" /> Exportar CSV
+              <IconDownloadLocal className="w-4 h-4" /> Exportar CSV
             </button>
           </div>
 
