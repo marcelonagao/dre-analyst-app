@@ -50,7 +50,8 @@ export function useDashboardData() {
         const mockData = {
           metadados: { competenciaAtual: competencia, competenciasDisponiveis: HISTORICO_12_MESES.map(h => h.mes) },
           historicoMensal: HISTORICO_12_MESES,
-          kpisGerais: { faturamentoBruto: 300939.97, totalTaxas: 42959.91, totalImpostos: 33100.00, totalCpv: 203331.01, lucroLiquido: 21545.65, margemLiquidaMedia: 7.16, totalPedidos: 4386 },
+          // MOCK ATUALIZADO: Inclusão do custosFixos simulando o valor do OPEX
+          kpisGerais: { faturamentoBruto: 300939.97, totalTaxas: 42959.91, totalImpostos: 33100.00, totalCpv: 203331.01, lucroLiquido: 21545.65, margemLiquidaMedia: 7.16, totalPedidos: 4386, custosFixos: 6500.00 },
           drePorPlataforma: [
             { plataforma: "Shopee RAFA", faturamentoBruto: 142796.36, taxasPlataforma: 26091.30, imposto: 15707.60, cpv: 86630.72, lucroLiquido: 14366.74, margemLiquida: 10.06, pedidos: 1897 },
             { plataforma: "Mercado Livre LCMED", faturamentoBruto: 101451.75, taxasPlataforma: 27560.25, imposto: 11159.69, cpv: 53217.17, lucroLiquido: 9514.64, margemLiquida: 9.38, pedidos: 1036 },
@@ -120,7 +121,7 @@ export function useDashboardData() {
       mapPlat[pBase.plataforma] = {
         plataforma: pBase.plataforma,
         faturamentoBruto: pBase.faturamentoBruto || 0,
-        lucroLiquido: pBase.lucroLiquido || 0,
+        lucroLiquido: pBase.lucroLiquido || 0, // <-- Essa é a Margem de Contribuição do canal
         taxasPlataforma: pBase.taxasPlataforma || 0,
         imposto: pBase.imposto || 0,
         cpv: pBase.cpv || 0,
@@ -134,12 +135,13 @@ export function useDashboardData() {
     return Object.values(mapPlat).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
   }, [viewMode, data, channelFilter]);
 
-  // 3. KPIs GERAIS
+  // 3. KPIs GERAIS (INCLUINDO CUSTO FIXO)
   const kpisExibidos = useMemo(() => {
     let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
     
     dreExibida.forEach(p => {
-      faturamentoBruto += p.faturamentoBruto; lucroLiquido += p.lucroLiquido;
+      faturamentoBruto += p.faturamentoBruto; 
+      lucroLiquido += p.lucroLiquido; // Soma das Margens de Contribuição
       totalTaxas += p.taxasPlataforma; totalImpostos += p.imposto;
       totalCpv += p.cpv; totalPedidos += p.pedidos;
     });
@@ -156,8 +158,24 @@ export function useDashboardData() {
       }
     }
 
-    return { faturamentoBruto, lucroLiquido, margemLiquidaMedia, totalTaxas, totalImpostos, totalCpv, totalPedidos, variacaoFat, variacaoLucro };
-  }, [dreExibida, viewMode, listaHistorico, selectedCompetencia]);
+    // LÓGICA DO OPEX: Se for "consolidado", multiplica o custo fixo do mês pela quantidade de meses ativos.
+    const mesesAtivos = listaHistorico.filter(m => m.faturamento > 0).length;
+    const baseCustosFixos = data?.kpisGerais?.custosFixos || 0;
+    const custosFixos = viewMode === 'consolidado' ? (baseCustosFixos * Math.max(mesesAtivos, 1)) : baseCustosFixos;
+
+    return { 
+      faturamentoBruto, 
+      lucroLiquido, 
+      margemLiquidaMedia, 
+      totalTaxas, 
+      totalImpostos, 
+      totalCpv, 
+      totalPedidos, 
+      variacaoFat, 
+      variacaoLucro,
+      custosFixos // <--- Campo adicionado para a Visão Geral
+    };
+  }, [dreExibida, viewMode, listaHistorico, selectedCompetencia, data]);
 
   const deducoesTotais = useMemo(() => {
     const { totalCpv = 0, totalTaxas = 0, totalImpostos = 0, faturamentoBruto = 1 } = kpisExibidos;
@@ -169,27 +187,18 @@ export function useDashboardData() {
     };
   }, [kpisExibidos]);
 
-  // ============================================================================
-  // 4. PRODUTOS FILTRADOS GLOBAIS (A MÁGICA ACONTECE AQUI)
-  // ============================================================================
+  // 4. PRODUTOS FILTRADOS GLOBAIS
   const produtosFiltradosGlobais = useMemo(() => {
     const globais = viewMode === 'consolidado' ? (data?.topProdutosCurvaABCConsolidado || []) : (data?.topProdutosCurvaABC || []);
     const porPlataforma = viewMode === 'consolidado' ? (data?.produtosPorPlataformaConsolidado || {}) : (data?.produtosPorPlataforma || {});
 
     if (channelFilter === 'todos') return globais;
 
-    // 1. Cria um mapa base com TODOS os produtos para não perder o estoque físico
     const map = {};
     globais.forEach(p => {
-      map[p.sku] = {
-        ...p,
-        quantidadeVendida: 0,
-        faturamentoBruto: 0,
-        lucroLiquido: 0
-      };
+      map[p.sku] = { ...p, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 };
     });
 
-    // 2. Soma as vendas APENAS dos canais selecionados
     Object.keys(porPlataforma).forEach(plat => {
       const platLower = plat.toLowerCase();
       const isOnline = platLower.includes('shopee') || platLower.includes('mercado livre') || platLower.includes('meli');
@@ -205,19 +214,12 @@ export function useDashboardData() {
         });
       }
     });
-
-    // 3. Recalcula os KPIs derivados (Margem, Venda Diária, Sugestão de Compra)
     
-    // CORREÇÃO: Conta apenas os meses que tiveram faturamento > 0 no canal filtrado
     const mesesAtivos = listaHistorico.filter(m => m.faturamento > 0).length;
-    
-    // Se for consolidado, multiplica os meses ativos por 30. Se for mensal, usa 30 dias.
     const diasPeriodo = viewMode === 'consolidado' ? (Math.max(mesesAtivos, 1) * 30) : 30;
 
     return Object.values(map).map(p => {
       const margem = p.faturamentoBruto > 0 ? (p.lucroLiquido / p.faturamentoBruto) * 100 : 0;
-      
-      // Agora a divisão é exata (ex: 7 meses * 30 = 210 dias)
       const vendaDiaria = p.quantidadeVendida / diasPeriodo;
       const diasDeEstoque = vendaDiaria > 0 ? (p.estoqueAtual / vendaDiaria) : 999;
       
@@ -236,7 +238,7 @@ export function useDashboardData() {
       };
     }).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 
-  }, [data, channelFilter, viewMode, listaHistorico]); // <-- Adicione listaHistorico nas dependências aqui
+  }, [data, channelFilter, viewMode, listaHistorico]);
 
   const produtosPorPlataforma = useMemo(() => {
     return viewMode === 'consolidado' ? (data?.produtosPorPlataformaConsolidado || {}) : (data?.produtosPorPlataforma || {});
