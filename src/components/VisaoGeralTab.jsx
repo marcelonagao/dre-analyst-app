@@ -19,44 +19,24 @@ export default function VisaoGeralTab({ kpis, deducoesTotais, historico12Meses, 
   return (
     <div className="space-y-6 w-full">
       
-      {/* 1. CARDS DE KPI COM VARIAÇÃO MOM */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
+      {/* CARD DE LUCRO ATUALIZADO */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-2xl p-5 md:p-6 text-white shadow-xl flex flex-col justify-between border border-slate-700/50 min-w-0">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
-            <span className="text-xs uppercase font-bold text-emerald-400 flex items-center gap-1.5"><IconTrendingUp /> Lucro Líquido</span>
-            <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">Margem {formatPercent(kpis.margemLiquidaMedia)}</span>
+            <span className="text-xs uppercase font-bold text-emerald-400 flex items-center gap-1.5"><IconTrendingUp /> {labelLucro}</span>
+            <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">Margem {formatPercent(margemReal)}</span>
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white truncate">{formatBRL(kpis.lucroLiquido)}</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white truncate">{formatBRL(lucroReal)}</h2>
             <div className="mt-1"><VariationBadge valor={kpis.variacaoLucro} /></div>
           </div>
+          
+          {/* AGORA MOSTRA SEMPRE NA VISÃO GLOBAL, MESMO SE FOR ZERO */}
+          {isVisaoGlobal && (
+            <span className="text-[10px] text-slate-400 mt-2 block border-t border-slate-700/50 pt-2">
+              Margem Bruta: {formatBRL(kpis.lucroLiquido)} | OPEX (Fixo): <strong className="text-rose-400">-{formatBRL(custosFixos || 0)}</strong>
+            </span>
+          )}
         </div>
-
-        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 uppercase">Faturamento Bruto</span>
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl"><IconDollarSign /></div>
-          </div>
-          <div>
-            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{formatBRL(kpis.faturamentoBruto)}</span>
-            <div className="mt-1 flex items-center gap-2">
-              <VariationBadge valor={kpis.variacaoFat} />
-              <span className="text-[10px] text-slate-400">Total Processado</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 uppercase">Volume de Vendas</span>
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl"><IconShoppingBag /></div>
-          </div>
-          <div>
-            <span className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 truncate block">{Math.round(kpis.totalPedidos || 0)} pedidos</span>
-            <span className="text-[11px] text-slate-500 mt-1 block">Ticket Médio: <strong>{formatBRL(ticketMedio)}</strong></span>
-          </div>
-        </div>
-      </div>
 
       {/* 2. GRÁFICO (AGORA RESPEITA O FILTRO DE CANAL) */}
       <GraficoLinha12Meses historico={historico12Meses} onSelectMonth={onSelectMonth} selectedCompetencia={selectedCompetencia} />
