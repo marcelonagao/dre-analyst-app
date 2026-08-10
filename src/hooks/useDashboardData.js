@@ -1,34 +1,22 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 
-// Mock atualizado com os novos campos para funcionar sem internet
-const HISTORICO_12_MESES = [
-  { mes: "05/2025", faturamento: 180000, lucro: 14400, margem: 8.00, shopee: 100000, meli: 60000, externa: 20000, cpv: 100000, taxas: 25000, impostos: 19800, pedidos: 2500, lojas: {"Shopee RAFA": 80000, "Mercado Livre LCMED": 80000, "Venda Externa": 20000} },
-  { mes: "06/2025", faturamento: 195000, lucro: 16575, margem: 8.50, shopee: 110000, meli: 65000, externa: 20000, cpv: 110000, taxas: 27000, impostos: 21450, pedidos: 2700, lojas: {"Shopee RAFA": 90000, "Mercado Livre LCMED": 85000, "Venda Externa": 20000} },
-  { mes: "07/2025", faturamento: 205000, lucro: 18040, margem: 8.80, shopee: 115000, meli: 68000, externa: 22000, cpv: 115000, taxas: 28000, impostos: 22550, pedidos: 2850, lojas: {"Shopee RAFA": 95000, "Mercado Livre LCMED": 88000, "Venda Externa": 22000} },
-  { mes: "08/2025", faturamento: 220000, lucro: 19800, margem: 9.00, shopee: 125000, meli: 70000, externa: 25000, cpv: 125000, taxas: 30000, impostos: 24200, pedidos: 3000, lojas: {"Shopee RAFA": 100000, "Mercado Livre LCMED": 95000, "Venda Externa": 25000} },
-  { mes: "09/2025", faturamento: 215000, lucro: 18705, margem: 8.70, shopee: 120000, meli: 70000, externa: 25000, cpv: 122000, taxas: 29000, impostos: 23650, pedidos: 2950, lojas: {"Shopee RAFA": 95000, "Mercado Livre LCMED": 95000, "Venda Externa": 25000} },
-  { mes: "10/2025", faturamento: 230000, lucro: 20470, margem: 8.90, shopee: 130000, meli: 75000, externa: 25000, cpv: 130000, taxas: 31000, impostos: 25300, pedidos: 3100, lojas: {"Shopee RAFA": 105000, "Mercado Livre LCMED": 100000, "Venda Externa": 25000} },
-  { mes: "11/2025", faturamento: 260000, lucro: 23920, margem: 9.20, shopee: 145000, meli: 85000, externa: 30000, cpv: 145000, taxas: 35000, impostos: 28600, pedidos: 3500, lojas: {"Shopee RAFA": 120000, "Mercado Livre LCMED": 110000, "Venda Externa": 30000} },
-  { mes: "12/2025", faturamento: 310000, lucro: 29450, margem: 9.50, shopee: 170000, meli: 105000, externa: 35000, cpv: 170000, taxas: 42000, impostos: 34100, pedidos: 4200, lojas: {"Shopee RAFA": 140000, "Mercado Livre LCMED": 135000, "Venda Externa": 35000} },
-  { mes: "01/2026", faturamento: 210000, lucro: 18500, margem: 8.81, shopee: 115000, meli: 70000, externa: 25000, cpv: 118000, taxas: 28000, impostos: 23100, pedidos: 2900, lojas: {"Shopee RAFA": 95000, "Mercado Livre LCMED": 90000, "Venda Externa": 25000} },
-  { mes: "02/2026", faturamento: 245000, lucro: 22100, margem: 9.02, shopee: 135000, meli: 82000, externa: 28000, cpv: 138000, taxas: 33000, impostos: 26950, pedidos: 3300, lojas: {"Shopee RAFA": 110000, "Mercado Livre LCMED": 107000, "Venda Externa": 28000} },
-  { mes: "03/2026", faturamento: 280000, lucro: 24760, margem: 8.84, shopee: 155000, meli: 95000, externa: 30000, cpv: 158000, taxas: 38000, impostos: 30800, pedidos: 3800, lojas: {"Shopee RAFA": 125000, "Mercado Livre LCMED": 125000, "Venda Externa": 30000} },
-  { mes: "04/2026", faturamento: 300939.97, lucro: 21545.65, margem: 7.16, shopee: 165000, meli: 105939.97, externa: 30000, cpv: 203331.01, taxas: 42959.91, impostos: 33100, pedidos: 4386, lojas: {"Shopee RAFA": 142796.36, "Mercado Livre LCMED": 101451.75, "Venda Externa": 56691.86} }
-];
+const HISTORICO_12_MESES = []; // Mock limpo, vamos focar na API Real
 
 export function useDashboardData() {
   const [apiUrl, setApiUrl] = useState('');
-  const [selectedCompetencia, setSelectedCompetencia] = useState('04/2026');
+  const [selectedCompetencia, setSelectedCompetencia] = useState('');
   const [viewMode, setViewMode] = useState('mensal'); 
   const [channelFilter, setChannelFilter] = useState('todos'); 
   
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const localCache = useRef({});
 
   const fetchData = async (competencia, forceRefresh = false) => {
+    if (!apiUrl.trim()) return;
+
     if (!forceRefresh && localCache.current[competencia]) {
       setData(localCache.current[competencia]);
       setLoading(false);
@@ -37,56 +25,45 @@ export function useDashboardData() {
 
     setLoading(true); setError(null);
     const cleanUrl = apiUrl.trim();
+    const targetComp = competencia || '';
 
     try {
-      if (cleanUrl) {
-        const response = await fetch(`${cleanUrl}?competencia=${encodeURIComponent(competencia)}`, {
-          method: 'GET',
-          redirect: 'follow'
-        });
-        if (!response.ok) throw new Error(`HTTP Error`);
-        const parsedJson = await response.json();
-        localCache.current[competencia] = parsedJson;
-        setData(parsedJson);
-      } else {
-        await new Promise((res) => setTimeout(res, 200));
-        const mockData = {
-          metadados: { competenciaAtual: competencia, competenciasDisponiveis: HISTORICO_12_MESES.map(h => h.mes) },
-          historicoMensal: HISTORICO_12_MESES,
-          // MOCK ATUALIZADO: Inclusão do custosFixos simulando o valor do OPEX
-          kpisGerais: { faturamentoBruto: 300939.97, totalTaxas: 42959.91, totalImpostos: 33100.00, totalCpv: 203331.01, lucroLiquido: 21545.65, margemLiquidaMedia: 7.16, totalPedidos: 4386, custosFixos: 6500.00 },
-          drePorPlataforma: [
-            { plataforma: "Shopee RAFA", faturamentoBruto: 142796.36, taxasPlataforma: 26091.30, imposto: 15707.60, cpv: 86630.72, lucroLiquido: 14366.74, margemLiquida: 10.06, pedidos: 1897 },
-            { plataforma: "Mercado Livre LCMED", faturamentoBruto: 101451.75, taxasPlataforma: 27560.25, imposto: 11159.69, cpv: 53217.17, lucroLiquido: 9514.64, margemLiquida: 9.38, pedidos: 1036 },
-            { plataforma: "Venda Externa", faturamentoBruto: 56691.86, taxasPlataforma: 0, imposto: 6236.10, cpv: 43397.43, lucroLiquido: 7058.33, margemLiquida: 12.45, pedidos: 691 }
-          ],
-          topProdutosCurvaABC: [
-            { sku: "2LB05", produto: "Creme Facial Anti-olheira", marca: "La Belle Paris", plataforma: "Shopee RAFA", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84, estoqueAtual: 150, leadTime: 15, vendaDiaria: 10.6, diasDeEstoque: 14, sugestaoCompra: 327 },
-            { sku: "SÉRUM-VITC", produto: "Sérum Facial Vitamina C", marca: "La Belle Paris", plataforma: "Mercado Livre LCMED", quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0, margemLiquida: 0, estoqueAtual: 400, leadTime: 15, vendaDiaria: 0, diasDeEstoque: 999, sugestaoCompra: 0 }
-          ],
-          produtosPorPlataforma: {
-            "Shopee RAFA": [
-              { sku: "2LB05", produto: "Creme Facial Anti-olheira", marca: "La Belle Paris", quantidadeVendida: 320, faturamentoBruto: 125000.00, lucroLiquido: 9800.00, margemLiquida: 7.84 }
-            ]
-          }
-        };
-        localCache.current[competencia] = mockData;
-        setData(mockData);
+      // redirect: 'follow' garante que não somos bloqueados pelo CORS do Google
+      const response = await fetch(`${cleanUrl}?competencia=${encodeURIComponent(targetComp)}`, {
+        method: 'GET',
+        redirect: 'follow'
+      });
+      
+      if (!response.ok) throw new Error(`HTTP Error`);
+      const parsedJson = await response.json();
+      
+      if (parsedJson.error) {
+        throw new Error(parsedJson.error);
+      }
+
+      localCache.current[parsedJson.metadados.competenciaAtual] = parsedJson;
+      setData(parsedJson);
+      
+      if (!competencia) {
+        setSelectedCompetencia(parsedJson.metadados.competenciaAtual);
       }
     } catch (err) {
-      setError("Erro na conexão com a API.");
+      setError("Erro na conexão com a API. Verifique a URL ou o Cache.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(selectedCompetencia); }, [selectedCompetencia]);
+  // Dispara o fetch inicial quando a URL da API é configurada
+  useEffect(() => { 
+    if (apiUrl) fetchData(selectedCompetencia); 
+  }, [apiUrl, selectedCompetencia]);
 
-  const competenciasList = useMemo(() => data?.metadados?.competenciasDisponiveis || HISTORICO_12_MESES.map(h => h.mes), [data]);
+  const competenciasList = useMemo(() => data?.metadados?.competenciasDisponiveis || [], [data]);
 
   // 1. HISTÓRICO FILTRADO (Gráfico)
   const listaHistorico = useMemo(() => {
-    const histOriginal = data?.historicoMensal || HISTORICO_12_MESES;
+    const histOriginal = data?.historicoMensal || [];
     return histOriginal.map(m => {
       let fat = 0, luc = 0, cpv = 0, taxas = 0, impostos = 0, pedidos = 0;
       let lojasFiltradas = {};
@@ -124,7 +101,7 @@ export function useDashboardData() {
       mapPlat[pBase.plataforma] = {
         plataforma: pBase.plataforma,
         faturamentoBruto: pBase.faturamentoBruto || 0,
-        lucroLiquido: pBase.lucroLiquido || 0, // <-- Essa é a Margem de Contribuição do canal
+        lucroLiquido: pBase.lucroLiquido || 0,
         taxasPlataforma: pBase.taxasPlataforma || 0,
         imposto: pBase.imposto || 0,
         cpv: pBase.cpv || 0,
@@ -138,16 +115,40 @@ export function useDashboardData() {
     return Object.values(mapPlat).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
   }, [viewMode, data, channelFilter]);
 
-  // 3. KPIs GERAIS (INCLUINDO CUSTO FIXO)
+  // ============================================================================
+  // 3. KPIs GERAIS "À PROVA DE BALAS"
+  // ============================================================================
   const kpisExibidos = useMemo(() => {
     let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
     
-    dreExibida.forEach(p => {
-      faturamentoBruto += p.faturamentoBruto; 
-      lucroLiquido += p.lucroLiquido; // Soma das Margens de Contribuição
-      totalTaxas += p.taxasPlataforma; totalImpostos += p.imposto;
-      totalCpv += p.cpv; totalPedidos += p.pedidos;
-    });
+    // MODO BLINDADO: Se for visão global, confiamos 100% nos totais já somados pelo backend
+    if (channelFilter === 'todos') {
+       if (viewMode === 'mensal' && data?.kpisGerais) {
+         faturamentoBruto = data.kpisGerais.faturamentoBruto || 0;
+         lucroLiquido = data.kpisGerais.margemContribucion || data.kpisGerais.lucroLiquido || 0; 
+         totalTaxas = data.kpisGerais.totalTaxas || 0;
+         totalImpostos = data.kpisGerais.totalImpostos || 0;
+         totalCpv = data.kpisGerais.totalCpv || 0;
+         totalPedidos = data.kpisGerais.totalPedidos || 0;
+       } else if (viewMode === 'consolidado') {
+         listaHistorico.forEach(m => {
+            faturamentoBruto += m.faturamento || 0;
+            lucroLiquido += m.lucro || 0;
+            totalTaxas += m.taxas || 0;
+            totalImpostos += m.impostos || 0;
+            totalCpv += m.cpv || 0;
+            totalPedidos += m.pedidos || 0;
+         });
+       }
+    } else {
+       // Se filtrou por canal, soma a DRE dinamicamente
+       dreExibida.forEach(p => {
+         faturamentoBruto += p.faturamentoBruto; 
+         lucroLiquido += p.lucroLiquido; 
+         totalTaxas += p.taxasPlataforma; totalImpostos += p.imposto;
+         totalCpv += p.cpv; totalPedidos += p.pedidos;
+       });
+    }
 
     const margemLiquidaMedia = faturamentoBruto > 0 ? (lucroLiquido / faturamentoBruto) * 100 : 0;
 
@@ -161,24 +162,15 @@ export function useDashboardData() {
       }
     }
 
-    // LÓGICA DO OPEX: Se for "consolidado", multiplica o custo fixo do mês pela quantidade de meses ativos.
     const mesesAtivos = listaHistorico.filter(m => m.faturamento > 0).length;
     const baseCustosFixos = data?.kpisGerais?.custosFixos || 0;
     const custosFixos = viewMode === 'consolidado' ? (baseCustosFixos * Math.max(mesesAtivos, 1)) : baseCustosFixos;
 
     return { 
-      faturamentoBruto, 
-      lucroLiquido, 
-      margemLiquidaMedia, 
-      totalTaxas, 
-      totalImpostos, 
-      totalCpv, 
-      totalPedidos, 
-      variacaoFat, 
-      variacaoLucro,
-      custosFixos // <--- Campo adicionado para a Visão Geral
+      faturamentoBruto, lucroLiquido, margemLiquidaMedia, totalTaxas, 
+      totalImpostos, totalCpv, totalPedidos, variacaoFat, variacaoLucro, custosFixos 
     };
-  }, [dreExibida, viewMode, listaHistorico, selectedCompetencia, data]);
+  }, [dreExibida, viewMode, listaHistorico, selectedCompetencia, data, channelFilter]);
 
   const deducoesTotais = useMemo(() => {
     const { totalCpv = 0, totalTaxas = 0, totalImpostos = 0, faturamentoBruto = 1 } = kpisExibidos;
@@ -198,9 +190,7 @@ export function useDashboardData() {
     if (channelFilter === 'todos') return globais;
 
     const map = {};
-    globais.forEach(p => {
-      map[p.sku] = { ...p, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 };
-    });
+    globais.forEach(p => { map[p.sku] = { ...p, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 }; });
 
     Object.keys(porPlataforma).forEach(plat => {
       const platLower = plat.toLowerCase();
@@ -233,11 +223,8 @@ export function useDashboardData() {
       }
 
       return {
-        ...p,
-        margemLiquida: margem,
-        vendaDiaria: Number(vendaDiaria.toFixed(2)),
-        diasDeEstoque: Math.round(diasDeEstoque),
-        sugestaoCompra: sugestaoCompra
+        ...p, margemLiquida: margem, vendaDiaria: Number(vendaDiaria.toFixed(2)),
+        diasDeEstoque: Math.round(diasDeEstoque), sugestaoCompra: sugestaoCompra
       };
     }).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 
