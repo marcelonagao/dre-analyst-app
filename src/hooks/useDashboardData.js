@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 const HISTORICO_12_MESES = []; // Mock limpo, vamos focar na API Real
 
 export function useDashboardData() {
-  const [apiUrl, setApiUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState('//script.google.com/macros/s/AKfycbx3b9QNkUNxlFdmHxOTZ5j4wtwN9h7qJ9UgGTRGqH4HidWm0ZxeuUcT4ZnZCNqpQ8dd/exec');
   const [selectedCompetencia, setSelectedCompetencia] = useState('');
   const [viewMode, setViewMode] = useState('mensal'); 
   const [channelFilter, setChannelFilter] = useState('todos'); 
