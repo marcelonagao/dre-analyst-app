@@ -36,7 +36,7 @@ export function useDashboardData() {
       if (errCustos) throw errCustos;
 
       // 2. Mapeamento de Competências Únicas (ordenadas)
-      const competenciasSet = new Set(vendas.map(v => v.competencia).filter(Boolean));
+      const competenciasSet = new Set((vendas || []).map(v => v.competencia).filter(Boolean));
       const competenciasDisponiveis = Array.from(competenciasSet).sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number);
         const [mB, yB] = b.split('/').map(Number);
@@ -57,19 +57,19 @@ export function useDashboardData() {
 
       // Mapa rápido de custos de produtos
       const produtosDict = {};
-      produtos.forEach(p => {
+      (produtos || []).forEach(p => {
         produtosDict[p.sku] = p;
       });
 
-      // Mapeamento de Kits (para explodir para SKU base se necessário)
+      // Mapeamento de Kits
       const kitsDict = {};
-      kits.forEach(k => {
+      (kits || []).forEach(k => {
         if (!kitsDict[k.sku_kit]) kitsDict[k.sku_kit] = [];
         kitsDict[k.sku_kit].push(k);
       });
 
       // Processamento das Vendas
-      vendas.forEach(v => {
+      (vendas || []).forEach(v => {
         const comp = v.competencia;
         const plat = v.plataforma || 'Outros';
         const fatBruto = Number(v.faturamento_bruto) || 0;
@@ -170,8 +170,8 @@ export function useDashboardData() {
         }
       });
 
-      // Inclui no catálogo de produtos do estoque mesmo os que não venderam no mês
-      produtos.forEach(p => {
+      // Inclui no catálogo de produtos do estoque mesmo os que não venderam
+      (produtos || []).forEach(p => {
         if (!produtosMapConsolidado[p.sku]) {
           produtosMapConsolidado[p.sku] = {
             sku: p.sku, produto: p.nome, marca: p.marca,
@@ -197,7 +197,7 @@ export function useDashboardData() {
       const opexDetalhamentoMes = [];
       let custosFixosMesAtual = 0;
 
-      custosFixos.forEach(c => {
+      (custosFixos || []).forEach(c => {
         const val = Number(c.valor) || 0;
         if (!opexHistoricoMap[c.competencia]) opexHistoricoMap[c.competencia] = 0;
         opexHistoricoMap[c.competencia] += val;
@@ -381,6 +381,7 @@ export function useDashboardData() {
     };
   }, [dreExibida, viewMode, listaHistorico, data, channelFilter]);
 
+  // RETORNO ATUALIZADO E COMPATÍVEL
   return {
     data,
     loading,
@@ -394,12 +395,15 @@ export function useDashboardData() {
     listaHistorico,
     dreExibida,
     produtosExibidos,
+    produtosFiltradosGlobais: produtosExibidos, // Alias para compatibilidade com App.jsx
+    competenciasList: data?.metadados?.competenciasDisponiveis || [], // Exportado diretamente
     kpisExibidos,
+    deducoesTotais: (kpisExibidos.totalTaxas || 0) + (kpisExibidos.totalImpostos || 0),
+    fetchData,
     refetch: fetchData
   };
 }
 
-// Auxiliar de arredondamento
 function round2(val) {
   return Math.round((Number(val) || 0) * 100) / 100;
 }
