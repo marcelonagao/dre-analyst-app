@@ -1,23 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+// 1. Função auxiliar colocada FORA do Hook para evitar o erro de Inicialização (TDZ)
+function round2(val) {
+  return Math.round((Number(val) || 0) * 100) / 100;
+}
+
 export function useDashboardData() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros Globais
   const [selectedCompetencia, setSelectedCompetencia] = useState('');
-  const [viewMode, setViewMode] = useState('mensal'); // 'mensal' | 'consolidado'
-  const [channelFilter, setChannelFilter] = useState('todos'); // 'todos' | 'online' | 'externa'
+  const [viewMode, setViewMode] = useState('mensal'); 
+  const [channelFilter, setChannelFilter] = useState('todos'); 
 
-  // Função principal para carregar dados do Supabase
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // 1. Busca tabelas em paralelo no Supabase
       const [
         { data: vendas, error: errVendas },
         { data: produtos, error: errProdutos },
@@ -35,13 +37,13 @@ export function useDashboardData() {
       if (errKits) throw errKits;
       if (errCustos) throw errCustos;
 
-      // 2. Mapeamento de Competências Únicas (ordenadas)
-      // 2. Mapeamento de Competências Únicas (ordenadas e limpas)
+      // Filtro Inteligente que remove linhas vazias e meses "N/A"
       const competenciasSet = new Set(
         (vendas || [])
           .map(v => v?.competencia?.trim())
-          .filter(c => c && c !== 'N/A' && c !== '') // <-- Aqui está o filtro que expulsa o N/A
+          .filter(c => c && c !== 'N/A' && c !== '')
       );
+      
       const competenciasDisponiveis = Array.from(competenciasSet).sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number);
         const [mB, yB] = b.split('/').map(Number);
@@ -53,29 +55,27 @@ export function useDashboardData() {
         setSelectedCompetencia(compAtual);
       }
 
-      // 3. Estruturação do Histórico Mensal e DRE
       const historicoMap = {};
       const dreMapMensal = {};
       const dreMapConsolidado = {};
       const produtosMapMensal = {};
       const produtosMapConsolidado = {};
 
-      // Mapa rápido de custos de produtos
       const produtosDict = {};
       (produtos || []).forEach(p => {
         produtosDict[p.sku] = p;
       });
 
-      // Mapeamento de Kits
       const kitsDict = {};
       (kits || []).forEach(k => {
         if (!kitsDict[k.sku_kit]) kitsDict[k.sku_kit] = [];
         kitsDict[k.sku_kit].push(k);
       });
 
-      // Processamento das Vendas
       (vendas || []).forEach(v => {
         const comp = v.competencia;
+        if (!comp || comp === 'N/A') return; // Ignora vendas com data corrompida
+
         const plat = v.plataforma || 'Outros';
         const fatBruto = Number(v.faturamento_bruto) || 0;
         const taxas = Number(v.taxas_plataforma) || 0;
@@ -83,7 +83,6 @@ export function useDashboardData() {
         const embalagem = Number(v.custo_embalagem) || 0;
         const qtd = Number(v.quantidade) || 1;
 
-        // Custo Unitário do Produto (ou componentes se for kit)
         let custoProdUnit = 0;
         if (kitsDict[v.sku]) {
           custoProdUnit = kitsDict[v.sku].reduce((acc, comp) => {
@@ -98,19 +97,17 @@ export function useDashboardData() {
         const cpvTotal = (custoProdUnit * qtd) + embalagem;
         const lucroMargem = fatBruto - taxas - imposto - cpvTotal;
 
-        // --- A. HISTÓRICO MENSAL ---
         if (!historicoMap[comp]) {
           historicoMap[comp] = { faturamento: 0, lucro: 0, cpv: 0, taxas: 0, impostos: 0, pedidos: 0, lojas: {} };
         }
         historicoMap[comp].faturamento += fatBruto;
-        historicoMap[comp].lucro += lucroMargem;
+        historicoMap[comp].lucro += lucroMargem; // lucroMargem = Margem de Contribuição
         historicoMap[comp].cpv += cpvTotal;
         historicoMap[comp].taxas += taxas;
         historicoMap[comp].impostos += imposto;
         historicoMap[comp].pedidos += 1;
         historicoMap[comp].lojas[plat] = (historicoMap[comp].lojas[plat] || 0) + fatBruto;
 
-        // --- B. DRE CONSOLIDADO ---
         if (!dreMapConsolidado[plat]) {
           dreMapConsolidado[plat] = { plataforma: plat, faturamentoBruto: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, lucroLiquido: 0, pedidos: 0 };
         }
@@ -121,7 +118,6 @@ export function useDashboardData() {
         dreMapConsolidado[plat].lucroLiquido += lucroMargem;
         dreMapConsolidado[plat].pedidos += 1;
 
-        // --- C. DRE DO MÊS ATIVO ---
         if (comp === compAtual) {
           if (!dreMapMensal[plat]) {
             dreMapMensal[plat] = { plataforma: plat, faturamentoBruto: 0, taxasPlataforma: 0, imposto: 0, cpv: 0, lucroLiquido: 0, pedidos: 0 };
@@ -134,18 +130,13 @@ export function useDashboardData() {
           dreMapMensal[plat].pedidos += 1;
         }
 
-        // --- D. PRODUTOS / ESTOQUE ---
         const skuProd = v.sku;
         const prodInfo = produtosDict[skuProd] || { nome: 'Sem Nome', marca: 'N/A', estoque_atual: 0, lead_time: 15, custo_unitario: custoProdUnit };
 
         if (!produtosMapConsolidado[skuProd]) {
           produtosMapConsolidado[skuProd] = {
-            sku: skuProd,
-            produto: prodInfo.nome,
-            marca: prodInfo.marca,
-            quantidadeVendida: 0,
-            faturamentoBruto: 0,
-            lucroLiquido: 0,
+            sku: skuProd, produto: prodInfo.nome, marca: prodInfo.marca,
+            quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
             custoUnitario: Number(prodInfo.custo_unitario) || custoProdUnit,
             estoqueAtual: Number(prodInfo.estoque_atual) || 0,
             leadTime: Number(prodInfo.lead_time) || 15
@@ -158,12 +149,8 @@ export function useDashboardData() {
         if (comp === compAtual) {
           if (!produtosMapMensal[skuProd]) {
             produtosMapMensal[skuProd] = {
-              sku: skuProd,
-              produto: prodInfo.nome,
-              marca: prodInfo.marca,
-              quantidadeVendida: 0,
-              faturamentoBruto: 0,
-              lucroLiquido: 0,
+              sku: skuProd, produto: prodInfo.nome, marca: prodInfo.marca,
+              quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
               custoUnitario: Number(prodInfo.custo_unitario) || custoProdUnit,
               estoqueAtual: Number(prodInfo.estoque_atual) || 0,
               leadTime: Number(prodInfo.lead_time) || 15
@@ -175,29 +162,21 @@ export function useDashboardData() {
         }
       });
 
-      // Inclui no catálogo de produtos do estoque mesmo os que não venderam
       (produtos || []).forEach(p => {
         if (!produtosMapConsolidado[p.sku]) {
           produtosMapConsolidado[p.sku] = {
-            sku: p.sku, produto: p.nome, marca: p.marca,
-            quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-            custoUnitario: Number(p.custo_unitario) || 0,
-            estoqueAtual: Number(p.estoque_atual) || 0,
-            leadTime: Number(p.lead_time) || 15
+            sku: p.sku, produto: p.nome, marca: p.marca, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
+            custoUnitario: Number(p.custo_unitario) || 0, estoqueAtual: Number(p.estoque_atual) || 0, leadTime: Number(p.lead_time) || 15
           };
         }
         if (compAtual && !produtosMapMensal[p.sku]) {
           produtosMapMensal[p.sku] = {
-            sku: p.sku, produto: p.nome, marca: p.marca,
-            quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-            custoUnitario: Number(p.custo_unitario) || 0,
-            estoqueAtual: Number(p.estoque_atual) || 0,
-            leadTime: Number(p.lead_time) || 15
+            sku: p.sku, produto: p.nome, marca: p.marca, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
+            custoUnitario: Number(p.custo_unitario) || 0, estoqueAtual: Number(p.estoque_atual) || 0, leadTime: Number(p.lead_time) || 15
           };
         }
       });
 
-      // Mapeamento de Custos Fixos (OPEX)
       const opexHistoricoMap = {};
       const opexDetalhamentoMes = [];
       let custosFixosMesAtual = 0;
@@ -215,7 +194,6 @@ export function useDashboardData() {
 
       opexDetalhamentoMes.sort((a, b) => b.valor - a.valor);
 
-      // Formatação do Histórico Mensal
       const historicoMensalArr = competenciasDisponiveis.map(m => {
         const h = historicoMap[m] || { faturamento: 0, lucro: 0, cpv: 0, taxas: 0, impostos: 0, pedidos: 0, lojas: {} };
         const opexM = opexHistoricoMap[m] || 0;
@@ -223,7 +201,7 @@ export function useDashboardData() {
         return {
           mes: m,
           faturamento: round2(h.faturamento),
-          lucro: round2(h.lucro - opexM),
+          lucro: round2(h.lucro - opexM), // lucro salvo no histórico é o EBITDA
           opex: round2(opexM),
           margem: round2(margem),
           cpv: round2(h.cpv),
@@ -234,7 +212,6 @@ export function useDashboardData() {
         };
       });
 
-      // KPIs do Mês Ativo
       const kpisM = historicoMap[compAtual] || { faturamento: 0, lucro: 0, cpv: 0, taxas: 0, impostos: 0, pedidos: 0 };
       const margemContrib = kpisM.lucro;
       const ebitda = margemContrib - custosFixosMesAtual;
@@ -278,10 +255,10 @@ export function useDashboardData() {
           totalTaxas: round2(kpisM.taxas),
           totalImpostos: round2(kpisM.impostos),
           totalCpv: round2(kpisM.cpv),
-          margemContribucion: round2(margemContrib),
+          margemContribucion: round2(margemContrib), // <-- Guardando a Margem Bruta Pura
           custosFixos: round2(custosFixosMesAtual),
           detalhamentoOpex: opexDetalhamentoMes,
-          lucroLiquido: round2(ebitda),
+          lucroLiquido: round2(ebitda), // <-- Guardando o EBITDA Real
           margemLiquidaMedia: round2(margemEbitdaPct),
           totalPedidos: kpisM.pedidos
         },
@@ -293,7 +270,7 @@ export function useDashboardData() {
 
     } catch (err) {
       console.error("Erro ao carregar dados do Supabase:", err);
-      setError("Falha ao carregar dados do banco Supabase: " + err.message);
+      setError("Falha ao carregar dados: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -303,7 +280,6 @@ export function useDashboardData() {
     fetchData();
   }, [selectedCompetencia]);
 
-  // Filtros aplicados no frontend
   const listaHistorico = useMemo(() => {
     const hist = data?.historicoMensal || [];
     return hist.map(m => {
@@ -312,7 +288,6 @@ export function useDashboardData() {
       Object.keys(m.lojas || {}).forEach(loja => {
         const isOnline = loja.toLowerCase().includes('shopee') || loja.toLowerCase().includes('mercado livre') || loja.toLowerCase().includes('meli');
         const isExterna = loja.toLowerCase().includes('externa');
-
         if (channelFilter === 'todos' || (channelFilter === 'online' && isOnline) || (channelFilter === 'externa' && isExterna)) {
           lojasF[loja] = m.lojas[loja];
           fat += m.lojas[loja];
@@ -320,6 +295,7 @@ export function useDashboardData() {
       });
       const prop = m.faturamento > 0 ? fat / m.faturamento : 0;
       const opexF = channelFilter === 'todos' ? (m.opex || 0) : 0;
+      // Reconstroi o lucro proporcional aos canais
       const lucroF = channelFilter === 'todos' ? (m.lucro || 0) : (m.lucro + (m.opex || 0)) * prop;
 
       return { ...m, faturamento: fat, lucro: lucroF, opex: opexF, lojas: lojasF };
@@ -342,13 +318,14 @@ export function useDashboardData() {
     return viewMode === 'mensal' ? (data?.topProdutosCurvaABC || []) : (data?.topProdutosCurvaABCConsolidado || []);
   }, [data, viewMode]);
 
+  // CORREÇÃO: MATEMÁTICA DA MARGEM VS OPEX BLINDADA
   const kpisExibidos = useMemo(() => {
     let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
 
     if (channelFilter === 'todos') {
       if (viewMode === 'mensal' && data?.kpisGerais) {
         faturamentoBruto = data.kpisGerais.faturamentoBruto || 0;
-        lucroLiquido = data.kpisGerais.lucroLiquido || 0;
+        lucroLiquido = data.kpisGerais.margemContribucion || 0; // Envia Margem de Contribuição Intacta
         totalTaxas = data.kpisGerais.totalTaxas || 0;
         totalImpostos = data.kpisGerais.totalImpostos || 0;
         totalCpv = data.kpisGerais.totalCpv || 0;
@@ -356,7 +333,7 @@ export function useDashboardData() {
       } else if (viewMode === 'consolidado') {
         listaHistorico.forEach(m => {
           faturamentoBruto += m.faturamento || 0;
-          lucroLiquido += m.lucro || 0;
+          lucroLiquido += (m.lucro + (m.opex || 0)) || 0; // Recompoe Margem de Contribuição
           totalTaxas += m.taxas || 0;
           totalImpostos += m.impostos || 0;
           totalCpv += m.cpv || 0;
@@ -366,7 +343,7 @@ export function useDashboardData() {
     } else {
       dreExibida.forEach(p => {
         faturamentoBruto += p.faturamentoBruto;
-        lucroLiquido += p.lucroLiquido;
+        lucroLiquido += p.lucroLiquido; // Na DRE, isso já é a Margem Bruta
         totalTaxas += p.taxasPlataforma;
         totalImpostos += p.imposto;
         totalCpv += p.cpv;
@@ -386,7 +363,6 @@ export function useDashboardData() {
     };
   }, [dreExibida, viewMode, listaHistorico, data, channelFilter]);
 
-  // RETORNO ATUALIZADO E COMPATÍVEL
   return {
     data,
     loading,
@@ -400,15 +376,11 @@ export function useDashboardData() {
     listaHistorico,
     dreExibida,
     produtosExibidos,
-    produtosFiltradosGlobais: produtosExibidos, // Alias para compatibilidade com App.jsx
-    competenciasList: data?.metadados?.competenciasDisponiveis || [], // Exportado diretamente
+    produtosFiltradosGlobais: produtosExibidos,
+    competenciasList: data?.metadados?.competenciasDisponiveis || [],
     kpisExibidos,
     deducoesTotais: (kpisExibidos.totalTaxas || 0) + (kpisExibidos.totalImpostos || 0),
     fetchData,
     refetch: fetchData
   };
-}
-
-function round2(val) {
-  return Math.round((Number(val) || 0) * 100) / 100;
 }
