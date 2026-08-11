@@ -92,17 +92,18 @@ export default async function handler(req, res) {
     console.log("🚀 Iniciando Sincronização Dupla Bling (B2B + B2C) ➔ Supabase...");
 
     // Executa as duas consultas em paralelo para máxima velocidade
+    // Lendo exatamente os nomes das variáveis que estão na Vercel
     const [prodsB2B, prodsB2C] = await Promise.all([
       buscarProdutosBling(
         process.env.BLING_B2B_CLIENT_ID,
         process.env.BLING_B2B_CLIENT_SECRET,
-        process.env.BLING_B2B_REFRESH_TOKEN,
+        process.env.BLING_REFRESH_TOKEN_B2B, // <-- Ajustado
         'B2B'
       ),
       buscarProdutosBling(
-        process.env.BLING_B2C_CLIENT_ID,
-        process.env.BLING_B2C_CLIENT_SECRET,
-        process.env.BLING_B2C_REFRESH_TOKEN,
+        process.env.BLING_CLIENT_ID_B2C,     // <-- Ajustado
+        process.env.BLING_CLIENT_SECRET_B2C, // <-- Ajustado
+        process.env.BLING_REFRESH_TOKEN_B2C, // <-- Ajustado
         'B2C'
       )
     ]);
