@@ -65,7 +65,7 @@ export function useDashboardData() {
   const listaHistorico = useMemo(() => {
     const histOriginal = data?.historicoMensal || [];
     return histOriginal.map(m => {
-      let fat = 0, luc = 0, cpv = 0, taxas = 0, impostos = 0, pedidos = 0;
+      let fat = 0;
       let lojasFiltradas = {};
       
       Object.keys(m.lojas || {}).forEach(nomeLoja => {
@@ -79,9 +79,19 @@ export function useDashboardData() {
       });
 
       const prop = m.faturamento > 0 ? fat / m.faturamento : 0;
-      luc = (m.lucro || 0) * prop; cpv = (m.cpv || 0) * prop; taxas = (m.taxas || 0) * prop; impostos = (m.impostos || 0) * prop; pedidos = (m.pedidos || 0) * prop;
       
-      return { ...m, faturamento: fat, lucro: luc, cpv, taxas, impostos, pedidos, lojas: lojasFiltradas };
+      // Se for visão global, usa o lucro real (EBITDA) e o OPEX real. 
+      // Se for canal, usa a margem de contribuição (sem opex).
+      const opexFinal = channelFilter === 'todos' ? (m.opex || 0) : 0;
+      const lucroFinal = channelFilter === 'todos' ? (m.lucro || 0) : (m.lucro + (m.opex || 0)) * prop;
+
+      return { 
+        ...m, 
+        faturamento: fat, 
+        lucro: lucroFinal, 
+        opex: opexFinal, // <--- REPASSANDO OPEX HISTÓRICO
+        lojas: lojasFiltradas 
+      };
     });
   }, [data, channelFilter]);
 
