@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-// 1. Função auxiliar colocada FORA do Hook para evitar o erro de Inicialização (TDZ)
+// Auxiliar de arredondamento
 function round2(val) {
   return Math.round((Number(val) || 0) * 100) / 100;
 }
@@ -37,7 +37,6 @@ export function useDashboardData() {
       if (errKits) throw errKits;
       if (errCustos) throw errCustos;
 
-      // Filtro Inteligente que remove linhas vazias e meses "N/A"
       const competenciasSet = new Set(
         (vendas || [])
           .map(v => v?.competencia?.trim())
@@ -58,6 +57,7 @@ export function useDashboardData() {
       const historicoMap = {};
       const dreMapMensal = {};
       const dreMapConsolidado = {};
+      
       const produtosMapMensal = {};
       const produtosMapConsolidado = {};
 
@@ -72,9 +72,23 @@ export function useDashboardData() {
         kitsDict[k.sku_kit].push(k);
       });
 
+      // NOVO: Estrutura base de um produto para guardar o histórico por Canal
+      const initProd = (sku, pInfo, custoProdUnit) => ({
+        sku, produto: pInfo.nome, marca: pInfo.marca,
+        custoUnitario: Number(pInfo.custo_unitario) || custoProdUnit || 0,
+        estoqueAtual: Number(pInfo.estoque_atual) || 0,
+        leadTime: Number(pInfo.lead_time) || 15,
+        quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
+        canais: {
+          online: { quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 },
+          externa: { quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 },
+          outros: { quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0 }
+        }
+      });
+
       (vendas || []).forEach(v => {
         const comp = v.competencia;
-        if (!comp || comp === 'N/A') return; // Ignora vendas com data corrompida
+        if (!comp || comp === 'N/A') return;
 
         const plat = v.plataforma || 'Outros';
         const fatBruto = Number(v.faturamento_bruto) || 0;
@@ -82,6 +96,10 @@ export function useDashboardData() {
         const imposto = Number(v.imposto) || 0;
         const embalagem = Number(v.custo_embalagem) || 0;
         const qtd = Number(v.quantidade) || 1;
+
+        const isOnline = plat.toLowerCase().includes('shopee') || plat.toLowerCase().includes('mercado livre') || plat.toLowerCase().includes('meli');
+        const isExterna = plat.toLowerCase().includes('externa');
+        const canalKey = isOnline ? 'online' : (isExterna ? 'externa' : 'outros');
 
         let custoProdUnit = 0;
         if (kitsDict[v.sku]) {
@@ -101,7 +119,7 @@ export function useDashboardData() {
           historicoMap[comp] = { faturamento: 0, lucro: 0, cpv: 0, taxas: 0, impostos: 0, pedidos: 0, lojas: {} };
         }
         historicoMap[comp].faturamento += fatBruto;
-        historicoMap[comp].lucro += lucroMargem; // lucroMargem = Margem de Contribuição
+        historicoMap[comp].lucro += lucroMargem; 
         historicoMap[comp].cpv += cpvTotal;
         historicoMap[comp].taxas += taxas;
         historicoMap[comp].impostos += imposto;
@@ -131,50 +149,36 @@ export function useDashboardData() {
         }
 
         const skuProd = v.sku;
-        const prodInfo = produtosDict[skuProd] || { nome: 'Sem Nome', marca: 'N/A', estoque_atual: 0, lead_time: 15, custo_unitario: custoProdUnit };
+        const prodInfo = produtosDict[skuProd] || { nome: 'Sem Nome', marca: 'N/A' };
 
+        // Agregação de Produtos Global e por Canal (Consolidado)
         if (!produtosMapConsolidado[skuProd]) {
-          produtosMapConsolidado[skuProd] = {
-            sku: skuProd, produto: prodInfo.nome, marca: prodInfo.marca,
-            quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-            custoUnitario: Number(prodInfo.custo_unitario) || custoProdUnit,
-            estoqueAtual: Number(prodInfo.estoque_atual) || 0,
-            leadTime: Number(prodInfo.lead_time) || 15
-          };
+          produtosMapConsolidado[skuProd] = initProd(skuProd, prodInfo, custoProdUnit);
         }
         produtosMapConsolidado[skuProd].quantidadeVendida += qtd;
         produtosMapConsolidado[skuProd].faturamentoBruto += fatBruto;
         produtosMapConsolidado[skuProd].lucroLiquido += lucroMargem;
+        produtosMapConsolidado[skuProd].canais[canalKey].quantidadeVendida += qtd;
+        produtosMapConsolidado[skuProd].canais[canalKey].faturamentoBruto += fatBruto;
+        produtosMapConsolidado[skuProd].canais[canalKey].lucroLiquido += lucroMargem;
 
+        // Agregação de Produtos Global e por Canal (Mensal)
         if (comp === compAtual) {
           if (!produtosMapMensal[skuProd]) {
-            produtosMapMensal[skuProd] = {
-              sku: skuProd, produto: prodInfo.nome, marca: prodInfo.marca,
-              quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-              custoUnitario: Number(prodInfo.custo_unitario) || custoProdUnit,
-              estoqueAtual: Number(prodInfo.estoque_atual) || 0,
-              leadTime: Number(prodInfo.lead_time) || 15
-            };
+            produtosMapMensal[skuProd] = initProd(skuProd, prodInfo, custoProdUnit);
           }
           produtosMapMensal[skuProd].quantidadeVendida += qtd;
           produtosMapMensal[skuProd].faturamentoBruto += fatBruto;
           produtosMapMensal[skuProd].lucroLiquido += lucroMargem;
+          produtosMapMensal[skuProd].canais[canalKey].quantidadeVendida += qtd;
+          produtosMapMensal[skuProd].canais[canalKey].faturamentoBruto += fatBruto;
+          produtosMapMensal[skuProd].canais[canalKey].lucroLiquido += lucroMargem;
         }
       });
 
       (produtos || []).forEach(p => {
-        if (!produtosMapConsolidado[p.sku]) {
-          produtosMapConsolidado[p.sku] = {
-            sku: p.sku, produto: p.nome, marca: p.marca, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-            custoUnitario: Number(p.custo_unitario) || 0, estoqueAtual: Number(p.estoque_atual) || 0, leadTime: Number(p.lead_time) || 15
-          };
-        }
-        if (compAtual && !produtosMapMensal[p.sku]) {
-          produtosMapMensal[p.sku] = {
-            sku: p.sku, produto: p.nome, marca: p.marca, quantidadeVendida: 0, faturamentoBruto: 0, lucroLiquido: 0,
-            custoUnitario: Number(p.custo_unitario) || 0, estoqueAtual: Number(p.estoque_atual) || 0, leadTime: Number(p.lead_time) || 15
-          };
-        }
+        if (!produtosMapConsolidado[p.sku]) produtosMapConsolidado[p.sku] = initProd(p.sku, p, p.custo_unitario);
+        if (compAtual && !produtosMapMensal[p.sku]) produtosMapMensal[p.sku] = initProd(p.sku, p, p.custo_unitario);
       });
 
       const opexHistoricoMap = {};
@@ -199,16 +203,9 @@ export function useDashboardData() {
         const opexM = opexHistoricoMap[m] || 0;
         const margem = h.faturamento > 0 ? ((h.lucro - opexM) / h.faturamento) * 100 : 0;
         return {
-          mes: m,
-          faturamento: round2(h.faturamento),
-          lucro: round2(h.lucro - opexM), // lucro salvo no histórico é o EBITDA
-          opex: round2(opexM),
-          margem: round2(margem),
-          cpv: round2(h.cpv),
-          taxas: round2(h.taxas),
-          impostos: round2(h.impostos),
-          pedidos: h.pedidos,
-          lojas: h.lojas
+          mes: m, faturamento: round2(h.faturamento), lucro: round2(h.lucro - opexM), 
+          opex: round2(opexM), margem: round2(margem), cpv: round2(h.cpv),
+          taxas: round2(h.taxas), impostos: round2(h.impostos), pedidos: h.pedidos, lojas: h.lojas
         };
       });
 
@@ -227,45 +224,18 @@ export function useDashboardData() {
         margemLiquida: round2(item.faturamentoBruto > 0 ? (item.lucroLiquido / item.faturamentoBruto) * 100 : 0)
       })).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 
-      const formatProds = (mapa, diasPeriodo) => Object.values(mapa).map(p => {
-        const margem = p.faturamentoBruto > 0 ? (p.lucroLiquido / p.faturamentoBruto) * 100 : 0;
-        const vendaDiaria = p.quantidadeVendida / diasPeriodo;
-        const diasDeEstoque = vendaDiaria > 0 ? (p.estoqueAtual / vendaDiaria) : 999;
-        let sugestaoCompra = 0;
-        if (diasDeEstoque < (p.leadTime + 7)) {
-          sugestaoCompra = Math.max(0, Math.ceil((vendaDiaria * (30 + p.leadTime)) - p.estoqueAtual));
-        }
-        return {
-          ...p,
-          faturamentoBruto: round2(p.faturamentoBruto),
-          lucroLiquido: round2(p.lucroLiquido),
-          margemLiquida: round2(margem),
-          custoUnitario: round2(p.custoUnitario),
-          vendaDiaria: round2(vendaDiaria),
-          diasDeEstoque: Math.round(diasDeEstoque),
-          sugestaoCompra
-        };
-      }).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
-
       setData({
         metadados: { competenciaAtual: compAtual, competenciasDisponiveis, ultimaAtualizacao: new Date().toISOString() },
         historicoMensal: historicoMensalArr,
         kpisGerais: {
-          faturamentoBruto: round2(kpisM.faturamento),
-          totalTaxas: round2(kpisM.taxas),
-          totalImpostos: round2(kpisM.impostos),
-          totalCpv: round2(kpisM.cpv),
-          margemContribucion: round2(margemContrib), // <-- Guardando a Margem Bruta Pura
-          custosFixos: round2(custosFixosMesAtual),
-          detalhamentoOpex: opexDetalhamentoMes,
-          lucroLiquido: round2(ebitda), // <-- Guardando o EBITDA Real
-          margemLiquidaMedia: round2(margemEbitdaPct),
-          totalPedidos: kpisM.pedidos
+          faturamentoBruto: round2(kpisM.faturamento), totalTaxas: round2(kpisM.taxas), totalImpostos: round2(kpisM.impostos),
+          totalCpv: round2(kpisM.cpv), margemContribucion: round2(margemContrib), custosFixos: round2(custosFixosMesAtual),
+          detalhamentoOpex: opexDetalhamentoMes, lucroLiquido: round2(ebitda), margemLiquidaMedia: round2(margemEbitdaPct), totalPedidos: kpisM.pedidos
         },
         drePorPlataforma: formatDRE(dreMapMensal),
-        topProdutosCurvaABC: formatProds(produtosMapMensal, 30),
         drePorPlataformaConsolidado: formatDRE(dreMapConsolidado),
-        topProdutosCurvaABCConsolidado: formatProds(produtosMapConsolidado, Math.max(competenciasDisponiveis.length, 1) * 30)
+        rawProdutosMensal: Object.values(produtosMapMensal),
+        rawProdutosConsolidado: Object.values(produtosMapConsolidado)
       });
 
     } catch (err) {
@@ -283,19 +253,16 @@ export function useDashboardData() {
   const listaHistorico = useMemo(() => {
     const hist = data?.historicoMensal || [];
     return hist.map(m => {
-      let fat = 0;
-      let lojasF = {};
+      let fat = 0; let lojasF = {};
       Object.keys(m.lojas || {}).forEach(loja => {
         const isOnline = loja.toLowerCase().includes('shopee') || loja.toLowerCase().includes('mercado livre') || loja.toLowerCase().includes('meli');
         const isExterna = loja.toLowerCase().includes('externa');
         if (channelFilter === 'todos' || (channelFilter === 'online' && isOnline) || (channelFilter === 'externa' && isExterna)) {
-          lojasF[loja] = m.lojas[loja];
-          fat += m.lojas[loja];
+          lojasF[loja] = m.lojas[loja]; fat += m.lojas[loja];
         }
       });
       const prop = m.faturamento > 0 ? fat / m.faturamento : 0;
       const opexF = channelFilter === 'todos' ? (m.opex || 0) : 0;
-      // Reconstroi o lucro proporcional aos canais
       const lucroF = channelFilter === 'todos' ? (m.lucro || 0) : (m.lucro + (m.opex || 0)) * prop;
 
       return { ...m, faturamento: fat, lucro: lucroF, opex: opexF, lojas: lojasF };
@@ -314,18 +281,51 @@ export function useDashboardData() {
     });
   }, [data, viewMode, channelFilter]);
 
+  // NOVO: Processamento de Produtos 100% Dinâmico por Canal
   const produtosExibidos = useMemo(() => {
-    return viewMode === 'mensal' ? (data?.topProdutosCurvaABC || []) : (data?.topProdutosCurvaABCConsolidado || []);
-  }, [data, viewMode]);
+    const baseList = viewMode === 'mensal' ? (data?.rawProdutosMensal || []) : (data?.rawProdutosConsolidado || []);
+    const diasPeriodo = viewMode === 'mensal' ? 30 : Math.max(data?.metadados?.competenciasDisponiveis?.length || 1, 1) * 30;
 
-  // CORREÇÃO: MATEMÁTICA DA MARGEM VS OPEX BLINDADA
+    return baseList.map(p => {
+      let fat = 0, lucro = 0, qtd = 0;
+      
+      if (channelFilter === 'todos') {
+        fat = p.faturamentoBruto; lucro = p.lucroLiquido; qtd = p.quantidadeVendida;
+      } else {
+        fat = p.canais[channelFilter]?.faturamentoBruto || 0;
+        lucro = p.canais[channelFilter]?.lucroLiquido || 0;
+        qtd = p.canais[channelFilter]?.quantidadeVendida || 0;
+      }
+
+      const margem = fat > 0 ? (lucro / fat) * 100 : 0;
+      const vendaDiaria = qtd / diasPeriodo;
+      const diasDeEstoque = vendaDiaria > 0 ? (p.estoqueAtual / vendaDiaria) : 999;
+      let sugestaoCompra = 0;
+      if (diasDeEstoque < (p.leadTime + 7)) {
+        sugestaoCompra = Math.max(0, Math.ceil((vendaDiaria * (30 + p.leadTime)) - p.estoqueAtual));
+      }
+
+      return {
+        ...p,
+        quantidadeVendida: qtd,
+        faturamentoBruto: round2(fat),
+        lucroLiquido: round2(lucro),
+        margemLiquida: round2(margem),
+        custoUnitario: round2(p.custoUnitario),
+        vendaDiaria: round2(vendaDiaria),
+        diasDeEstoque: Math.round(diasDeEstoque),
+        sugestaoCompra
+      };
+    }).sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
+  }, [data, viewMode, channelFilter]);
+
   const kpisExibidos = useMemo(() => {
     let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
 
     if (channelFilter === 'todos') {
       if (viewMode === 'mensal' && data?.kpisGerais) {
         faturamentoBruto = data.kpisGerais.faturamentoBruto || 0;
-        lucroLiquido = data.kpisGerais.margemContribucion || 0; // Envia Margem de Contribuição Intacta
+        lucroLiquido = data.kpisGerais.margemContribucion || 0; 
         totalTaxas = data.kpisGerais.totalTaxas || 0;
         totalImpostos = data.kpisGerais.totalImpostos || 0;
         totalCpv = data.kpisGerais.totalCpv || 0;
@@ -333,7 +333,7 @@ export function useDashboardData() {
       } else if (viewMode === 'consolidado') {
         listaHistorico.forEach(m => {
           faturamentoBruto += m.faturamento || 0;
-          lucroLiquido += (m.lucro + (m.opex || 0)) || 0; // Recompoe Margem de Contribuição
+          lucroLiquido += (m.lucro + (m.opex || 0)) || 0; 
           totalTaxas += m.taxas || 0;
           totalImpostos += m.impostos || 0;
           totalCpv += m.cpv || 0;
@@ -343,7 +343,7 @@ export function useDashboardData() {
     } else {
       dreExibida.forEach(p => {
         faturamentoBruto += p.faturamentoBruto;
-        lucroLiquido += p.lucroLiquido; // Na DRE, isso já é a Margem Bruta
+        lucroLiquido += p.lucroLiquido; 
         totalTaxas += p.taxasPlataforma;
         totalImpostos += p.imposto;
         totalCpv += p.cpv;
