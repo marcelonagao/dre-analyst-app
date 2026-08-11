@@ -1,42 +1,37 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Forçando o uso EXCLUSIVO da chave de Superadmin
+// 1. FORÇANDO A CHAVE DE SUPERADMIN (Ignora o bloqueio de permissão)
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Trava de segurança para avisar se a Vercel não carregar a chave
 if (!supabaseServiceKey) {
   console.error("⚠️ CHAVE SERVICE_ROLE NÃO ENCONTRADA NAS VARIÁVEIS DA VERCEL!");
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
+  auth: { autoRefreshToken: false, persistSession: false }
 });
 
-// Função auxiliar para autenticar e buscar produtos de UMA conta Bling
+// 2. FUNÇÃO QUE BUSCA NO BLING E SALVA O TOKEN NOVO
 async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
   if (!clientId || !clientSecret) return [];
 
   try {
-    // 1. TENTA LER O TOKEN ATUALIZADO DO SUPABASE
+    // Tenta ler o token atualizado do banco de dados
     let { data: tokenData } = await supabase
       .from('bling_tokens')
       .select('refresh_token')
       .eq('conta', contaNome)
       .single();
 
-    // Se tiver no banco, usa ele. Se não, usa o da Vercel (primeira vez)
     let tokenParaUsar = tokenData ? tokenData.refresh_token : envRefreshToken;
 
     if (!tokenParaUsar) {
-      console.warn(`⚠️ Nenhum Refresh Token disponível para a conta ${contaNome}.`);
+      console.warn(`⚠️ Nenhum Refresh Token para a conta ${contaNome}.`);
       return [];
     }
 
-    // 2. SOLICITA O ACESSO AO BLING
+    // Solicita o acesso ao Bling
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
       method: 'POST',
@@ -57,14 +52,14 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
       return [];
     }
 
-    // 3. ✨ A MÁGICA: SALVA O NOVO REFRESH TOKEN NO SUPABASE PARA NÃO EXPIRAR!
+    // Salva o NOVO token no banco para ele não expirar na próxima vez!
     await supabase
       .from('bling_tokens')
       .upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
 
     const accessToken = tokenInfo.access_token;
 
-    // 4. BUSCA PAGINADA DE PRODUTOS E ESTOQUES (Continua igual...)
+    // Busca os produtos e estoques
     let pagina = 1;
     let temMaisPaginas = true;
     let produtosConta = [];
@@ -113,31 +108,29 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
   }
 }
 
+// 3. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
 export default async function handler(req, res) {
   try {
     console.log("🚀 Iniciando Sincronização Dupla Bling (B2B + B2C) ➔ Supabase...");
 
-    // Executa as duas consultas em paralelo para máxima velocidade
-    // Lendo exatamente os nomes das variáveis que estão na Vercel
+    // Executa as duas consultas usando os nomes EXATOS das variáveis da sua Vercel
     const [prodsB2B, prodsB2C] = await Promise.all([
       buscarProdutosBling(
         process.env.BLING_B2B_CLIENT_ID,
         process.env.BLING_B2B_CLIENT_SECRET,
-        process.env.BLING_REFRESH_TOKEN_B2B, // <-- Ajustado
+        process.env.BLING_REFRESH_TOKEN_B2B,
         'B2B'
       ),
       buscarProdutosBling(
-        process.env.BLING_CLIENT_ID_B2C,     // <-- Ajustado
-        process.env.BLING_CLIENT_SECRET_B2C, // <-- Ajustado
-        process.env.BLING_REFRESH_TOKEN_B2C, // <-- Ajustado
+        process.env.BLING_CLIENT_ID_B2C,
+        process.env.BLING_CLIENT_SECRET_B2C,
+        process.env.BLING_REFRESH_TOKEN_B2C,
         'B2C'
       )
     ]);
 
-    // MAPA DE CONSOLIDAÇÃO POR SKU
     const estoqueConsolidadoMap = new Map();
 
-    // 1. Processa B2B
     for (const p of prodsB2B) {
       estoqueConsolidadoMap.set(p.sku, {
         sku: p.sku,
@@ -149,11 +142,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Processa B2C (Soma estoque se o SKU já existir no B2B)
     for (const p of prodsB2C) {
       if (estoqueConsolidadoMap.has(p.sku)) {
         const itemExistente = estoqueConsolidadoMap.get(p.sku);
-        itemExistente.estoque_atual += p.estoque; // Soma o estoque B2B + B2C
+        itemExistente.estoque_atual += p.estoque;
         if (p.custoUnitario > 0) itemExistente.custo_unitario = p.custoUnitario;
       } else {
         estoqueConsolidadoMap.set(p.sku, {
@@ -170,13 +162,12 @@ export default async function handler(req, res) {
     const produtosParaAtualizar = Array.from(estoqueConsolidadoMap.values());
 
     if (produtosParaAtualizar.length > 0) {
+      // 4. GRAVANDO NO BANCO (Agora com a chave de Superadmin garantida)
       const { error: errSupabase } = await supabase
         .from('produtos')
         .upsert(produtosParaAtualizar, { onConflict: 'sku' });
 
       if (errSupabase) throw errSupabase;
-
-      console.log(`🎉 Sincronização concluída com sucesso! ${produtosParaAtualizar.length} SKUs consolidados.`);
 
       return res.status(200).json({
         success: true,
