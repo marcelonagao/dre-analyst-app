@@ -27,6 +27,18 @@ export default function App() {
     produtosPorPlataforma
   } = useDashboardData();
 
+  // Trava de Segurança: Enquanto carrega ou se não tiver dados, mostra um Loading bonitão
+  if (loading || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen w-full bg-slate-50">
+        <div className="w-10 h-10 border-4 border-slate-300 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+        <h2 className="text-slate-500 font-bold text-sm tracking-widest uppercase">
+          Conectando ao Supabase...
+        </h2>
+      </div>
+    );
+  }
+
   const [showApiModal, setShowApiModal] = useState(false);
   const [activeTab, setActiveTab] = useState('visao-geral');
   const [searchQuery, setSearchQuery] = useState('');
