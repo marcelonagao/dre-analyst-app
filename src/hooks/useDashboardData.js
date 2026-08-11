@@ -331,7 +331,51 @@ export function useDashboardData() {
     return listaDRE.filter(p => {
       const isOnline = p.plataforma.toLowerCase().includes('shopee') || p.plataforma.toLowerCase().includes('mercado livre') || p.plataforma.toLowerCase().includes('meli');
       const isExterna = p.plataforma.toLowerCase().includes('externa');
-      if (channelFilter === 'todos') return true;
+      const kpisExibidos = useMemo(() => {
+        let faturamentoBruto = 0, lucroLiquido = 0, totalTaxas = 0, totalImpostos = 0, totalCpv = 0, totalPedidos = 0;
+    
+        if (channelFilter === 'todos') {
+          if (viewMode === 'mensal' && data?.kpisGerais) {
+            faturamentoBruto = data.kpisGerais.faturamentoBruto || 0;
+            // CORREÇÃO 1: Envia a Margem de Contribuição intacta para a tela não subtrair o OPEX 2 vezes
+            lucroLiquido = data.kpisGerais.margemContribucion || 0; 
+            totalTaxas = data.kpisGerais.totalTaxas || 0;
+            totalImpostos = data.kpisGerais.totalImpostos || 0;
+            totalCpv = data.kpisGerais.totalCpv || 0;
+            totalPedidos = data.kpisGerais.totalPedidos || 0;
+          } else if (viewMode === 'consolidado') {
+            listaHistorico.forEach(m => {
+              faturamentoBruto += m.faturamento || 0;
+              // CORREÇÃO 2: Recompõe a Margem Bruta no modo Total (EBITDA + OPEX)
+              lucroLiquido += (m.lucro + (m.opex || 0)) || 0;
+              totalTaxas += m.taxas || 0;
+              totalImpostos += m.impostos || 0;
+              totalCpv += m.cpv || 0;
+              totalPedidos += m.pedidos || 0;
+            });
+          }
+        } else {
+          dreExibida.forEach(p => {
+            faturamentoBruto += p.faturamentoBruto;
+            lucroLiquido += p.lucroLiquido;
+            totalTaxas += p.taxasPlataforma;
+            totalImpostos += p.imposto;
+            totalCpv += p.cpv;
+            totalPedidos += p.pedidos;
+          });
+        }
+    
+        const margemLiquidaMedia = faturamentoBruto > 0 ? (lucroLiquido / faturamentoBruto) * 100 : 0;
+        const baseCustosFixos = data?.kpisGerais?.custosFixos || 0;
+        const mesesAtivos = listaHistorico.filter(m => m.faturamento > 0).length;
+        const custosFixos = viewMode === 'consolidado' ? (baseCustosFixos * Math.max(mesesAtivos, 1)) : baseCustosFixos;
+        const detalhamentoOpex = (channelFilter === 'todos' && viewMode === 'mensal') ? (data?.kpisGerais?.detalhamentoOpex || []) : [];
+    
+        return {
+          faturamentoBruto, lucroLiquido, margemLiquidaMedia, totalTaxas,
+          totalImpostos, totalCpv, totalPedidos, custosFixos, detalhamentoOpex
+        };
+      }, [dreExibida, viewMode, listaHistorico, data, channelFilter]);
       if (channelFilter === 'online') return isOnline;
       if (channelFilter === 'externa') return isExterna;
       return true;
