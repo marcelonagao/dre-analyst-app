@@ -15,17 +15,29 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     persistSession: false
   }
 });
+
 // Função auxiliar para autenticar e buscar produtos de UMA conta Bling
-async function buscarProdutosBling(clientId, clientSecret, refreshToken, contaNome) {
-  if (!clientId || !clientSecret || !refreshToken) {
-    console.warn(`⚠️ Credenciais da conta ${contaNome} não foram totalmente configuradas.`);
-    return [];
-  }
+async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
+  if (!clientId || !clientSecret) return [];
 
   try {
-    // 1. OBTÉM ACCESS TOKEN VIA OAUTH2
+    // 1. TENTA LER O TOKEN ATUALIZADO DO SUPABASE
+    let { data: tokenData } = await supabase
+      .from('bling_tokens')
+      .select('refresh_token')
+      .eq('conta', contaNome)
+      .single();
+
+    // Se tiver no banco, usa ele. Se não, usa o da Vercel (primeira vez)
+    let tokenParaUsar = tokenData ? tokenData.refresh_token : envRefreshToken;
+
+    if (!tokenParaUsar) {
+      console.warn(`⚠️ Nenhum Refresh Token disponível para a conta ${contaNome}.`);
+      return [];
+    }
+
+    // 2. SOLICITA O ACESSO AO BLING
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
     const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
       method: 'POST',
       headers: {
@@ -34,20 +46,25 @@ async function buscarProdutosBling(clientId, clientSecret, refreshToken, contaNo
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: refreshToken
+        refresh_token: tokenParaUsar
       })
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenInfo = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error(`❌ Erro OAuth no Bling ${contaNome}:`, tokenData);
+      console.error(`❌ Erro OAuth no Bling ${contaNome}:`, tokenInfo);
       return [];
     }
 
-    const accessToken = tokenData.access_token;
+    // 3. ✨ A MÁGICA: SALVA O NOVO REFRESH TOKEN NO SUPABASE PARA NÃO EXPIRAR!
+    await supabase
+      .from('bling_tokens')
+      .upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
 
-    // 2. BUSCA PAGINADA DE PRODUTOS E ESTOQUES
+    const accessToken = tokenInfo.access_token;
+
+    // 4. BUSCA PAGINADA DE PRODUTOS E ESTOQUES (Continua igual...)
     let pagina = 1;
     let temMaisPaginas = true;
     let produtosConta = [];
@@ -72,7 +89,6 @@ async function buscarProdutosBling(clientId, clientSecret, refreshToken, contaNo
 
       for (const prod of listaProdutos) {
         if (!prod.codigo) continue;
-
         const sku = String(prod.codigo).trim();
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
         const custoUnitario = Number(prod.precoCusto || prod.preco) || 0;
@@ -85,7 +101,6 @@ async function buscarProdutosBling(clientId, clientSecret, refreshToken, contaNo
           estoque: estoqueFisico
         });
       }
-
       pagina++;
     }
 
