@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Forçando o uso EXCLUSIVO da chave de Superadmin
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Trava de segurança para avisar se a Vercel não carregar a chave
+if (!supabaseServiceKey) {
+  console.error("⚠️ CHAVE SERVICE_ROLE NÃO ENCONTRADA NAS VARIÁVEIS DA VERCEL!");
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 // Função auxiliar para autenticar e buscar produtos de UMA conta Bling
 async function buscarProdutosBling(clientId, clientSecret, refreshToken, contaNome) {
   if (!clientId || !clientSecret || !refreshToken) {
