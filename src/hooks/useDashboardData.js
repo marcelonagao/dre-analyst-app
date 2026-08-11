@@ -36,7 +36,12 @@ export function useDashboardData() {
       if (errCustos) throw errCustos;
 
       // 2. Mapeamento de Competências Únicas (ordenadas)
-      const competenciasSet = new Set((vendas || []).map(v => v.competencia).filter(Boolean));
+      // 2. Mapeamento de Competências Únicas (ordenadas e limpas)
+      const competenciasSet = new Set(
+        (vendas || [])
+          .map(v => v?.competencia?.trim())
+          .filter(c => c && c !== 'N/A' && c !== '') // <-- Aqui está o filtro que expulsa o N/A
+      );
       const competenciasDisponiveis = Array.from(competenciasSet).sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number);
         const [mB, yB] = b.split('/').map(Number);
