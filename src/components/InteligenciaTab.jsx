@@ -1,498 +1,508 @@
 import React, { useState, useMemo } from 'react';
-import { formatBRL, formatPercent } from '../utils/formatters';
-// Importamos apenas os ícones que já tínhamos certeza que existiam
-import { IconShoppingCart, IconBrain, IconChevronDown, IconChevronRight, IconPackage, IconAlertTriangle, IconRefreshCw } from './Icons';
+import { 
+  IconPackage, IconShoppingCart, IconCheckCircle2, IconAlertCircle, 
+  IconSearch, IconDownload, IconLayers, IconTrendingUp, IconFilter 
+} from './Icons';
 
-// Ícones embutidos para garantir que não vai dar erro de compilação
-const IconDownloadLocal = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
+export default function InteligenciaTab({ produtos = [], margemAtual = 0 }) {
+  const [subTab, setSubTab] = useState('balanco'); // 'balanco' | 'compras' | 'posicao'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMarca, setSelectedMarca] = useState('todas');
+  const [selectedItems, setSelectedItems] = useState({});
+  const [qtdsAjustadas, setQtdsAjustadas] = useState({});
 
-const IconSearchLocal = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-  </svg>
-);
-
-export default function InteligenciaTab({ produtos, margemAtual }) {
-  const [abaPrincipal, setAbaPrincipal] = useState('posicao'); 
-  const [aumentoAltaMargem, setAumentoAltaMargem] = useState(20);
-  const [reducaoBaixaMargem, setReducaoBaixaMargem] = useState(-30);
-  const [expandedBrand, setExpandedBrand] = useState(null);
-
-  // ESTADOS DO NOVO FILTRO/ORDENAÇÃO
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Todos');
-  const [sortConfig, setSortConfig] = useState('imobilizado_desc');
-
-  const margemSimulada = margemAtual + (aumentoAltaMargem * 0.08) + (Math.abs(reducaoBaixaMargem) * 0.05);
-
-  // 1. CLASSIFICADOR ABC & STATUS
-  const produtosComClasseEStatus = useMemo(() => {
-    if (!produtos || produtos.length === 0) return [];
-    const sorted = [...produtos].sort((a, b) => (b.faturamentoBruto || 0) - (a.faturamentoBruto || 0));
-    const totalFat = sorted.reduce((acc, p) => acc + (p.faturamentoBruto || 0), 0);
-    
-    let acumulado = 0;
-    return sorted.map(p => {
-      const fat = p.faturamentoBruto || 0;
-      acumulado += fat;
-      const percAcumulado = totalFat > 0 ? (acumulado / totalFat) * 100 : 100;
-      
-      let classe = 'C';
-      if (percAcumulado <= 80 || (acumulado - fat) / totalFat < 0.8) classe = 'A';
-      else if (percAcumulado <= 95) classe = 'B';
-
-      let status = { label: 'Saudável', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' };
-      if (p.estoqueAtual <= 0) {
-        status = { label: 'Esgotado', color: 'bg-rose-100 text-rose-700 border-rose-300' };
-      } else if (p.quantidadeVendida === 0) {
-        status = { label: 'Parado', color: 'bg-slate-100 text-slate-600 border-slate-300' };
-      } else if (p.diasDeEstoque < p.leadTime) {
-        status = { label: 'Risco Ruptura', color: 'bg-orange-100 text-orange-800 border-orange-300' };
-      } else if (p.diasDeEstoque > p.leadTime + 45) {
-        status = { label: 'Excesso', color: 'bg-amber-100 text-amber-800 border-amber-300' };
-      }
-
-      const precoVenda = p.quantidadeVendida > 0 ? p.faturamentoBruto / p.quantidadeVendida : 0;
-      const custoUnitario = p.custoUnitario || (precoVenda * 0.45);
-      const imobilizado = (p.estoqueAtual || 0) * custoUnitario;
-
-      return { ...p, classe, statusEstoque: status, imobilizado, custoUnitario };
-    });
-  }, [produtos]);
-
-  // 2. ANÁLISE MACRO DE ESTOQUE
-  const analiseEstoque = useMemo(() => {
-    let totalFisico = 0, valorTotal = 0, fisicoRodando = 0, valorRodando = 0, fisicoParado = 0, valorParado = 0;
-    produtosComClasseEStatus.forEach(p => {
-      const qtd = p.estoqueAtual || 0;
-      if (qtd <= 0) return;
-      const valor = p.imobilizado;
-      totalFisico += qtd; valorTotal += valor;
-      if (p.quantidadeVendida > 0) { fisicoRodando += qtd; valorRodando += valor; } 
-      else { fisicoParado += qtd; valorParado += valor; }
-    });
-    return { totalFisico, valorTotal, fisicoRodando, valorRodando, fisicoParado, valorParado };
-  }, [produtosComClasseEStatus]);
-
-  // 3. AGRUPAMENTO, FILTRO E ORDENAÇÃO (Posição de Estoque)
-  const posicaoPorMarca = useMemo(() => {
-    const produtosFiltrados = produtosComClasseEStatus.filter(p => {
-      const matchesSearch = p.produto.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'Todos' || p.statusEstoque.label === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-
-    const map = {};
-    produtosFiltrados.forEach(p => {
-      const brand = p.marca || "Outras Marcas";
-      if (!map[brand]) map[brand] = { marca: brand, valorTotal: 0, produtos: [] };
-      map[brand].valorTotal += p.imobilizado;
-      map[brand].produtos.push(p);
-    });
-
-    Object.values(map).forEach(b => {
-      b.produtos.sort((p1, p2) => {
-        if (sortConfig === 'imobilizado_desc') return p2.imobilizado - p1.imobilizado;
-        if (sortConfig === 'imobilizado_asc') return p1.imobilizado - p2.imobilizado;
-        if (sortConfig === 'fisico_desc') return p2.estoqueAtual - p1.estoqueAtual;
-        if (sortConfig === 'dias_desc') return p2.diasDeEstoque - p1.diasDeEstoque;
-        return 0;
-      });
-    });
-
-    return Object.values(map).sort((a, b) => b.valorTotal - a.valorTotal);
-  }, [produtosComClasseEStatus, searchTerm, statusFilter, sortConfig]);
-
-  // 4. FUNÇÃO DE EXPORTAÇÃO CSV
-  const exportarCSV = () => {
-    let csv = "Marca;SKU;Produto;Físico;Custo Unitário (R$);Valor Imobilizado (R$);Dias de Cobertura;Status Logístico\n";
-    posicaoPorMarca.forEach(b => {
-      b.produtos.forEach(p => {
-        const nomeLimpo = p.produto.replace(/"/g, '""'); 
-        csv += `"${b.marca}";"${p.sku}";"${nomeLimpo}";${p.estoqueAtual};${p.custoUnitario.toFixed(2)};${p.imobilizado.toFixed(2)};${p.diasDeEstoque};"${p.statusEstoque.label}"\n`;
-      });
-    });
-
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); 
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `Relatorio_Estoque_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  // 1. Tratamento de Nomes Elegantes
+  const formatNomeProduto = (nome) => {
+    if (!nome) return 'Produto Sem Descrição';
+    return nome
+      .toLowerCase()
+      .replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
   };
 
-  // 5. MOTOR DE COMPRAS
-  const comprasPorMarca = useMemo(() => {
-    const map = {};
-    let totalItensComprar = 0, valorTotalComprar = 0;
-    const fatorAumentoA = 1 + (aumentoAltaMargem / 100);
-    const fatorReducaoC = 1 + (reducaoBaixaMargem / 100);
+  // 2. Marcas Únicas Disponíveis
+  const marcasDisponiveis = useMemo(() => {
+    const setM = new Set(produtos.map(p => p.marca).filter(Boolean));
+    return ['todas', ...Array.from(setM).sort()];
+  }, [produtos]);
 
-    produtosComClasseEStatus.forEach(p => {
-      let novaVendaDiaria = p.vendaDiaria || 0;
-      if (p.classe === 'A') novaVendaDiaria *= fatorAumentoA;
-      if (p.classe === 'C') novaVendaDiaria *= Math.max(0, fatorReducaoC);
+  // 3. Filtro Base de Produtos por Marca e Busca
+  const produtosFiltrados = useMemo(() => {
+    return produtos.filter(p => {
+      const matchMarca = selectedMarca === 'todas' || p.marca === selectedMarca;
+      const matchBusca = searchQuery === '' || 
+        p.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.marca.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchMarca && matchBusca;
+    });
+  }, [produtos, selectedMarca, searchQuery]);
 
-      const coberturaDesejada = (p.leadTime || 0) + 30; 
-      let novaSugestaoCompra = Math.ceil((novaVendaDiaria * coberturaDesejada) - (p.estoqueAtual || 0));
-      novaSugestaoCompra = Math.max(0, novaSugestaoCompra);
+  // 4. Métrica de Balanço Financeiro do Estoque
+  const balancoEstoque = useMemo(() => {
+    let custoTotal = 0;
+    let unidadesTotais = 0;
+    let capitalAtivoCusto = 0;
+    let capitalCongeladoCusto = 0;
+    let unidadesParadas = 0;
 
-      if (novaSugestaoCompra > 0) {
-        totalItensComprar += novaSugestaoCompra;
-        valorTotalComprar += novaSugestaoCompra * p.custoUnitario;
+    produtosFiltrados.forEach(p => {
+      const imob = (p.estoqueAtual || 0) * (p.custoUnitario || 0);
+      custoTotal += imob;
+      unidadesTotais += (p.estoqueAtual || 0);
 
-        const brand = p.marca || "Outras Marcas";
-        if (!map[brand]) map[brand] = { marca: brand, totalComprar: 0, valorComprar: 0, produtos: [] };
-        
-        map[brand].totalComprar += novaSugestaoCompra;
-        map[brand].valorComprar += novaSugestaoCompra * p.custoUnitario;
-        map[brand].produtos.push({ ...p, vendaDiariaSimulada: novaVendaDiaria, sugestaoCompraSimulada: novaSugestaoCompra });
+      // Critério de Estoque Parado: 0 vendas no período ou > 90 dias de estoque
+      if (p.quantidadeVendida === 0 || p.diasDeEstoque > 90) {
+        capitalCongeladoCusto += imob;
+        unidadesParadas += (p.estoqueAtual || 0);
+      } else {
+        capitalAtivoCusto += imob;
       }
     });
 
-    return { marcas: Object.values(map).sort((a, b) => b.totalComprar - a.totalComprar), totalItensComprar, valorTotalComprar };
-  }, [produtosComClasseEStatus, aumentoAltaMargem, reducaoBaixaMargem]);
+    return {
+      custoTotal,
+      unidadesTotais,
+      capitalAtivoCusto,
+      capitalCongeladoCusto,
+      unidadesParadas,
+      unidadesRodando: unidadesTotais - unidadesParadas
+    };
+  }, [produtosFiltrados]);
 
-  // 6. MOTOR DE ESTOQUE PARADO
-  const estoqueParadoPorMarca = useMemo(() => {
-    const map = {};
-    produtosComClasseEStatus.forEach(p => {
-      const qtd = p.estoqueAtual || 0;
-      if (qtd > 0 && p.quantidadeVendida === 0) {
-        const valorParado = qtd * p.custoUnitario;
-        const brand = p.marca || "Outras Marcas";
-        if (!map[brand]) map[brand] = { marca: brand, totalItens: 0, valorTotalParado: 0, produtos: [] };
-        map[brand].totalItens += qtd; map[brand].valorTotalParado += valorParado;
-        map[brand].produtos.push({ ...p, valorParado });
+  // 5. Produtos Sugeridos para Compra (Motor de Compras)
+  const produtosSugestao = useMemo(() => {
+    return produtosFiltrados.filter(p => p.sugestaoCompra > 0);
+  }, [produtosFiltrados]);
+
+  // Handler para Checkbox de Seleção
+  const toggleSelectItem = (sku) => {
+    setSelectedItems(prev => ({ ...prev, [sku]: !prev[sku] }));
+  };
+
+  const toggleSelectAll = () => {
+    const allSelected = produtosSugestao.every(p => selectedItems[p.sku]);
+    const nextState = {};
+    produtosSugestao.forEach(p => {
+      nextState[p.sku] = !allSelected;
+    });
+    setSelectedItems(nextState);
+  };
+
+  // Resumo do Pedido do CEO/Compras
+  const resumoPedido = useMemo(() => {
+    let totalPecas = 0;
+    let custoTotalPedido = 0;
+    let itensContados = 0;
+
+    produtosSugestao.forEach(p => {
+      if (selectedItems[p.sku]) {
+        const qtdFinal = qtdsAjustadas[p.sku] !== undefined ? qtdsAjustadas[p.sku] : p.sugestaoCompra;
+        totalPecas += qtdFinal;
+        custoTotalPedido += (qtdFinal * p.custoUnitario);
+        itensContados += 1;
       }
     });
-    return Object.values(map).sort((a, b) => b.valorTotalParado - a.valorTotalParado);
-  }, [produtosComClasseEStatus]);
+
+    return { totalPecas, custoTotalPedido, itensContados };
+  }, [produtosSugestao, selectedItems, qtdsAjustadas]);
+
+  // Gerador de Texto para Pedido
+  const gerarPedidoTexto = () => {
+    let txt = `*PEDIDO DE REPOSIÇÃO - FORNECEDOR / MARCA: ${selectedMarca.toUpperCase()}*\n`;
+    txt += `Data: ${new Date().toLocaleDateString('pt-BR')}\n`;
+    txt += `--------------------------------------------------\n\n`;
+
+    produtosSugestao.forEach(p => {
+      if (selectedItems[p.sku]) {
+        const qtdFinal = qtdsAjustadas[p.sku] !== undefined ? qtdsAjustadas[p.sku] : p.sugestaoCompra;
+        const totalItem = (qtdFinal * p.custoUnitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        txt += `• *[${p.sku}]* ${formatNomeProduto(p.produto)}\n   Qtd: *${qtdFinal} un* | Custo Unit: R$ ${p.custoUnitario.toFixed(2)} | Subtotal: ${totalItem}\n\n`;
+      }
+    });
+
+    txt += `--------------------------------------------------\n`;
+    txt += `*TOTAL DE ITENS:* ${resumoPedido.itensContados}\n`;
+    txt += `*TOTAL PEÇAS:* ${resumoPedido.totalPecas} un\n`;
+    txt += `*VALOR TOTAL DO PEDIDO:* ${resumoPedido.custoTotalPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+
+    navigator.clipboard.writeText(txt);
+    alert('✅ Pedido copiado para a área de transferência! Pode colar no WhatsApp do Fornecedor.');
+  };
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6">
       
-      {/* KPIs GLOBAIS DE ESTOQUE */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
-          <div className="flex items-center space-x-2 mb-2">
-            <IconPackage className="w-4 h-4 text-slate-400" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estoque Físico Total</span>
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-slate-800">{analiseEstoque.totalFisico} <span className="text-xs font-medium text-slate-500">un</span></h3>
-            <span className="text-xs font-bold text-slate-400">Total Imobilizado: {formatBRL(analiseEstoque.valorTotal)}</span>
-          </div>
-        </div>
-
-        <div className="bg-emerald-50 rounded-2xl p-5 shadow-sm border border-emerald-200 flex flex-col justify-between">
-          <div className="flex items-center space-x-2 mb-2">
-            <IconRefreshCw className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Estoque Rodando (Giro)</span>
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-emerald-900">{analiseEstoque.fisicoRodando} <span className="text-xs font-medium text-emerald-700">un</span></h3>
-            <span className="text-xs font-bold text-emerald-600">Capital Ativo: {formatBRL(analiseEstoque.valorRodando)}</span>
-          </div>
-        </div>
-
-        <div className="bg-rose-50 rounded-2xl p-5 shadow-sm border border-rose-200 flex flex-col justify-between">
-          <div className="flex items-center space-x-2 mb-2">
-            <IconAlertTriangle className="w-4 h-4 text-rose-500" />
-            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Estoque Parado (0 Vendas)</span>
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-rose-900">{analiseEstoque.fisicoParado} <span className="text-xs font-medium text-rose-700">un</span></h3>
-            <span className="text-xs font-bold text-rose-600">Capital Congelado: {formatBRL(analiseEstoque.valorParado)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* SUB-NAVEGAÇÃO INTERNA */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
-        <button onClick={() => {setAbaPrincipal('posicao'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'posicao' ? 'border-slate-800 text-slate-900 bg-slate-200/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-          Posição Físico-Financeira
-        </button>
-        <button onClick={() => {setAbaPrincipal('compras'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'compras' ? 'border-blue-500 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-          Motor de Compras
-        </button>
-        <button onClick={() => {setAbaPrincipal('parado'); setExpandedBrand(null);}} className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-all ${abaPrincipal === 'parado' ? 'border-rose-500 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-          Capital Congelado
-        </button>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* VISÃO 1: POSIÇÃO DE ESTOQUE (COM FILTROS, ORDENAÇÃO E EXPORTAÇÃO) */}
-      {/* ========================================================================= */}
-      {abaPrincipal === 'posicao' && (
-        <div className="space-y-4 animate-fadeIn">
+      {/* 🟢 BARRA SUPERIOR DE SUB-NAVEGAÇÃO */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex bg-slate-100 p-1 rounded-xl gap-1 text-xs font-bold">
+          <button 
+            onClick={() => setSubTab('balanco')} 
+            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${subTab === 'balanco' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            <IconLayers className="w-4 h-4" />
+            <span>Balanço de Estoque</span>
+          </button>
           
-          {/* BARRA DE FERRAMENTAS (TOOLBAR) */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end md:items-center justify-between">
-            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto flex-1">
-              
-              {/* Busca */}
-              <div className="relative flex-1 max-w-xs">
-                <IconSearchLocal className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input type="text" placeholder="Buscar SKU ou Produto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none" />
-              </div>
+          <button 
+            onClick={() => setSubTab('compras')} 
+            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 relative ${subTab === 'compras' ? 'bg-emerald-500 text-slate-950 shadow-sm font-black' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            <IconShoppingCart className="w-4 h-4" />
+            <span>Motor de Compras</span>
+            {produtosSugestao.length > 0 && (
+              <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full ml-1">
+                {produtosSugestao.length}
+              </span>
+            )}
+          </button>
 
-              {/* Filtro de Status */}
-              <div className="flex flex-col">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
-                  <option value="Todos">Todos os Status</option>
-                  <option value="Saudável">✅ Saudável</option>
-                  <option value="Excesso">⚠️ Excesso</option>
-                  <option value="Risco Ruptura">🔥 Risco Ruptura</option>
-                  <option value="Parado">❄️ Parado</option>
-                  <option value="Esgotado">❌ Esgotado</option>
-                </select>
-              </div>
+          <button 
+            onClick={() => setSubTab('posicao')} 
+            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${subTab === 'posicao' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            <IconPackage className="w-4 h-4" />
+            <span>Posição Físico-Financeira</span>
+          </button>
+        </div>
 
-              {/* Ordenação */}
-              <div className="flex flex-col">
-                <select value={sortConfig} onChange={(e) => setSortConfig(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
-                  <option value="imobilizado_desc">Maior Imobilizado (R$)</option>
-                  <option value="imobilizado_asc">Menor Imobilizado (R$)</option>
-                  <option value="fisico_desc">Maior Qtd Física</option>
-                  <option value="dias_desc">Maior Cobertura (Dias)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Botão de Exportar CSV */}
-            <button onClick={exportarCSV} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
-              <IconDownloadLocal className="w-4 h-4" /> Exportar CSV
-            </button>
+        {/* Filtro por Marca e Busca */}
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs">
+            <IconFilter className="w-3.5 h-3.5 text-slate-400" />
+            <select 
+              value={selectedMarca} 
+              onChange={(e) => setSelectedMarca(e.target.value)}
+              className="bg-transparent text-slate-700 font-bold focus:outline-none cursor-pointer capitalize"
+            >
+              {marcasDisponiveis.map(m => (
+                <option key={m} value={m} className="capitalize">{m === 'todas' ? 'Todas as Marcas' : m}</option>
+              ))}
+            </select>
           </div>
 
-          {posicaoPorMarca.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center text-slate-400 border border-slate-200">
-              Nenhum produto encontrado para os filtros selecionados.
-            </div>
-          ) : (
-            posicaoPorMarca.map((b) => {
-              const isExpanded = expandedBrand === b.marca;
-              return (
-                <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center space-x-3 w-1/2">
-                      <div className="p-2 bg-slate-100 text-slate-600 rounded-lg font-black text-[10px] border border-slate-200">MARCA</div>
-                      <div className="truncate">
-                        <h4 className="text-sm font-bold text-slate-800 truncate">{b.marca}</h4>
-                        <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs listados (Filtrado)</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end space-x-4 w-1/2">
-                      <div className="text-right">
-                        <span className="text-[9px] uppercase text-slate-400 font-bold block">Imobilizado Filtrado</span>
-                        <span className="text-sm font-black text-slate-700">{formatBRL(b.valorTotal)}</span>
-                      </div>
-                      {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
-                    </div>
-                  </div>
+          <div className="relative">
+            <IconSearch className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <input 
+              type="text" 
+              placeholder="Buscar SKU ou Produto..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-48"
+            />
+          </div>
+        </div>
+      </div>
 
-                  {isExpanded && (
-                    <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
-                      <table className="w-full text-left text-xs whitespace-nowrap">
-                        <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[9px]">
-                          <tr>
-                            <th className="p-3 pl-4">Produto / SKU Base</th>
-                            <th className="p-3 text-center">Físico</th>
-                            <th className="p-3 text-right">Custo Unit.</th>
-                            <th className="p-3 text-right">Valor Imobilizado</th>
-                            <th className="p-3 text-center">Dias Estoque</th>
-                            <th className="p-3 text-center pr-4">Status Logístico</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {b.produtos.map((p, i) => (
-                            <tr key={i} className="hover:bg-white transition-colors">
-                              <td className="p-3 pl-4 max-w-[250px] truncate">
-                                <span className="font-bold text-slate-700 block truncate" title={p.produto}>{p.produto}</span>
-                                <span className="text-[9px] text-slate-400 font-mono">{p.sku}</span>
-                              </td>
-                              <td className="p-3 text-center font-black text-slate-600">{p.estoqueAtual} un</td>
-                              <td className="p-3 text-right text-slate-500">{formatBRL(p.custoUnitario)}</td>
-                              <td className="p-3 text-right font-bold text-slate-700">{formatBRL(p.imobilizado)}</td>
-                              <td className="p-3 text-center font-medium text-slate-500">{p.diasDeEstoque > 900 ? '∞' : p.diasDeEstoque} dias</td>
-                              <td className="p-3 pr-4 text-center">
-                                <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold border ${p.statusEstoque.color}`}>
-                                  {p.statusEstoque.label}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
+      {/* ------------------------------------------------------------------ */}
+      {/* 📊 ABA 1: BALANÇO FINANCEIRO DE ESTOQUE */}
+      {/* ------------------------------------------------------------------ */}
+      {subTab === 'balanco' && (
+        <div className="space-y-6">
+          {/* CARDS KPIS DE BALANÇO */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Card 1: Ativo Circulante Total */}
+            <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-md border border-slate-800 space-y-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Ativo Circulante (Estoque a Custo)</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-emerald-400">
+                  {balancoEstoque.custoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+                <span className="text-xs text-slate-400 font-bold">{balancoEstoque.unidadesTotais.toLocaleString('pt-BR')} un</span>
+              </div>
+              <p className="text-[11px] text-slate-400 border-t border-slate-800 pt-2">
+                Valor patrimonial total em mercadorias a preço de custo.
+              </p>
+            </div>
+
+            {/* Card 2: Capital Ativo em Giro */}
+            <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 space-y-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Estoque Rodando (Capital Ativo)</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-slate-900">
+                  {balancoEstoque.capitalAtivoCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+                <span className="text-xs text-emerald-600 font-bold">{balancoEstoque.unidadesRodando.toLocaleString('pt-BR')} un</span>
+              </div>
+              <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-2">
+                Mercadorias com giro saudável de vendas (&le; 90 dias).
+              </p>
+            </div>
+
+            {/* Card 3: Capital Congelado */}
+            <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100 space-y-2">
+              <span className="text-xs font-bold text-red-700 uppercase tracking-wider block">Capital Congelado (Encalhado)</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-red-600">
+                  {balancoEstoque.capitalCongeladoCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+                <span className="text-xs text-red-700 font-bold">{balancoEstoque.unidadesParadas.toLocaleString('pt-BR')} un</span>
+              </div>
+              <p className="text-[11px] text-red-500 border-t border-red-100/60 pt-2">
+                Mercadorias com 0 vendas ou estoque &gt; 90 dias.
+              </p>
+            </div>
+          </div>
+
+          {/* TABELA RESUMO POR MARCA PARA O BALANÇO */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Valuation de Estoque por Marca / Fornecedor
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3">Marca / Fornecedor</th>
+                    <th className="pb-3 text-right">SKUs Listados</th>
+                    <th className="pb-3 text-right">Físico Total</th>
+                    <th className="pb-3 text-right">Ativo Imobilizado (Custo)</th>
+                    <th className="pb-3 text-right">Proporção do Estoque</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {marcasDisponiveis.filter(m => m !== 'todas').map(marca => {
+                    const prodsM = produtos.filter(p => p.marca === marca);
+                    const fisM = prodsM.reduce((a, b) => a + (b.estoqueAtual || 0), 0);
+                    const imobM = prodsM.reduce((a, b) => a + ((b.estoqueAtual || 0) * (b.custoUnitario || 0)), 0);
+                    const pctM = balancoEstoque.custoTotal > 0 ? (imobM / balancoEstoque.custoTotal) * 100 : 0;
+
+                    return (
+                      <tr key={marca} className="hover:bg-slate-50">
+                        <td className="py-3 font-bold text-slate-800 capitalize">{marca}</td>
+                        <td className="py-3 text-right text-slate-500 font-medium">{prodsM.length}</td>
+                        <td className="py-3 text-right font-bold text-slate-700">{fisM.toLocaleString('pt-BR')} un</td>
+                        <td className="py-3 text-right font-black text-slate-900">
+                          {imobM.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </td>
+                        <td className="py-3 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <span className="font-bold text-slate-600">{pctM.toFixed(1)}%</span>
+                            <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${pctM}%` }}></div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* VISÃO 2: MOTOR DE COMPRAS */}
-      {/* ========================================================================= */}
-      {abaPrincipal === 'compras' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* ------------------------------------------------------------------ */}
+      {/* 🛒 ABA 2: MOTOR DE COMPRAS (CARRINHO DO CEO / COMPRAS) */}
+      {/* ------------------------------------------------------------------ */}
+      {subTab === 'compras' && (
+        <div className="space-y-6 relative pb-28">
+          
+          {/* ALERTA INFORMATIVO */}
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between text-xs text-amber-800">
+            <div className="flex items-center space-x-3">
+              <IconAlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
               <div>
-                <h4 className="text-sm font-black text-blue-900 flex items-center gap-2"><IconBrain className="w-5 h-5 text-blue-600" /> Simulador de Abastecimento</h4>
-                <p className="text-xs text-blue-700 mt-1">Ajuste o mix para gerar a Ordem de Compra baseada no Lead Time.</p>
-              </div>
-              <div className="text-right bg-white p-3 rounded-xl border border-blue-200 shadow-sm">
-                <span className="text-[9px] uppercase font-bold text-blue-500 block">Orçamento Total Projetado</span>
-                <span className="text-xl font-black text-blue-700">{formatBRL(comprasPorMarca.valorTotalComprar)}</span>
+                <strong className="font-bold block">Motor de Sugestão de Reposição Inteligente</strong>
+                <span>Produtos abaixo do Ponto de Pedido (Estoque &lt; Lead Time + 7 dias). Marque os itens e exporte o pedido.</span>
               </div>
             </div>
             
-            <div className="space-y-4 pt-4 border-t border-blue-200/50">
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
-                  <span>Acelerar volume de produtos Classe A</span>
-                  <span className="text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">+{aumentoAltaMargem}%</span>
-                </div>
-                <input type="range" className="w-full accent-emerald-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" min="0" max="100" value={aumentoAltaMargem} onChange={(e) => setAumentoAltaMargem(Number(e.target.value))} />
-              </div>
-            </div>
+            <button 
+              onClick={toggleSelectAll} 
+              className="px-3 py-1.5 bg-amber-200/60 hover:bg-amber-200 text-amber-900 font-bold rounded-lg transition-colors shrink-0"
+            >
+              Selecionar / Desmarcar Todos
+            </button>
           </div>
 
-          {comprasPorMarca.marcas.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">Estoque saudável. Nenhuma compra sugerida.</div>
-          ) : (
-            <div className="space-y-4 w-full">
-              {comprasPorMarca.marcas.map((b) => {
-                const isExpanded = expandedBrand === b.marca;
+          {/* LISTA DE CARDS INTERATIVOS DE COMPRA */}
+          <div className="grid grid-cols-1 gap-3">
+            {produtosSugestao.length === 0 ? (
+              <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+                <IconCheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                <h4 className="font-bold text-slate-800 text-sm">Estoque Saudável!</h4>
+                <p className="text-xs text-slate-400">Nenhum produto necessita de compra para o filtro de marca selecionado.</p>
+              </div>
+            ) : (
+              produtosSugestao.map(p => {
+                const isSelected = !!selectedItems[p.sku];
+                const qtdComprar = qtdsAjustadas[p.sku] !== undefined ? qtdsAjustadas[p.sku] : p.sugestaoCompra;
+                const subtotalItem = qtdComprar * p.custoUnitario;
+
                 return (
-                  <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50">
-                      <div className="flex items-center space-x-3 w-1/2">
-                        <div className="p-2 bg-amber-50 text-amber-700 rounded-lg font-black text-[10px] border border-amber-200">FORNECEDOR</div>
-                        <div className="truncate">
-                          <h4 className="text-sm font-bold text-slate-800 truncate">{b.marca}</h4>
-                          <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs para reposição</p>
+                  <div 
+                    key={p.sku} 
+                    className={`bg-white p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${isSelected ? 'border-emerald-500 shadow-xs bg-emerald-50/10' : 'border-slate-200 opacity-75'}`}
+                  >
+                    {/* ESQUERDA: Checkbox + Produto */}
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected}
+                        onChange={() => toggleSelectItem(p.sku)}
+                        className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
+                      />
+                      
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded uppercase">
+                            {p.sku}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full capitalize">
+                            {p.marca}
+                          </span>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-end space-x-4 w-1/2">
-                        <div className="text-right">
-                          <span className="text-[9px] uppercase text-slate-400 font-bold block">Comprar (R$)</span>
-                          <span className="text-sm font-black text-amber-600">{formatBRL(b.valorComprar)}</span>
-                        </div>
-                        {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
+
+                        <h4 className="text-xs font-bold text-slate-800 capitalize truncate" title={p.produto}>
+                          {formatNomeProduto(p.produto)}
+                        </h4>
+
+                        <p className="text-[11px] text-slate-400">
+                          Estoque Atual: <strong className="text-slate-700">{p.estoqueAtual} un</strong> | Venda Diária: <strong className="text-slate-700">{p.vendaDiaria} un/dia</strong> | Cobertura: <strong className="text-red-500">{p.diasDeEstoque} dias</strong>
+                        </p>
                       </div>
                     </div>
 
-                    {isExpanded && (
-                      <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
-                        <table className="w-full text-left text-xs whitespace-nowrap">
-                          <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[9px]">
-                            <tr>
-                              <th className="p-3 pl-4">Produto</th>
-                              <th className="p-3 text-center">Físico</th>
-                              <th className="p-3 text-center">Run Rate/dia</th>
-                              <th className="p-3 text-right">Custo Un.</th>
-                              <th className="p-3 text-right text-amber-700 pr-4">Sugestão Compra</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200">
-                            {b.produtos.map((p, i) => (
-                              <tr key={i} className="hover:bg-white">
-                                <td className="p-3 pl-4 max-w-[200px] truncate"><span className="font-bold text-slate-700 block truncate">{p.produto}</span><span className="text-[9px] text-slate-400 font-mono">{p.sku}</span></td>
-                                <td className="p-3 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
-                                <td className="p-3 text-center text-slate-500">{p.vendaDiariaSimulada.toFixed(1)} un</td>
-                                <td className="p-3 text-right text-slate-500">{formatBRL(p.custoUnitario)}</td>
-                                <td className="p-3 text-right pr-4">
-                                  <span className="font-black text-amber-600 block">+ {p.sugestaoCompraSimulada} un</span>
-                                  <span className="text-[9px] text-slate-400 block">{formatBRL(p.sugestaoCompraSimulada * p.custoUnitario)}</span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    {/* DIREITA: Inputs de Ajuste de Quantidade e Valor */}
+                    <div className="flex items-center justify-between md:justify-end space-x-6 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Custo Unitário</span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {p.custoUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
                       </div>
-                    )}
+
+                      <div className="text-center">
+                        <span className="text-[10px] text-emerald-700 font-bold uppercase block">Qtd a Pedir</span>
+                        <input 
+                          type="number" 
+                          value={qtdComprar}
+                          onChange={(e) => setQtdsAjustadas({ ...qtdsAjustadas, [p.sku]: Math.max(0, parseInt(e.target.value) || 0) })}
+                          className="w-20 bg-slate-50 border border-slate-300 font-black text-slate-900 text-xs rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div className="text-right min-w-[100px]">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Subtotal</span>
+                        <span className="text-sm font-black text-emerald-600">
+                          {subtotalItem.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
-              })}
+              })
+            )}
+          </div>
+
+          {/* 🟢 BARRA FLUTUANTE DE RESUMO DO PEDIDO (CEO/COMPRAS) */}
+          {resumoPedido.itensContados > 0 && (
+            <div className="fixed bottom-4 left-4 right-4 md:left-80 md:right-8 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 z-40 animate-fadeIn">
+              <div className="flex items-center space-x-6">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Itens Selecionados</span>
+                  <span className="text-base font-black text-white">{resumoPedido.itensContados} SKUs ({resumoPedido.totalPecas.toLocaleString('pt-BR')} pe&ccedil;as)</span>
+                </div>
+
+                <div className="border-l border-slate-800 pl-6">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Valor Total do Pedido</span>
+                  <span className="text-xl font-black text-emerald-400">
+                    {resumoPedido.custoTotalPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                onClick={gerarPedidoTexto}
+                className="w-full sm:w-auto px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-2"
+              >
+                <IconDownload className="w-4 h-4" />
+                <span>EXPORTAR PEDIDO (WHATSAPP)</span>
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* VISÃO 3: CAPITAL CONGELADO */}
-      {/* ========================================================================= */}
-      {abaPrincipal === 'parado' && (
-        <div className="space-y-6 animate-fadeIn">
-          {estoqueParadoPorMarca.length === 0 ? (
-             <div className="bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200/80">Sem estoque parado neste período!</div>
-          ) : (
-            <div className="space-y-4 w-full">
-              {estoqueParadoPorMarca.map((b) => {
-                const isExpanded = expandedBrand === b.marca;
-                return (
-                  <div key={b.marca} className="bg-white rounded-xl shadow-sm border border-rose-200/60 overflow-hidden transition-all">
-                    <div onClick={() => setExpandedBrand(isExpanded ? null : b.marca)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-rose-50/30">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-rose-50 text-rose-700 rounded-lg font-black text-[10px] border border-rose-200">MARCA</div>
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900">{b.marca}</h4>
-                          <p className="text-[10px] text-slate-400">{b.produtos.length} SKUs sem giro</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <span className="text-[9px] uppercase text-rose-400 font-bold block">Capital Preso</span>
-                          <span className="text-sm font-black text-rose-600">{formatBRL(b.valorTotalParado)}</span>
-                        </div>
-                        {isExpanded ? <IconChevronDown className="w-4 h-4 text-slate-400" /> : <IconChevronRight className="w-4 h-4 text-slate-400" />}
-                      </div>
-                    </div>
+      {/* ------------------------------------------------------------------ */}
+      {/* 📋 ABA 3: POSIÇÃO FÍSICO-FINANCEIRA DETALHADA */}
+      {/* ------------------------------------------------------------------ */}
+      {subTab === 'posicao' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Detalhamento de SKUs e Giro de Estoque
+            </h3>
+            <span className="text-xs text-slate-400 font-bold">{produtosFiltrados.length} SKUs encontrados</span>
+          </div>
 
-                    {isExpanded && (
-                      <div className="bg-slate-50/80 border-t border-slate-100 p-0 overflow-x-auto">
-                        <table className="w-full text-left text-xs whitespace-nowrap">
-                          <thead className="bg-rose-50/50 text-slate-500 uppercase font-bold text-[9px]">
-                            <tr>
-                              <th className="p-3 pl-4">Produto</th>
-                              <th className="p-3 text-center">Físico Parado</th>
-                              <th className="p-3 text-right">Valor Congelado</th>
-                              <th className="p-3 text-center pr-4">Ação Sugerida</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200">
-                            {b.produtos.map((p, i) => (
-                              <tr key={i} className="hover:bg-white">
-                                <td className="p-3 pl-4 max-w-[250px] truncate"><span className="font-bold text-slate-800 block truncate">{p.produto}</span><span className="text-[9px] text-slate-400 font-mono">{p.sku}</span></td>
-                                <td className="p-3 text-center font-bold text-slate-600">{p.estoqueAtual} un</td>
-                                <td className="p-3 text-right font-black text-rose-600">{formatBRL(p.valorParado)}</td>
-                                <td className="p-3 text-center pr-4">
-                                  <span className="px-2 py-1 rounded-md font-bold text-[9px] uppercase bg-slate-800 text-white">
-                                    {p.valorParado > 500 ? 'Liquidação' : 'Bundling (Kits)'}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="pb-3">SKU / Produto</th>
+                  <th className="pb-3 text-center">Marca</th>
+                  <th className="pb-3 text-right">Estoque Físico</th>
+                  <th className="pb-3 text-right">Custo Unit.</th>
+                  <th className="pb-3 text-right">Valor Imobilizado</th>
+                  <th className="pb-3 text-right">Cobertura</th>
+                  <th className="pb-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {produtosFiltrados.map(p => {
+                  const imob = (p.estoqueAtual || 0) * (p.custoUnitario || 0);
+                  let statusBg = 'bg-slate-100 text-slate-600';
+                  let statusTxt = 'Saudável';
+
+                  if (p.estoqueAtual === 0) {
+                    statusBg = 'bg-red-100 text-red-700 font-bold';
+                    statusTxt = 'Ruptura (Sem Estoque)';
+                  } else if (p.diasDeEstoque > 90) {
+                    statusBg = 'bg-amber-100 text-amber-800 font-bold';
+                    statusTxt = 'Excesso / Congelado';
+                  } else if (p.sugestaoCompra > 0) {
+                    statusBg = 'bg-emerald-100 text-emerald-800 font-bold';
+                    statusTxt = 'Comprar Reposição';
+                  }
+
+                  return (
+                    <tr key={p.sku} className="hover:bg-slate-50">
+                      <td className="py-3 max-w-[280px]">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{p.sku}</span>
+                          <span className="font-bold text-slate-700 capitalize truncate" title={p.produto}>
+                            {formatNomeProduto(p.produto)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-center font-bold text-slate-500 capitalize">{p.marca}</td>
+                      <td className="py-3 text-right font-bold text-slate-800">{p.estoqueAtual.toLocaleString('pt-BR')} un</td>
+                      <td className="py-3 text-right text-slate-600">
+                        {p.custoUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                      <td className="py-3 text-right font-black text-slate-900">
+                        {imob.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                      <td className="py-3 text-right font-bold text-slate-600">
+                        {p.diasDeEstoque === 999 ? '∞ dias' : `${p.diasDeEstoque} dias`}
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusBg}`}>
+                          {statusTxt}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-
     </div>
   );
 }
