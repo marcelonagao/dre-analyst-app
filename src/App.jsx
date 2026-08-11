@@ -27,6 +27,11 @@ export default function App() {
     produtosPorPlataforma
   } = useDashboardData();
 
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('visao-geral');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterLowMargin, setFilterLowMargin] = useState(false);
+  
   // Trava de Segurança: Enquanto carrega ou se não tiver dados, mostra um Loading bonitão
   if (loading || !data) {
     return (
@@ -38,11 +43,6 @@ export default function App() {
       </div>
     );
   }
-
-  const [showApiModal, setShowApiModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('visao-geral');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterLowMargin, setFilterLowMargin] = useState(false);
 
   return (
     <div className="w-screen min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800 antialiased overflow-x-hidden m-0 p-0 pb-20 md:pb-0">
