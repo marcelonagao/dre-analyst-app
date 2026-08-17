@@ -52,10 +52,20 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
       return [];
     }
 
-    // Salva o NOVO token no banco para ele não expirar na próxima vez!
-    await supabase
-      .from('bling_tokens')
-      .upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
+    // 3. PRIORIDADE MÁXIMA: TENTA SALVAR O TOKEN IMEDIATAMENTE (E ISOLA O ERRO)
+    try {
+      const { error: dbError } = await supabase
+        .from('bling_tokens')
+        .upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
+
+      if (dbError) {
+        console.error(`❌ ALERTA: Supabase recusou salvar o token do ${contaNome}! Motivo:`, dbError.message);
+      } else {
+        console.log(`💾 Novo Refresh Token do ${contaNome} salvo com sucesso no banco!`);
+      }
+    } catch (err) {
+      console.error(`❌ Erro crítico ao conectar com Supabase para salvar token:`, err);
+    }
 
     const accessToken = tokenInfo.access_token;
 
@@ -108,7 +118,7 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
   }
 }
 
-// 3. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
+// 4. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
 export default async function handler(req, res) {
   try {
     console.log("🚀 Iniciando Sincronização Dupla Bling (B2B + B2C) ➔ Supabase...");
@@ -162,7 +172,7 @@ export default async function handler(req, res) {
     const produtosParaAtualizar = Array.from(estoqueConsolidadoMap.values());
 
     if (produtosParaAtualizar.length > 0) {
-      // 4. GRAVANDO NO BANCO (Agora com a chave de Superadmin garantida)
+      // GRAVANDO NO BANCO (Agora com a chave de Superadmin garantida)
       const { error: errSupabase } = await supabase
         .from('produtos')
         .upsert(produtosParaAtualizar, { onConflict: 'sku' });
