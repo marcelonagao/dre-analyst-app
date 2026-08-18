@@ -44,17 +44,22 @@ export default async function handler(req, res) {
       throw new Error("ID do cliente B2B não definido. Cadastre a variável BLING_DEFAULT_B2B_CLIENT_ID na Vercel.");
     }
 
+    // Pega a data de hoje no formato YYYY-MM-DD para o Bling calcular as parcelas (Resolve o Erro 14)
+    const dataHoje = new Date().toISOString().split('T')[0];
+
     const pedidoBling = {
+      data: dataHoje,
+      dataSaida: dataHoje,
       contato: {
         id: Number(idClienteB2B)
       },
       itens: itens.map(item => ({
-        codigo: String(item.sku),
-        descricao: String(item.nome).substring(0, 120), // Descrição evita erros se o SKU não estiver mapeado igual
+        produto: {
+          id: Number(item.id) // ESSENCIAL: Diz ao Bling que é um produto já cadastrado (Resolve o Erro 27)
+        },
         quantidade: Number(item.quantidade),
         valor: Number(item.preco)
       }))
-      // ⚠️ Removemos o campo 'situacao: { id: 0 }' que costuma bloquear pedidos na API v3
     };
 
     // 3. ENVIAR PEDIDO PARA A API DO BLING
@@ -70,9 +75,8 @@ export default async function handler(req, res) {
 
     const blingData = await blingRes.json();
 
-    // Tratamento de erro AVANÇADO (Pegando os detalhes escondidos do Bling)
+    // Tratamento de erro AVANÇADO
     if (!blingRes.ok || blingData.error) {
-      // O Bling esconde a causa real dentro de "fields" ou "collection"
       const detalhesBling = blingData.error?.fields || blingData.error?.collection || blingData.error?.description || blingData;
       throw new Error(`Recusado pelo Bling. Motivo detalhado: ${JSON.stringify(detalhesBling)}`);
     }
