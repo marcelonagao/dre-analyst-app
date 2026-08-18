@@ -15,7 +15,7 @@ function formatarDataECompetencia(dataString) {
 }
 
 export default async function handler(req, res) {
-  console.log("🚀 Iniciando Sync de Vendas B2B com Custos...");
+  console.log("🚀 Iniciando Sync B2B com Regras de Venda Externa...");
 
   try {
     // 1. RENOVAR TOKEN B2B
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     await supabase.from('bling_tokens').upsert({ conta: 'B2B', refresh_token: tokenInfo.refresh_token });
     const accessToken = tokenInfo.access_token;
 
-    // 2. CARREGAR DICIONÁRIOS DO SUPABASE (KITS E CUSTOS)
+    // 2. CARREGAR KITS E CUSTOS DO SUPABASE
     const { data: kitsData } = await supabase.from('kits').select('*');
     const mapaKits = {};
     if (kitsData) {
@@ -45,7 +45,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Puxa o custo unitário de todos os produtos para fazer o cálculo
     const { data: produtosData } = await supabase.from('produtos').select('sku, custo_unitario');
     const mapaCustos = {};
     if (produtosData) {
@@ -60,20 +59,15 @@ export default async function handler(req, res) {
     });
     const pedidosData = await resPedidos.json();
 
-    // 🚨 A NOVA TRAVA: Se o Bling der erro de permissão, mostre na tela!
-    if (pedidosData.error) {
-      throw new Error(`Bling recusou a busca: ${pedidosData.error.message || JSON.stringify(pedidosData.error)}`);
-    }
+    if (pedidosData.error) throw new Error(`Erro do Bling: ${pedidosData.error.message || JSON.stringify(pedidosData.error)}`);
 
     const pedidosList = pedidosData.data || [];
-
     if (pedidosList.length === 0) return res.status(200).json({ success: true, message: "Sem pedidos B2B novos." });
 
-    // 👇 MANTENHA ESTES DOIS AQUI!
     let linhasParaInserir = [];
     let orderIdsProcessados = [];
 
-    // 4. PROCESSAR ITENS E CALCULAR LUCROS
+    // 4. PROCESSAR REGRAS ESPECÍFICAS DE B2B
     for (const pedidoBling of pedidosList) {
       const orderId = String(pedidoBling.numero);
       orderIdsProcessados.push(orderId);
@@ -81,11 +75,15 @@ export default async function handler(req, res) {
       const resDetalhe = await fetch(`https://www.bling.com.br/Api/v3/pedidos/vendas/${pedidoBling.id}`, {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
       });
-      const pedidoCompleto = (await resDetalhe.json()).data;
+      const detalheData = await resDetalhe.json();
+      const pedidoCompleto = detalheData.data;
       if (!pedidoCompleto || !pedidoCompleto.itens) continue;
 
       const { dataVenda, competencia } = formatarDataECompetencia(pedidoCompleto.data);
       const statusDesc = pedidoCompleto.situacao.id === 12 ? "Cancelado" : "Atendido"; 
+
+      // REGRA 1: Valida se a Nota Fiscal foi emitida no Bling
+      const temNF = !!(pedidoCompleto.notaFiscal && pedidoCompleto.notaFiscal.id);
 
       for (const item of pedidoCompleto.itens) {
         const skuVendido = String(item.codigo).trim();
@@ -94,6 +92,7 @@ export default async function handler(req, res) {
 
         const componentesKit = mapaKits[skuVendido];
         
+        // REGRA 3: Explosão de Kits continua ativa
         if (componentesKit && componentesKit.length > 0) {
           for (const comp of componentesKit) {
             const proporcaoFaturamento = 1 / componentesKit.length; 
@@ -102,9 +101,11 @@ export default async function handler(req, res) {
             const custoUnitarioComp = mapaCustos[comp.skuComp] || 0;
             const custoTotalProduto = custoUnitarioComp * qtdEfetiva;
             const fatProporcional = faturamentoItem * proporcaoFaturamento;
-            const imposto = fatProporcional * 0.11;
-            const embalagem = 0.08 * qtdEfetiva;
-            const lucroLiquido = fatProporcional - imposto - embalagem - custoTotalProduto; // Taxa plataforma B2B é 0
+            
+            // APLICANDO AS NOVAS REGRAS
+            const imposto = temNF ? (fatProporcional * 0.11) : 0;
+            const embalagem = 0; // REGRA 2: Custo Zero
+            const lucroLiquido = fatProporcional - imposto - embalagem - custoTotalProduto; 
             
             linhasParaInserir.push({
               order_id: orderId, plataforma: "B2B", status: statusDesc, competencia: competencia,
@@ -118,8 +119,10 @@ export default async function handler(req, res) {
           // PRODUTO SIMPLES
           const custoUnitarioProd = mapaCustos[skuVendido] || 0;
           const custoTotalProduto = custoUnitarioProd * quantidadeVendida;
-          const imposto = faturamentoItem * 0.11;
-          const embalagem = 0.08 * quantidadeVendida;
+          
+          // APLICANDO AS NOVAS REGRAS
+          const imposto = temNF ? (faturamentoItem * 0.11) : 0;
+          const embalagem = 0; // REGRA 2: Custo Zero
           const lucroLiquido = faturamentoItem - imposto - embalagem - custoTotalProduto;
 
           linhasParaInserir.push({
@@ -139,7 +142,7 @@ export default async function handler(req, res) {
       if (insertError) throw insertError;
     }
 
-    return res.status(200).json({ success: true, message: `${linhasParaInserir.length} linhas calculadas e salvas!`});
+    return res.status(200).json({ success: true, message: `${linhasParaInserir.length} linhas calculadas com as Novas Regras B2B!`});
 
   } catch (error) {
     console.error("Erro B2B:", error);
