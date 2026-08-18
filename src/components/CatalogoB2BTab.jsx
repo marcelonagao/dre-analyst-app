@@ -51,26 +51,41 @@ export default function CatalogoB2BTab() {
     });
   };
 
-  const finalizarPedido = () => {
+  const finalizarPedido = async () => {
     if (quantidadeTotal === 0) return alert("Adicione produtos ao carrinho primeiro!");
-    console.log("Carrinho pronto para envio:", itensCarrinho);
-    alert("Pronto para o Checkout! Próximo passo: integrar a rota B2B na Vercel.");
-    setModalCarrinhoAberto(false);
+
+    try {
+      const res = await fetch('/api/create-order-b2b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itens: itensCarrinho })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert("🎉 Pedido criado com sucesso no Bling!");
+        setCarrinho({});
+        setModalCarrinhoAberto(false);
+      } else {
+        alert(`❌ Erro ao fechar pedido: ${data.error}`);
+      }
+    } catch (err) {
+      alert("❌ Falha de comunicação ao tentar enviar o pedido.");
+    }
   };
 
-  // --- INTELIGÊNCIA DE DADOS ---
-  
-  // 1. Extrai as marcas dinamicamente baseando-se no texto antes do "-"
+  // Extrai marcas dinamicamente
   const marcas = useMemo(() => {
     const listaMarcas = produtos.map(p => {
       const partes = p.nome.split('-');
       return partes.length > 1 ? partes[0].trim() : 'Outros';
     });
-    const unicas = [...new Set(listaMarcas)].filter(m => m.length > 2);
+    const unicas = [...new Set(listaMarcas)].filter(m => m.length > 1);
     return ['Todas', ...unicas.sort()];
   }, [produtos]);
 
-  // 2. Aplica Filtro de Busca + Marca
+  // Filtra produtos
   const produtosFiltrados = useMemo(() => {
     return produtos.filter(p => {
       const matchBusca = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
@@ -81,12 +96,10 @@ export default function CatalogoB2BTab() {
     });
   }, [produtos, busca, marcaSelecionada]);
 
-  // 3. Cálculos do Carrinho
   const itensCarrinho = Object.values(carrinho);
   const quantidadeTotal = itensCarrinho.reduce((acc, item) => acc + item.quantidade, 0);
   const valorTotal = itensCarrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
 
-  // --- TELAS DE ESTADO ---
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 w-full">
@@ -104,11 +117,11 @@ export default function CatalogoB2BTab() {
     <div className="flex flex-col lg:flex-row gap-6 relative">
       
       {/* ========================================== */}
-      {/* LADO ESQUERDO: VITRINE & FILTROS (MOBILE/DESKTOP) */}
+      {/* LADO ESQUERDO: VITRINE & FILTROS */}
       {/* ========================================== */}
-      <div className="flex-1 pb-24 lg:pb-0">
+      <div className="flex-1 pb-28 lg:pb-0">
         
-        {/* BUSCA */}
+        {/* BARRA DE PESQUISA */}
         <div className="mb-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
           <span className="pl-4 text-slate-400">🔍</span>
           <input 
@@ -116,20 +129,20 @@ export default function CatalogoB2BTab() {
             placeholder="Buscar por nome ou SKU..." 
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full p-3 bg-transparent text-sm text-slate-700 focus:outline-none font-medium"
+            className="w-full p-2.5 bg-transparent text-sm text-slate-700 focus:outline-none font-medium"
           />
         </div>
 
-        {/* FILTRO DE MARCAS (Scrolável no Mobile) */}
-        <div className="mb-6 flex overflow-x-auto gap-2 pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+        {/* FILTRO DE MARCAS (PILLS) */}
+        <div className="mb-6 flex overflow-x-auto gap-2 pb-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
           {marcas.map(marca => (
             <button
               key={marca}
               onClick={() => setMarcaSelecionada(marca)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-colors border ${
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                 marcaSelecionada === marca 
-                  ? 'bg-slate-800 text-white border-slate-800' 
-                  : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-500 shadow-sm' 
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
               }`}
             >
               {marca}
@@ -138,48 +151,55 @@ export default function CatalogoB2BTab() {
         </div>
         
         {produtosFiltrados.length === 0 ? (
-          <div className="text-center py-10 text-slate-400 font-medium">Nenhum produto encontrado.</div>
+          <div className="text-center py-12 text-slate-400 font-medium">Nenhum produto encontrado.</div>
         ) : (
-          /* GRID RESPONSIVO: Flex row no celular (lista), Grid flex col no Desktop */
-          <div className="flex flex-col sm:grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          /* 📱 GRID DE 2 COLUNAS NO MOBILE E 3/4 NO DESKTOP (Estilo Mercado Livre) */
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {produtosFiltrados.map((produto) => {
               const qtdNoCarrinho = carrinho[produto.sku]?.quantidade || 0;
               
               return (
-                <div key={produto.sku} className="bg-white border border-slate-200 sm:rounded-2xl rounded-xl p-3 flex flex-row sm:flex-col shadow-sm hover:shadow-md transition-shadow gap-4 items-center sm:items-stretch">
+                <div key={produto.sku} className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col justify-between shadow-xs hover:shadow-md transition-all relative group">
                   
-                  {/* IMAGEM */}
-                  <div className="w-24 h-24 sm:w-full sm:h-40 bg-slate-50 sm:rounded-xl rounded-lg flex-shrink-0 flex items-center justify-center text-slate-300 border border-slate-100 overflow-hidden relative">
-                    {qtdNoCarrinho > 0 && (
-                      <div className="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center z-10">
-                        {qtdNoCarrinho}
-                      </div>
-                    )}
+                  {/* Badge de Quantidade no Carrinho */}
+                  {qtdNoCarrinho > 0 && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-xs w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-sm">
+                      {qtdNoCarrinho}
+                    </div>
+                  )}
+
+                  {/* IMAGEM NÍTIDA */}
+                  <div className="w-full h-36 sm:h-44 bg-slate-50 rounded-xl mb-3 flex items-center justify-center border border-slate-100 overflow-hidden relative p-2">
                     {produto.imagemUrl ? (
-                      <img src={produto.imagemUrl} alt={produto.nome} className="h-full w-full object-contain mix-blend-multiply p-2" />
+                      <img src={produto.imagemUrl} alt={produto.nome} className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300" />
                     ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-center">Sem Imagem</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Sem Imagem</span>
                     )}
                   </div>
                   
-                  {/* INFORMAÇÕES */}
-                  <div className="flex flex-col flex-1 min-w-0 justify-between sm:h-full">
+                  {/* INFORMAÇÕES DO PRODUTO */}
+                  <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 mb-0.5 tracking-wider uppercase">SKU: {produto.sku}</div>
-                      <div className="text-xs sm:text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-2">
+                      <div className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">SKU: {produto.sku}</div>
+                      <div className="text-xs sm:text-sm font-semibold text-slate-800 line-clamp-2 leading-snug mb-3">
                         {produto.nome}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-auto">
-                      <div className="text-sm sm:text-lg font-black text-emerald-600">
-                        R$ {Number(produto.preco).toFixed(2).replace('.', ',')}
+                    {/* PREÇO E BOTÃO DE ADICIONAR */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block leading-none">Preço B2B</span>
+                        <span className="text-sm sm:text-base font-black text-emerald-600">
+                          R$ {Number(produto.preco).toFixed(2).replace('.', ',')}
+                        </span>
                       </div>
                       <button 
                         onClick={() => adicionarAoCarrinho(produto)}
-                        className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg sm:rounded-xl hover:bg-emerald-500 hover:text-white transition-colors"
+                        className="h-9 w-9 flex items-center justify-center bg-slate-100 text-slate-700 rounded-xl hover:bg-emerald-500 hover:text-slate-950 transition-colors shadow-xs active:scale-95 font-bold text-lg"
+                        title="Adicionar"
                       >
-                        <span className="text-lg sm:text-xl font-bold leading-none">+</span>
+                        +
                       </button>
                     </div>
                   </div>
@@ -211,28 +231,31 @@ export default function CatalogoB2BTab() {
         <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40">
           <button 
             onClick={() => setModalCarrinhoAberto(true)}
-            className="w-full bg-slate-900 text-white rounded-2xl p-4 flex justify-between items-center shadow-2xl shadow-slate-900/50"
+            className="w-full bg-slate-900 text-white rounded-2xl p-4 flex justify-between items-center shadow-2xl shadow-slate-900/50 border border-slate-800"
           >
             <div className="flex items-center gap-3">
-              <span className="bg-emerald-500 text-slate-900 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm">
+              <span className="bg-emerald-500 text-slate-950 w-7 h-7 rounded-full flex items-center justify-center font-black text-xs">
                 {quantidadeTotal}
               </span>
               <span className="font-bold text-sm">Ver Carrinho</span>
             </div>
-            <span className="font-black text-emerald-400">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
+            <span className="font-black text-emerald-400 text-base">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
           </button>
         </div>
       )}
 
       {/* MODAL BOTTOM SHEET (MOBILE) */}
       {modalCarrinhoAberto && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-end transition-opacity">
-          <div className="bg-white w-full h-[85vh] rounded-t-3xl shadow-2xl flex flex-col animate-slide-up">
-            <div className="p-4 flex justify-between items-center border-b border-slate-100">
-              <h3 className="text-lg font-black text-slate-900">Seu Pedido</h3>
-              <button onClick={() => setModalCarrinhoAberto(false)} className="w-8 h-8 bg-slate-100 rounded-full font-bold text-slate-500">✕</button>
+        <div className="lg:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-center items-end animate-fade-in">
+          <div className="bg-white w-full h-[85vh] rounded-t-3xl shadow-2xl flex flex-col p-6 overflow-hidden">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Seu Pedido B2B</h3>
+                <p className="text-xs text-slate-400">{quantidadeTotal} itens selecionados</p>
+              </div>
+              <button onClick={() => setModalCarrinhoAberto(false)} className="w-8 h-8 bg-slate-100 rounded-full font-bold text-slate-600 flex items-center justify-center">✕</button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto">
               <CarrinhoSidebar 
                 itensCarrinho={itensCarrinho} 
                 quantidadeTotal={quantidadeTotal} 
@@ -251,7 +274,6 @@ export default function CatalogoB2BTab() {
   );
 }
 
-// Sub-componente para isolar a lógica visual do carrinho e reaproveitar no Desktop e Mobile
 function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDoCarrinho, adicionarAoCarrinho, finalizarPedido, isMobile = false }) {
   return (
     <div className={`bg-white ${!isMobile ? 'border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-xl shadow-slate-200/50' : ''}`}>
@@ -267,7 +289,7 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
         </div>
       )}
       
-      <div className={`${!isMobile ? 'max-h-72' : ''} overflow-y-auto mb-6 pr-2 space-y-4`}>
+      <div className={`${!isMobile ? 'max-h-72' : 'max-h-[50vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
         {itensCarrinho.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-sm">O carrinho está vazio.</div>
         ) : (
@@ -279,9 +301,9 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
               </div>
               
               <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-lg p-1 shrink-0">
-                <button onClick={() => removerDoCarrinho(item.sku)} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors font-bold">-</button>
+                <button onClick={() => removerDoCarrinho(item.sku)} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-bold">-</button>
                 <span className="w-6 text-center font-black text-xs text-slate-700">{item.quantidade}</span>
-                <button onClick={() => adicionarAoCarrinho(item)} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors font-bold">+</button>
+                <button onClick={() => adicionarAoCarrinho(item)} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors font-bold">+</button>
               </div>
             </div>
           ))
@@ -300,7 +322,7 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
         disabled={quantidadeTotal === 0}
         className={`w-full py-4 rounded-xl font-black text-sm transition-all duration-300 uppercase tracking-wide ${
           quantidadeTotal > 0 
-            ? 'bg-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 active:scale-95' 
+            ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 active:scale-95 cursor-pointer' 
             : 'bg-slate-100 text-slate-400 cursor-not-allowed'
         }`}
       >
