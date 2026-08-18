@@ -10,11 +10,15 @@ export default function CatalogoB2BTab() {
   const [marcaSelecionada, setMarcaSelecionada] = useState('Todas');
   const [modalCarrinhoAberto, setModalCarrinhoAberto] = useState(false);
 
-  // ESTADOS DO CLIENTE B2B
+  // ESTADOS DO CLIENTE B2B E CHECKOUT
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
   const [buscaCliente, setBuscaCliente] = useState('');
   const [clientesResultados, setClientesResultados] = useState([]);
   const [buscandoCliente, setBuscandoCliente] = useState(false);
+  
+  // NOVOS ESTADOS DO MODAL DE SUCESSO E LOADING
+  const [enviandoPedido, setEnviandoPedido] = useState(false);
+  const [pedidoSucesso, setPedidoSucesso] = useState(null); // Vai guardar o ID do pedido
 
   useEffect(() => {
     buscarCatalogo();
@@ -79,19 +83,23 @@ export default function CatalogoB2BTab() {
     if (!clienteSelecionado) return alert("⚠️ Você precisa selecionar um Cliente antes de fechar o pedido!");
 
     try {
+      setEnviandoPedido(true); // Ativa o estado de carregamento no botão
       const res = await fetch('/api/create-order-b2b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           itens: itensCarrinho,
-          clienteId: clienteSelecionado.id // Aqui enviamos o ID do Bling do cliente!
+          clienteId: clienteSelecionado.id
         })
       });
 
       const data = await res.json();
 
       if (data.success) {
-        alert("🎉 Pedido criado com sucesso no Bling!");
+        // Exibe o modal de sucesso com o ID do pedido!
+        setPedidoSucesso(data.pedidoBlingId || 'Registrado'); 
+        
+        // Limpa o carrinho e formulário
         setCarrinho({});
         setClienteSelecionado(null);
         setBuscaCliente('');
@@ -102,6 +110,8 @@ export default function CatalogoB2BTab() {
       }
     } catch (err) {
       alert("❌ Falha de comunicação ao tentar enviar o pedido.");
+    } finally {
+      setEnviandoPedido(false); // Desliga o carregamento do botão
     }
   };
 
@@ -132,13 +142,15 @@ export default function CatalogoB2BTab() {
 
   const sidebarProps = {
     itensCarrinho, quantidadeTotal, valorTotal, removerDoCarrinho, adicionarAoCarrinho, finalizarPedido,
-    clienteSelecionado, setClienteSelecionado, buscaCliente, setBuscaCliente, clientesResultados, setClientesResultados, buscarClientesBling, buscandoCliente
+    clienteSelecionado, setClienteSelecionado, buscaCliente, setBuscaCliente, clientesResultados, setClientesResultados, buscarClientesBling, buscandoCliente, enviandoPedido
   };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 relative">
       
+      {/* ========================================== */}
       {/* VITRINE ESQUERDA */}
+      {/* ========================================== */}
       <div className="flex-1 min-w-0 pb-32 lg:pb-0">
         <div className="mb-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
           <span className="pl-4 text-slate-400">🔍</span>
@@ -185,13 +197,17 @@ export default function CatalogoB2BTab() {
         )}
       </div>
 
+      {/* ========================================== */}
       {/* CARRINHO DESKTOP */}
+      {/* ========================================== */}
       <div className="hidden lg:block w-80 xl:w-96 shrink-0">
         <CarrinhoSidebar {...sidebarProps} />
       </div>
 
+      {/* ========================================== */}
       {/* BARRA MOBILE */}
-      {quantidadeTotal > 0 && (
+      {/* ========================================== */}
+      {quantidadeTotal > 0 && !pedidoSucesso && (
         <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40">
           <button onClick={() => setModalCarrinhoAberto(true)} className="w-full bg-slate-900 text-white rounded-2xl p-4 flex justify-between items-center shadow-2xl shadow-slate-900/50 border border-slate-800">
             <div className="flex items-center gap-3">
@@ -221,19 +237,53 @@ export default function CatalogoB2BTab() {
         </div>
       )}
 
+      {/* ========================================== */}
+      {/* 🌟 NOVO: MODAL DE SUCESSO ANIMADO */}
+      {/* ========================================== */}
+      {pedidoSucesso && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform transition-all scale-100">
+            
+            {/* Ícone de Check Verde */}
+            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border-4 border-white outline outline-2 outline-emerald-50">
+              <svg className="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-black text-slate-800 mb-2">Venda Fechada!</h2>
+            <p className="text-slate-500 mb-6 text-sm leading-relaxed">
+              O pedido foi processado com sucesso e já está integrado diretamente no seu painel do Bling.
+            </p>
+
+            <div className="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100">
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Cód. do Pedido (Bling)</p>
+              <p className="text-xl font-black text-slate-800">#{pedidoSucesso}</p>
+            </div>
+
+            <button 
+              onClick={() => setPedidoSucesso(null)}
+              className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
+            >
+              Começar Nova Venda
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
-// COMPONENTE DO CARRINHO (AGORA COM SELEÇÃO DE CLIENTE)
+// COMPONENTE DO CARRINHO
 function CarrinhoSidebar({ 
   itensCarrinho, quantidadeTotal, valorTotal, removerDoCarrinho, adicionarAoCarrinho, finalizarPedido, isMobile = false,
-  clienteSelecionado, setClienteSelecionado, buscaCliente, setBuscaCliente, clientesResultados, setClientesResultados, buscarClientesBling, buscandoCliente
+  clienteSelecionado, setClienteSelecionado, buscaCliente, setBuscaCliente, clientesResultados, setClientesResultados, buscarClientesBling, buscandoCliente, enviandoPedido
 }) {
   return (
     <div className={`bg-white ${!isMobile ? 'border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-xl shadow-slate-200/50' : 'pb-6'}`}>
       
-      {/* 1. SELEÇÃO DE CLIENTE (NOVIDADE) */}
+      {/* 1. SELEÇÃO DE CLIENTE */}
       <div className="mb-6 pb-6 border-b border-slate-100">
         <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
           <span className="bg-slate-100 w-5 h-5 flex items-center justify-center rounded text-xs">1</span> 
@@ -317,7 +367,7 @@ function CarrinhoSidebar({
         </div>
       </div>
 
-      {/* 3. TOTAL E BOTÃO */}
+      {/* 3. TOTAL E BOTÃO DE FINALIZAR */}
       <div className="pt-4 border-t border-slate-100 mb-6">
         <div className="flex justify-between items-center mb-1">
           <span className="text-slate-500 text-sm font-bold">Total Líquido</span>
@@ -327,14 +377,21 @@ function CarrinhoSidebar({
 
       <button 
         onClick={finalizarPedido}
-        disabled={quantidadeTotal === 0}
-        className={`w-full py-4 rounded-xl font-black text-sm transition-all duration-300 uppercase tracking-wide ${
-          quantidadeTotal > 0 
+        disabled={quantidadeTotal === 0 || enviandoPedido}
+        className={`w-full py-4 rounded-xl font-black text-sm transition-all duration-300 uppercase tracking-wide flex justify-center items-center gap-2 ${
+          quantidadeTotal > 0 && !enviandoPedido
             ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 active:scale-95 cursor-pointer' 
             : 'bg-slate-100 text-slate-400 cursor-not-allowed'
         }`}
       >
-        Finalizar Pedido B2B
+        {enviandoPedido ? (
+          <>
+            <div className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"></div>
+            Processando...
+          </>
+        ) : (
+          'Finalizar Pedido B2B'
+        )}
       </button>
     </div>
   );
