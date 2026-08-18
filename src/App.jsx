@@ -4,6 +4,8 @@ import VisaoGeralTab from './components/VisaoGeralTab';
 import DREPlataformasTab from './components/DREPlataformasTab';
 import CurvaABCTab from './components/CurvaABCTab';
 import InteligenciaTab from './components/InteligenciaTab';
+/* 🛒 NOVO: Importando a tela do Portal B2B */
+import CatalogoB2BTab from './components/CatalogoB2BTab'; 
 import {
   IconBarChart3, IconCalendar, IconRefreshCw,
   IconPieChart, IconLayers, IconPackage, IconBrain
@@ -88,6 +90,11 @@ export default function App() {
             <button onClick={() => setActiveTab('inteligencia')} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === 'inteligencia' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
               <div className="flex items-center space-x-3"><IconBrain className="w-4 h-4" /><span>Inteligência & Compras</span></div>
             </button>
+            
+            {/* 🛒 NOVO: Botão do Portal B2B no Desktop */}
+            <button onClick={() => setActiveTab('catalogo-b2b')} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === 'catalogo-b2b' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <div className="flex items-center space-x-3"><span className="text-sm">🛒</span><span>Portal B2B</span></div>
+            </button>
           </nav>
         </div>
       </aside>
@@ -102,6 +109,8 @@ export default function App() {
               {activeTab === 'dre' && 'DRE por Canal de Vendas'}
               {activeTab === 'abc' && 'Curva ABC de Produtos'}
               {activeTab === 'inteligencia' && 'Inteligência & Planejamento'}
+              {/* 🛒 NOVO: Título do Portal no Header */}
+              {activeTab === 'catalogo-b2b' && 'Portal de Vendas B2B'} 
             </h2>
             <p className="text-xs text-slate-400">
               Modo: <strong className="text-slate-700">{viewMode === 'consolidado' ? 'Acumulado Total' : `Mês ${selectedCompetencia}`}</strong>
@@ -109,7 +118,6 @@ export default function App() {
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* SELETOR DE CANAL DE VENDAS */}
             <div className="bg-emerald-50/50 p-1 rounded-xl border border-emerald-100 flex space-x-1 text-xs mr-2">
               <button onClick={() => setChannelFilter('todos')} className={`px-3 py-1.5 rounded-lg font-bold transition-all ${channelFilter === 'todos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-100'}`}>Todos</button>
               <button onClick={() => setChannelFilter('online')} className={`px-3 py-1.5 rounded-lg font-bold transition-all ${channelFilter === 'online' ? 'bg-emerald-500 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-100'}`}>Online</button>
@@ -196,6 +204,10 @@ export default function App() {
                   margemAtual={kpisExibidos.margemLiquidaMedia} 
                 />
               )}
+              {/* 🛒 NOVO: Renderizando a Tela do Catálogo B2B */}
+              {activeTab === 'catalogo-b2b' && (
+                <CatalogoB2BTab />
+              )}
             </>
           )}
         </main>
@@ -214,6 +226,10 @@ export default function App() {
         </button>
         <button onClick={() => setActiveTab('inteligencia')} className={`flex flex-col items-center space-y-1 p-2 w-full transition-colors ${activeTab === 'inteligencia' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <IconBrain className="w-5 h-5" />
+        </button>
+        {/* 🛒 NOVO: Botão B2B no Mobile */}
+        <button onClick={() => setActiveTab('catalogo-b2b')} className={`flex flex-col items-center space-y-1 p-2 w-full transition-colors ${activeTab === 'catalogo-b2b' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+          <span className="text-[20px]">🛒</span>
         </button>
       </nav>
     </div>
