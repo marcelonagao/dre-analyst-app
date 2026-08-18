@@ -38,7 +38,6 @@ export default async function handler(req, res) {
     const accessToken = tokenInfo.access_token;
 
     // 2. MONTAR O PAYLOAD DO PEDIDO
-    // O Bling exige que o pedido tenha um ID de um cliente (Contato) cadastrado lá.
     const idClienteB2B = clienteId || process.env.BLING_DEFAULT_B2B_CLIENT_ID;
     
     if (!idClienteB2B) {
@@ -50,13 +49,12 @@ export default async function handler(req, res) {
         id: Number(idClienteB2B)
       },
       itens: itens.map(item => ({
-        codigo: item.sku,
+        codigo: String(item.sku),
+        descricao: String(item.nome).substring(0, 120), // Descrição evita erros se o SKU não estiver mapeado igual
         quantidade: Number(item.quantidade),
         valor: Number(item.preco)
-      })),
-      situacao: {
-        id: 0 // ID 0 no Bling geralmente é pedido "Em Aberto"
-      }
+      }))
+      // ⚠️ Removemos o campo 'situacao: { id: 0 }' que costuma bloquear pedidos na API v3
     };
 
     // 3. ENVIAR PEDIDO PARA A API DO BLING
@@ -72,13 +70,13 @@ export default async function handler(req, res) {
 
     const blingData = await blingRes.json();
 
-    // Tratamento de erro caso o Bling recuse o pedido (ex: sem estoque, sku inválido)
+    // Tratamento de erro AVANÇADO (Pegando os detalhes escondidos do Bling)
     if (!blingRes.ok || blingData.error) {
-      const msgErro = blingData.error?.message || JSON.stringify(blingData.error || blingData);
-      throw new Error(`Erro do Bling: ${msgErro}`);
+      // O Bling esconde a causa real dentro de "fields" ou "collection"
+      const detalhesBling = blingData.error?.fields || blingData.error?.collection || blingData.error?.description || blingData;
+      throw new Error(`Recusado pelo Bling. Motivo detalhado: ${JSON.stringify(detalhesBling)}`);
     }
 
-    // Sucesso! Retorna o ID do pedido gerado
     return res.status(200).json({ 
       success: true, 
       message: "Pedido gerado com sucesso no Bling!", 
