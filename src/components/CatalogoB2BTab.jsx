@@ -119,7 +119,7 @@ export default function CatalogoB2BTab() {
       {/* ========================================== */}
       {/* LADO ESQUERDO: VITRINE & FILTROS */}
       {/* ========================================== */}
-      <div className="flex-1 pb-28 lg:pb-0">
+      <div className="flex-1 pb-32 lg:pb-0">
         
         {/* BARRA DE PESQUISA */}
         <div className="mb-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
@@ -153,7 +153,7 @@ export default function CatalogoB2BTab() {
         {produtosFiltrados.length === 0 ? (
           <div className="text-center py-12 text-slate-400 font-medium">Nenhum produto encontrado.</div>
         ) : (
-          /* 📱 GRID DE 2 COLUNAS NO MOBILE E 3/4 NO DESKTOP (Estilo Mercado Livre) */
+          /* GRID DE 2 COLUNAS NO MOBILE E 3/4 NO DESKTOP */
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {produtosFiltrados.map((produto) => {
               const qtdNoCarrinho = carrinho[produto.sku]?.quantidade || 0;
@@ -168,12 +168,12 @@ export default function CatalogoB2BTab() {
                     </div>
                   )}
 
-                  {/* IMAGEM NÍTIDA */}
-                  <div className="w-full h-36 sm:h-44 bg-slate-50 rounded-xl mb-3 flex items-center justify-center border border-slate-100 overflow-hidden relative p-2">
+                  {/* IMAGEM NÍTIDA COM FUNDO BRANCO E ENQUADRAMENTO PROPORCIONAL */}
+                  <div className="w-full h-36 sm:h-44 bg-white rounded-xl mb-3 flex items-center justify-center border border-slate-100 overflow-hidden relative p-2">
                     {produto.imagemUrl ? (
                       <img src={produto.imagemUrl} alt={produto.nome} className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300" />
                     ) : (
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Sem Imagem</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center">Sem Imagem</span>
                     )}
                   </div>
                   
@@ -225,7 +225,7 @@ export default function CatalogoB2BTab() {
       </div>
 
       {/* ========================================== */}
-      {/* BARRA FLUTUANTE & MODAL DO CARRINHO (MOBILE) */}
+      {/* BARRA FLUTUANTE (MOBILE) */}
       {/* ========================================== */}
       {quantidadeTotal > 0 && (
         <div className="lg:hidden fixed bottom-20 left-4 right-4 z-40">
@@ -247,15 +247,15 @@ export default function CatalogoB2BTab() {
       {/* MODAL BOTTOM SHEET (MOBILE) */}
       {modalCarrinhoAberto && (
         <div className="lg:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-center items-end animate-fade-in">
-          <div className="bg-white w-full h-[85vh] rounded-t-3xl shadow-2xl flex flex-col p-6 overflow-hidden">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+          <div className="bg-white w-full h-[85vh] rounded-t-3xl shadow-2xl flex flex-col p-6 pb-28 overflow-hidden">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4 shrink-0">
               <div>
                 <h3 className="text-lg font-black text-slate-900">Seu Pedido B2B</h3>
                 <p className="text-xs text-slate-400">{quantidadeTotal} itens selecionados</p>
               </div>
               <button onClick={() => setModalCarrinhoAberto(false)} className="w-8 h-8 bg-slate-100 rounded-full font-bold text-slate-600 flex items-center justify-center">✕</button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pr-1">
               <CarrinhoSidebar 
                 itensCarrinho={itensCarrinho} 
                 quantidadeTotal={quantidadeTotal} 
@@ -276,7 +276,7 @@ export default function CatalogoB2BTab() {
 
 function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDoCarrinho, adicionarAoCarrinho, finalizarPedido, isMobile = false }) {
   return (
-    <div className={`bg-white ${!isMobile ? 'border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-xl shadow-slate-200/50' : ''}`}>
+    <div className={`bg-white ${!isMobile ? 'border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-xl shadow-slate-200/50' : 'pb-6'}`}>
       {!isMobile && (
         <div className="flex justify-between items-end mb-6 border-b border-slate-100 pb-4">
           <div>
@@ -289,7 +289,7 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
         </div>
       )}
       
-      <div className={`${!isMobile ? 'max-h-72' : 'max-h-[50vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
+      <div className={`${!isMobile ? 'max-h-72' : 'max-h-[42vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
         {itensCarrinho.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-sm">O carrinho está vazio.</div>
         ) : (
