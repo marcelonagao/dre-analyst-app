@@ -168,10 +168,15 @@ export default function CatalogoB2BTab() {
                     </div>
                   )}
 
-                  {/* IMAGEM NÍTIDA COM FUNDO BRANCO E ENQUADRAMENTO PROPORCIONAL */}
+                  {/* IMAGEM COM TRATAMENTO ANTI-BORRÃO */}
                   <div className="w-full h-36 sm:h-44 bg-white rounded-xl mb-3 flex items-center justify-center border border-slate-100 overflow-hidden relative p-2">
                     {produto.imagemUrl ? (
-                      <img src={produto.imagemUrl} alt={produto.nome} className="h-full w-full object-contain transform group-hover:scale-105 transition-transform duration-300" />
+                      <img 
+                        src={produto.imagemUrl} 
+                        alt={produto.nome} 
+                        loading="lazy"
+                        className="max-h-full max-w-full object-scale-down transform group-hover:scale-105 transition-transform duration-300" 
+                      />
                     ) : (
                       <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest text-center">Sem Imagem</span>
                     )}
@@ -289,6 +294,7 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
         </div>
       )}
       
+      {/* CORREÇÃO APLICADA AQUI NA CLASSE max-h-[42vh] */}
       <div className={`${!isMobile ? 'max-h-72' : 'max-h-[42vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
         {itensCarrinho.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-sm">O carrinho está vazio.</div>
