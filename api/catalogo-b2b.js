@@ -26,35 +26,31 @@ export default async function handler(req, res) {
 
     // 2. BUSCAR PRODUTOS NO BLING (Trazendo o saldo de estoque junto)
     // O parâmetro situacao=A busca apenas produtos Ativos
+
     const resProdutos = await fetch(`https://www.bling.com.br/Api/v3/produtos?situacao=A&limite=100`, {
       headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
     });
     
     const produtosData = await resProdutos.json();
+    
     if (produtosData.error) throw new Error(produtosData.error.message || "Erro ao buscar produtos.");
 
-    // 3. FILTRAR E FORMATAR PARA O FRONTEND (React)
-    // 3. FILTRAR E FORMATAR PARA O FRONTEND (React)
+    const projetoSupabase = process.env.VITE_SUPABASE_URL; // Puxa automático da Vercel
+
     const catalogoLimpo = produtosData.data.map(p => {
-        let fotoAltaQualidade = p.imagemURL || p.imagem || null;
-        
-        // O hack para o Bling: remove os sufixos de miniatura da URL para forçar o carregamento do arquivo original
-        if (fotoAltaQualidade) {
-          fotoAltaQualidade = fotoAltaQualidade
-            .replace('_thumb', '')
-            .replace('_mini', '')
-            .replace('-thumb', '')
-            .replace('-mini', '');
-        }
-  
-        return {
-          id: p.id,
-          sku: p.codigo,
-          nome: p.nome,
-          preco: p.preco,
-          imagemUrl: fotoAltaQualidade, 
-        };
-      });
+      // Magia: A foto agora é puxada direto do seu bucket ultra-rápido, baseada no SKU!
+      const fotoPermanente = p.imagemURL 
+        ? `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.codigo}.jpg` 
+        : null;
+
+      return {
+        id: p.id,
+        sku: p.codigo,
+        nome: p.nome,
+        preco: p.preco,
+        imagemUrl: fotoPermanente, 
+      };
+    });
 
     return res.status(200).json({ success: true, produtos: catalogoLimpo });
 
