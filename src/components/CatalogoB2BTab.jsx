@@ -4,7 +4,8 @@ export default function CatalogoB2BTab() {
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [carrinho, setCarrinho] = useState({}); // Guarda os itens por SKU
+  const [carrinho, setCarrinho] = useState({});
+  const [busca, setBusca] = useState(''); // Novo estado para a barra de pesquisa
 
   useEffect(() => {
     buscarCatalogo();
@@ -28,7 +29,6 @@ export default function CatalogoB2BTab() {
     }
   };
 
-  // --- FUNÇÕES DO CARRINHO ---
   const adicionarAoCarrinho = (produto) => {
     setCarrinho((prev) => {
       const qtdAtual = prev[produto.sku]?.quantidade || 0;
@@ -51,91 +51,156 @@ export default function CatalogoB2BTab() {
     });
   };
 
-  // --- CÁLCULOS DO RESUMO ---
+  const finalizarPedido = () => {
+    if (quantidadeTotal === 0) return alert("Adicione produtos ao carrinho primeiro!");
+    console.log("Carrinho pronto para envio:", itensCarrinho);
+    alert("Pronto para o Checkout! Próximo passo: integrar a rota B2B na Vercel.");
+  };
+
+  // Filtra os produtos com base no que foi digitado na busca
+  const produtosFiltrados = produtos.filter(p => 
+    p.nome.toLowerCase().includes(busca.toLowerCase()) || 
+    p.sku.toLowerCase().includes(busca.toLowerCase())
+  );
+
   const itensCarrinho = Object.values(carrinho);
   const quantidadeTotal = itensCarrinho.reduce((acc, item) => acc + item.quantidade, 0);
   const valorTotal = itensCarrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
 
-  const finalizarPedido = () => {
-    if (quantidadeTotal === 0) return alert("Adicione produtos ao carrinho primeiro!");
-    console.log("Carrinho pronto para envio:", itensCarrinho);
-    alert("Pronto para o Checkout! O próximo passo é enviar isso para a API do Bling.");
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 w-full">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+        <h2 className="text-slate-500 font-bold text-sm uppercase tracking-widest">
+          Sincronizando Catálogo...
+        </h2>
+      </div>
+    );
+  }
 
-  // --- TELAS DE ESTADO (Loading e Erro) ---
-  if (loading) return <div className="p-8 text-center text-gray-500">⏳ Carregando catálogo B2B atualizado...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">❌ Erro: {error}</div>;
+  if (error) {
+    return (
+      <div className="p-8 bg-red-50 rounded-2xl border border-red-200 text-center">
+        <p className="text-red-700 font-bold text-sm">❌ Erro: {error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       
-      {/* LADO ESQUERDO: VITRINE DE PRODUTOS */}
+      {/* ESQUERDA: VITRINE DE PRODUTOS */}
       <div className="flex-1">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Vitrine B2B</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {produtos.map((produto) => (
-            <div key={produto.sku} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-              {/* Espaço para imagem futura */}
-              <div className="h-32 bg-gray-100 rounded mb-4 flex items-center justify-center text-gray-400">
-                {produto.imagemUrl ? <img src={produto.imagemUrl} alt={produto.nome} className="h-full object-contain" /> : "📷 Sem Imagem"}
-              </div>
-              
-              <div className="text-sm text-gray-500 mb-1">SKU: {produto.sku}</div>
-              <div className="font-semibold text-gray-800 mb-2 h-12 overflow-hidden">{produto.nome}</div>
-              <div className="text-lg font-bold text-green-600 mb-4">
-                R$ {Number(produto.preco).toFixed(2).replace('.', ',')}
-              </div>
-              
-              <button 
-                onClick={() => adicionarAoCarrinho(produto)}
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors font-medium"
-              >
-                + Adicionar
-              </button>
-            </div>
-          ))}
+        {/* Barra de Pesquisa */}
+        <div className="mb-6 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+          <span className="pl-4 text-slate-400">🔍</span>
+          <input 
+            type="text" 
+            placeholder="Buscar por nome ou SKU..." 
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full p-3 bg-transparent text-sm text-slate-700 focus:outline-none"
+          />
         </div>
+        
+        {produtosFiltrados.length === 0 ? (
+          <div className="text-center py-10 text-slate-400 font-medium">Nenhum produto encontrado.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            {produtosFiltrados.map((produto) => (
+              <div key={produto.sku} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col shadow-sm hover:shadow-lg transition-all duration-300 group">
+                
+                {/* Imagem (com background neutro) */}
+                <div className="h-40 bg-slate-50 rounded-xl mb-4 flex items-center justify-center text-slate-300 border border-slate-100 overflow-hidden">
+                  {produto.imagemUrl ? (
+                    <img src={produto.imagemUrl} alt={produto.nome} className="h-full w-full object-contain mix-blend-multiply p-2" />
+                  ) : (
+                    <span className="text-xs font-bold uppercase tracking-widest">Sem Imagem</span>
+                  )}
+                </div>
+                
+                {/* Informações do Produto */}
+                <div className="flex-1">
+                  <div className="text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">SKU: {produto.sku}</div>
+                  <div className="text-sm font-bold text-slate-800 mb-2 line-clamp-2 leading-tight min-h-[2.5rem]">
+                    {produto.nome}
+                  </div>
+                </div>
+
+                {/* Preço e Botão */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-lg font-black text-emerald-600">
+                    R$ {Number(produto.preco).toFixed(2).replace('.', ',')}
+                  </div>
+                  <button 
+                    onClick={() => adicionarAoCarrinho(produto)}
+                    className="h-10 w-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-colors shadow-sm"
+                    title="Adicionar ao Carrinho"
+                  >
+                    <span className="text-xl font-bold leading-none">+</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* LADO DIREITO: CARRINHO LATERAL (STICKY) */}
-      <div className="w-full md:w-80 lg:w-96">
-        <div className="bg-gray-50 border rounded-lg p-6 sticky top-6">
-          <h3 className="text-xl font-bold mb-4 flex justify-between">
-            🛒 Carrinho 
-            <span className="bg-blue-100 text-blue-800 text-sm py-1 px-2 rounded-full">{quantidadeTotal} itens</span>
-          </h3>
+      {/* DIREITA: CARRINHO (STICKY) */}
+      <div className="w-full lg:w-80 xl:w-96 shrink-0">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-xl shadow-slate-200/50">
+          <div className="flex justify-between items-end mb-6 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 tracking-tight">Resumo do Pedido</h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">Portal B2B</p>
+            </div>
+            <span className="bg-emerald-100 text-emerald-800 text-xs font-bold py-1 px-3 rounded-full">
+              {quantidadeTotal} {quantidadeTotal === 1 ? 'item' : 'itens'}
+            </span>
+          </div>
           
-          <div className="max-h-96 overflow-y-auto mb-4 border-b pb-4">
+          <div className="max-h-72 overflow-y-auto mb-6 pr-2 space-y-4">
             {itensCarrinho.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Seu carrinho está vazio.</p>
+              <div className="text-center py-8 text-slate-400 text-sm">
+                <span className="text-3xl block mb-2">🛒</span>
+                Seu carrinho está vazio.
+              </div>
             ) : (
               itensCarrinho.map((item) => (
-                <div key={item.sku} className="flex justify-between items-center mb-3 text-sm">
-                  <div className="flex-1 truncate pr-2">
-                    <span className="font-medium">{item.nome}</span>
+                <div key={item.sku} className="flex justify-between items-center text-sm group">
+                  <div className="flex-1 truncate pr-3">
+                    <p className="font-bold text-slate-700 truncate">{item.nome}</p>
+                    <p className="text-[10px] text-slate-400">R$ {Number(item.preco).toFixed(2).replace('.', ',')}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => removerDoCarrinho(item.sku)} className="bg-gray-200 px-2 rounded hover:bg-red-200">-</button>
-                    <span className="w-4 text-center">{item.quantidade}</span>
-                    <button onClick={() => adicionarAoCarrinho(item)} className="bg-gray-200 px-2 rounded hover:bg-green-200">+</button>
+                  
+                  {/* Controles de Quantidade */}
+                  <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-lg p-1">
+                    <button onClick={() => removerDoCarrinho(item.sku)} className="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors">-</button>
+                    <span className="w-5 text-center font-bold text-xs text-slate-700">{item.quantidade}</span>
+                    <button onClick={() => adicionarAoCarrinho(item)} className="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors">+</button>
                   </div>
                 </div>
               ))
             )}
           </div>
 
-          <div className="flex justify-between items-center mb-6 font-bold text-lg">
-            <span>Total:</span>
-            <span className="text-green-600">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
+          <div className="pt-4 border-t border-slate-100 mb-6">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-slate-500 text-sm font-bold">Total Liquido</span>
+              <span className="text-xl font-black text-emerald-600">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
+            </div>
           </div>
 
           <button 
             onClick={finalizarPedido}
             disabled={quantidadeTotal === 0}
-            className={`w-full py-3 rounded font-bold text-white transition-colors ${quantidadeTotal > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}`}
+            className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${
+              quantidadeTotal > 0 
+                ? 'bg-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/30 hover:bg-emerald-400 hover:scale-[1.02]' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
           >
-            Finalizar Pedido
+            Finalizar Pedido B2B
           </button>
         </div>
       </div>
