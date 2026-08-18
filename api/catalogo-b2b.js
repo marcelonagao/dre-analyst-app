@@ -34,15 +34,27 @@ export default async function handler(req, res) {
     if (produtosData.error) throw new Error(produtosData.error.message || "Erro ao buscar produtos.");
 
     // 3. FILTRAR E FORMATAR PARA O FRONTEND (React)
-    const catalogoLimpo = produtosData.data.map(p => ({
-      id: p.id,
-      sku: p.codigo,
-      nome: p.nome,
-      preco: p.preco,
-      // O Bling v3 precisa de uma chamada separada para saldos exatos de múltiplos depósitos, 
-      // mas podemos retornar a estrutura pronta para a tela.
-      imagemUrl: p.imagemURL || null, 
-    }));
+    // 3. FILTRAR E FORMATAR PARA O FRONTEND (React)
+    const catalogoLimpo = produtosData.data.map(p => {
+        let fotoAltaQualidade = p.imagemURL || p.imagem || null;
+        
+        // O hack para o Bling: remove os sufixos de miniatura da URL para forçar o carregamento do arquivo original
+        if (fotoAltaQualidade) {
+          fotoAltaQualidade = fotoAltaQualidade
+            .replace('_thumb', '')
+            .replace('_mini', '')
+            .replace('-thumb', '')
+            .replace('-mini', '');
+        }
+  
+        return {
+          id: p.id,
+          sku: p.codigo,
+          nome: p.nome,
+          preco: p.preco,
+          imagemUrl: fotoAltaQualidade, 
+        };
+      });
 
     return res.status(200).json({ success: true, produtos: catalogoLimpo });
 
