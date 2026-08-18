@@ -59,10 +59,17 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
     });
     const pedidosData = await resPedidos.json();
+
+    // 🚨 A NOVA TRAVA: Se o Bling der erro de permissão, mostre na tela!
+    if (pedidosData.error) {
+      throw new Error(`Bling recusou a busca: ${pedidosData.error.message || JSON.stringify(pedidosData.error)}`);
+    }
+
     const pedidosList = pedidosData.data || [];
 
     if (pedidosList.length === 0) return res.status(200).json({ success: true, message: "Sem pedidos B2B novos." });
 
+    // 👇 MANTENHA ESTES DOIS AQUI!
     let linhasParaInserir = [];
     let orderIdsProcessados = [];
 
