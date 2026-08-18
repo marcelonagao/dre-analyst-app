@@ -118,8 +118,9 @@ export default function CatalogoB2BTab() {
       
       {/* ========================================== */}
       {/* LADO ESQUERDO: VITRINE & FILTROS */}
+      {/* A classe 'min-w-0' aqui é o que resolve o bug do layout estourado no desktop! */}
       {/* ========================================== */}
-      <div className="flex-1 pb-32 lg:pb-0">
+      <div className="flex-1 min-w-0 pb-32 lg:pb-0">
         
         {/* BARRA DE PESQUISA */}
         <div className="mb-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center">
@@ -134,7 +135,7 @@ export default function CatalogoB2BTab() {
         </div>
 
         {/* FILTRO DE MARCAS (PILLS) */}
-        <div className="mb-6 flex overflow-x-auto gap-2 pb-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+        <div className="mb-6 flex overflow-x-auto gap-2 pb-2 scrollbar-none w-full" style={{ scrollbarWidth: 'none' }}>
           {marcas.map(marca => (
             <button
               key={marca}
@@ -153,8 +154,8 @@ export default function CatalogoB2BTab() {
         {produtosFiltrados.length === 0 ? (
           <div className="text-center py-12 text-slate-400 font-medium">Nenhum produto encontrado.</div>
         ) : (
-          /* GRID DE 2 COLUNAS NO MOBILE E 3/4 NO DESKTOP */
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          /* GRID RESPONSIVA AJUSTADA PARA O CARRINHO NÃO ESMAGAR OS CARDS */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {produtosFiltrados.map((produto) => {
               const qtdNoCarrinho = carrinho[produto.sku]?.quantidade || 0;
               
@@ -217,6 +218,7 @@ export default function CatalogoB2BTab() {
 
       {/* ========================================== */}
       {/* LADO DIREITO: CARRINHO (DESKTOP) */}
+      {/* O Carrinho agora ficará 100% visível! */}
       {/* ========================================== */}
       <div className="hidden lg:block w-80 xl:w-96 shrink-0">
         <CarrinhoSidebar 
@@ -294,8 +296,7 @@ function CarrinhoSidebar({ itensCarrinho, quantidadeTotal, valorTotal, removerDo
         </div>
       )}
       
-      {/* CORREÇÃO APLICADA AQUI NA CLASSE max-h-[42vh] */}
-      <div className={`${!isMobile ? 'max-h-72' : 'max-h-[42vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
+      <div className={`${!isMobile ? 'max-h-[50vh]' : 'max-h-[42vh]'} overflow-y-auto mb-6 pr-1 space-y-4`}>
         {itensCarrinho.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-sm">O carrinho está vazio.</div>
         ) : (
