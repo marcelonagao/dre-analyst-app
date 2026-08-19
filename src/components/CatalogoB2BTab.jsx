@@ -933,13 +933,17 @@ export default function CatalogoB2BTab() {
                 onClick={() => openProductDetails(product)}
                 className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
               >
-                {/* CAIXA DE IMAGEM MAIOR (h-48 e sm:h-56) */}
-                <div className="h-48 sm:h-56 relative p-1 flex justify-center items-center bg-white border-b border-gray-50 overflow-hidden">
+                {/* CAIXA DE IMAGEM */}
+                <div className="h-48 sm:h-56 relative p-2 flex justify-center items-center bg-white border-b border-gray-50 overflow-hidden">
                   <img 
                     src={product.image} 
                     alt={product.name} 
-                    /* Adicionado scale-110 para dar um leve zoom padrão nas imagens com muita borda branca */
-                    className="max-h-full max-w-full object-contain mix-blend-multiply scale-110 group-hover:scale-125 transition-transform duration-500" 
+                    /* 
+                      1. w-full h-full: Força a imagem a preencher a caixa inteira
+                      2. scale-125: Dá um zoom de 25% para "comer" a borda branca da foto original
+                      3. group-hover:scale-150: Zoom dramático ao passar o mouse!
+                    */
+                    className="w-full h-full object-contain mix-blend-multiply scale-125 group-hover:scale-150 transition-transform duration-500" 
                   />
                   {product.category && (
                     <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm z-10">
