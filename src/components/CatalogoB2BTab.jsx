@@ -246,22 +246,20 @@ export default function CatalogoB2BTab() {
         
         if (data.success) {
           
-          // O "Adaptador": Traduz as variáveis do Bling para o Front
+           // O "Adaptador": Traduz as variáveis do Bling para o Front
           const produtosAdaptados = data.produtos.map((p) => {
             const partesNome = p.nome.split('-');
             const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
 
-            // 🌟 O TRUQUE DE MESTRE AQUI:
             let imagemTratada = p.imagemUrl || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
             
-            // 1. Se o link vier do Bling direto, arrancamos a pasta /t/ (miniatura) à força
-            imagemTratada = imagemTratada.replace(/\/t\//g, '/');
-            
-            // 2. Se o link vier do Supabase, adicionamos a HORA atual no final do link.
-            // Isso engana a CDN do Supabase e obriga ela a buscar a foto HD nova!
+            // Aplica o cache-buster (atualização de hora) APENAS se for do Supabase
+            // O Bling nós deixamos quieto para não quebrar o link original da Amazon
             if (imagemTratada.includes('supabase.co')) {
               const horaAtual = new Date().getHours(); 
-              imagemTratada = `${imagemTratada}?v=${horaAtual}`;
+              // Verifica se já existe um '?' no link para não bugar a URL
+              const separador = imagemTratada.includes('?') ? '&' : '?';
+              imagemTratada = `${imagemTratada}${separador}v=${horaAtual}`;
             }
 
             return {
@@ -271,7 +269,7 @@ export default function CatalogoB2BTab() {
               category: categoriaDerivada,
               price: Number(p.preco),
               stock: 999,
-              image: imagemTratada, // 👈 Usamos a imagem super tratada aqui!
+              image: imagemTratada,
               description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
             };
           });
@@ -947,20 +945,24 @@ export default function CatalogoB2BTab() {
                 onClick={() => openProductDetails(product)}
                 className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
               >
-                {/* CAIXA DE IMAGEM */}
-                <div className="h-48 sm:h-56 relative p-2 flex justify-center items-center bg-white border-b border-gray-50 overflow-hidden">
+                {/* CAIXA DE IMAGEM COM ALTURA ADAPTÁVEL E FUNDO CLEAN */}
+                <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
                   <img 
                     src={product.image} 
                     alt={product.name} 
                     /* 
-                      1. w-full h-full: Força a imagem a preencher a caixa inteira
-                      2. scale-125: Dá um zoom de 25% para "comer" a borda branca da foto original
-                      3. group-hover:scale-150: Zoom dramático ao passar o mouse!
+                      O segredo aqui é 'object-contain' com 'max-h-full' e 'max-w-full'. 
+                      Ele cresce até onde pode sem perder a proporção e sem estourar o pixel.
+                      O 'group-hover:scale-105' dá um zoom suave e premium, sem exagero.
                     */
-                    className="w-full h-full object-contain mix-blend-multiply scale-125 group-hover:scale-150 transition-transform duration-500" 
+                    className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+                    }}
                   />
                   {product.category && (
-                    <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm z-10">
+                    <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest shadow-sm z-10">
                       {product.category}
                     </span>
                   )}
