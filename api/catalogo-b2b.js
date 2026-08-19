@@ -9,34 +9,39 @@ export default async function handler(req, res) {
     let todosOsProdutos = [];
     let pagina = 1;
     let temMaisProdutos = true;
+    const MAX_PAGINAS = 15; // 🌟 Trava anti-timeout da Vercel (Máx 1.500 produtos em estoque)
 
-    // 🔄 O Loop de Coleta: Vai rodar até o Bling dizer que a página está vazia
-    while (temMaisProdutos) {
+    // O Loop com limite máximo de rodadas
+    while (temMaisProdutos && pagina <= MAX_PAGINAS) {
       const response = await fetch(`https://www.bling.com.br/Api/v3/produtos?limite=100&pagina=${pagina}&criterio=5`, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       
       const data = await response.json();
+      
+      // 🌟 Lupa de Erros: Se o Bling barrar a busca, paramos imediatamente
+      if (data.error) {
+        throw new Error(`Bling recusou a página ${pagina}: ${JSON.stringify(data.error)}`);
+      }
+
       const produtosDestaPagina = data.data || [];
 
       if (produtosDestaPagina.length > 0) {
-        // Junta os produtos novos com os que já coletamos
         todosOsProdutos = todosOsProdutos.concat(produtosDestaPagina);
         pagina++;
         
-        // 🛑 Freio de segurança (350ms) para respeitar o limite do Bling (3 req/s)
+        // Freio rápido (350ms)
         await new Promise(resolve => setTimeout(resolve, 350));
       } else {
-        // A página veio vazia? Acabou o estoque, saímos do loop!
         temMaisProdutos = false;
       }
     }
 
-    // 🚀 Entrega o Catálogo COMPLETO para a Vitrine
     return res.status(200).json({ produtos: todosOsProdutos });
 
   } catch (error) {
-    console.error("Erro crítico na agregação do Catálogo:", error);
-    return res.status(500).json({ error: error.message });
+    console.error("❌ ERRO NO CATÁLOGO:", error);
+    // Garante que o erro retorne como texto legível para o Front-end
+    return res.status(500).json({ error: error.message || JSON.stringify(error) });
   }
 }
