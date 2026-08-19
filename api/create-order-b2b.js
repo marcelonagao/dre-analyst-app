@@ -33,7 +33,8 @@ export default async function handler(req, res) {
           const payloadContato = {
             nome: clienteNome,
             numeroDocumento: cnpjLimpo,
-            tipo: cnpjLimpo.length === 14 ? 'J' : 'F' // Jurídica (14) ou Física (11)
+            tipo: cnpjLimpo.length === 14 ? 'J' : 'F', // Jurídica (14) ou Física (11)
+            situacao: 'A' // 🌟 AQUI ESTÁ A CORREÇÃO: Diz pro Bling que o cliente já nasce "Ativo"
           };
 
           const createRes = await fetch('https://www.bling.com.br/Api/v3/contatos', {
