@@ -160,8 +160,8 @@ const PRODUCTS_FALLBACK = [
 ];
 
 const MOCK_USERS = {
-  // Adicionamos o campo 'nif' com CNPJs fictícios válidos (14 dígitos)
-  b2b_approved: { id: 'u2', name: 'Teste Ltda', isB2B: true, creditLimit: 5000.00, status: 'aprovado', nif: '12345678000199' },
+  // Troquei o nif da Teste Ltda por um CNPJ matematicamente válido
+  b2b_approved: { id: 'u2', name: 'Teste Ltda', isB2B: true, creditLimit: 5000.00, status: 'aprovado', nif: '45997418000153' },
   b2b_novato: { id: 'u3', name: 'Nova Loja (Novo)', isB2B: true, creditLimit: 0.00, status: 'pendente', nif: '98765432000199' },
   rep: { id: 'rep_1', name: 'Carlos Vendedor', isRep: true },
   admin: { id: 'admin', name: 'Gestor GKL', isAdmin: true }
