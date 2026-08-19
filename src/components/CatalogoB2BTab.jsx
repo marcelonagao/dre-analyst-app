@@ -449,9 +449,7 @@ export default function CatalogoB2BTab() {
 
   const handleFinalizeOrder = async (paymentMethod) => {
     if (!isFirebaseConfigured) {
-      alert("Modo de Simulação: Como as chaves do Firebase não foram colocadas, o pedido será apenas simulado na tela.");
-      setCart([]); 
-      setCurrentScreen('success');
+      alert("Modo de Simulação: Configure o Firebase.");
       return;
     }
 
@@ -461,9 +459,39 @@ export default function CatalogoB2BTab() {
     }
 
     try {
+      // 1. DADOS DO CLIENTE (Firebase)
       const targetClient = currentUser.isRep ? selectedClientForRep : currentUser;
       const targetClientId = targetClient?.id || firebaseUser.uid;
 
+      // 2. AÇÃO A: INJETAR NO BLING (Via Vercel)
+      // Convertemos o carrinho para o formato que a nossa API do Bling exige
+      const itensBling = cart.map(item => ({
+        sku: item.id, // O SKU que mapeamos no catálogo
+        id: item.blingId, // O ID interno do Bling (evita o Erro 27 de duplicação)
+        nome: item.name,
+        quantidade: item.quantity,
+        preco: item.price
+      }));
+
+      // Dispara para a nuvem!
+      const resBling = await fetch('/api/create-order-b2b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          itens: itensBling
+          // Nota: Como não estamos enviando o clienteId do Bling aqui, 
+          // a Vercel vai usar aquele BLING_DEFAULT_B2B_CLIENT_ID automaticamente!
+        })
+      });
+
+      const dataBling = await resBling.json();
+
+      if (!dataBling.success) {
+        alert(`❌ Erro retornado pelo Bling: ${dataBling.error}`);
+        return; // Interrompe o processo e não salva no Firebase se o Bling recusar!
+      }
+
+      // 3. AÇÃO B: SALVAR NO FIREBASE (Para histórico do app)
       const orderPath = typeof window !== 'undefined' && window.__app_id
         ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
         : collection(db, 'pedidos');
@@ -477,15 +505,18 @@ export default function CatalogoB2BTab() {
         itens: cart,
         total: cartTotal,
         metodoPagamento: paymentMethod,
-        status: 'Autorizado',
+        status: 'Integrado ao Bling', // Mudamos o status para mostrar que deu certo!
+        blingPedidoId: dataBling.pedidoBlingId || 'N/A', // Salva o ID oficial do Bling como comprovante
         dataCriacao: new Date().toISOString()
       });
 
+      // 4. SUCESSO! Limpa o carrinho e avança de tela
       setCart([]); 
       setCurrentScreen('success');
+
     } catch (error) {
       console.error("Erro ao guardar pedido:", error);
-      alert("Erro ao finalizar pedido. Verifique as configurações do Firebase.");
+      alert("❌ Falha de comunicação ao finalizar pedido. Tente novamente.");
     }
   };
 
