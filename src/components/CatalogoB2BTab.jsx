@@ -464,26 +464,24 @@ export default function CatalogoB2BTab() {
       const targetClientId = targetClient?.id || firebaseUser.uid;
 
       // 2. AÇÃO A: INJETAR NO BLING (Via Vercel)
-      // Convertemos o carrinho para o formato que a nossa API do Bling exige
       const itensBling = cart.map(item => ({
-        sku: item.id, // O SKU que mapeamos no catálogo
-        id: item.blingId, // O ID interno do Bling (evita o Erro 27 de duplicação)
+        sku: item.id, 
+        id: item.blingId, 
         nome: item.name,
         quantidade: item.quantity,
         preco: item.price
       }));
 
-      // Dispara para a nuvem!
+      // Dispara para a nuvem enviando também os dados do cliente!
       const resBling = await fetch('/api/create-order-b2b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          itens: itensBling
-          // Nota: Como não estamos enviando o clienteId do Bling aqui, 
-          // a Vercel vai usar aquele BLING_DEFAULT_B2B_CLIENT_ID automaticamente!
+          itens: itensBling,
+          clienteCnpj: targetClient?.nif,  // Envia o CNPJ salvo no Firebase
+          clienteNome: targetClient?.name  // Envia o Nome salvo no Firebase
         })
       });
-
       const dataBling = await resBling.json();
 
       if (!dataBling.success) {
