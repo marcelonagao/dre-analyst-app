@@ -1,8 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
+// Importamos o nosso novo Gerente Inteligente!
+import { getValidBlingToken } from './_blingAuth.js'; 
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
@@ -12,57 +9,37 @@ export default async function handler(req, res) {
 
     if (!itens || itens.length === 0) return res.status(400).json({ error: 'O carrinho está vazio.' });
 
-    // 1. RENOVAR TOKEN B2B NO SUPABASE
-    let { data: tokenData } = await supabase.from('bling_tokens').select('refresh_token').eq('conta', 'B2B').single();
-    if (!tokenData) throw new Error("Token B2B não encontrado.");
-
-    const credentials = Buffer.from(`${process.env.BLING_B2B_CLIENT_ID}:${process.env.BLING_B2B_CLIENT_SECRET}`).toString('base64');
-    const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${credentials}` },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: tokenData.refresh_token })
-    });
-
-    const tokenInfo = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error("Erro ao renovar token B2B.");
-    await supabase.from('bling_tokens').upsert({ conta: 'B2B', refresh_token: tokenInfo.refresh_token });
-    const accessToken = tokenInfo.access_token;
+    // 1. PEGAR A CHAVE (O Gerente decide se usa a salva ou se pede uma nova)
+    const accessToken = await getValidBlingToken();
 
     // ==========================================================
     // 2. INTELIGÊNCIA B2B: DESCOBRIR OU CRIAR CLIENTE NO BLING
     // ==========================================================
-    let idClienteBling = process.env.BLING_DEFAULT_B2B_CLIENT_ID; // Fallback (Plano B)
+    let idClienteBling = process.env.BLING_DEFAULT_B2B_CLIENT_ID;
 
     if (clienteCnpj) {
-      // Limpa pontos e traços do CNPJ
       const cnpjLimpo = String(clienteCnpj).replace(/\D/g, '');
 
       if (cnpjLimpo.length >= 11) {
-        // PASSO A: Pergunta ao Bling se esse CNPJ já existe
         const buscaRes = await fetch(`https://www.bling.com.br/Api/v3/contatos?numeroDocumento=${cnpjLimpo}`, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const buscaData = await buscaRes.json();
 
         if (buscaData.data && buscaData.data.length > 0) {
-          // 🎉 CLIENTE EXISTE! Pega o ID dele.
           idClienteBling = buscaData.data[0].id;
         } else if (clienteNome) {
-          // ✨ CLIENTE NÃO EXISTE! Vamos criar ele no Bling automaticamente.
           const createRes = await fetch('https://www.bling.com.br/Api/v3/contatos', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nome: clienteNome,
               numeroDocumento: cnpjLimpo,
-              tipo: cnpjLimpo.length === 14 ? 'J' : 'F' // Jurídica (14) ou Física (11)
+              tipo: cnpjLimpo.length === 14 ? 'J' : 'F'
             })
           });
           const createData = await createRes.json();
-          
-          if (createData.data && createData.data.id) {
-            idClienteBling = createData.data.id;
-          }
+          if (createData.data && createData.data.id) idClienteBling = createData.data.id;
         }
       }
     }
@@ -77,7 +54,7 @@ export default async function handler(req, res) {
     const pedidoBling = {
       data: dataHoje,
       dataSaida: dataHoje,
-      contato: { id: Number(idClienteBling) }, // Agora usa o cliente exato!
+      contato: { id: Number(idClienteBling) },
       itens: itens.map(item => ({
         produto: { id: Number(item.id) },
         quantidade: Number(item.quantidade),
