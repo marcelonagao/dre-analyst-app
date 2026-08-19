@@ -4,39 +4,32 @@ export default async function handler(req, res) {
   try {
     const accessToken = await getValidBlingToken();
 
-    // Busca os 50 primeiros produtos
-    const produtosRes = await fetch('https://www.bling.com.br/Api/v3/produtos?limite=50', {
+    // 🌟 COLOQUE AQUI O SKU DE UM PRODUTO QUE VOCÊ TEM CERTEZA QUE TEM FOTO NO BLING
+    const skuAlvo = "N51029"; // Exemplo: "13022" ou "SnuggManguitoM"
+
+    // 1. Busca o produto exato pelo SKU
+    const buscaRes = await fetch(`https://www.bling.com.br/Api/v3/produtos?codigo=${skuAlvo}`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
-    const produtosData = await produtosRes.json();
+    const buscaData = await buscaRes.json();
 
-    if (!produtosData.data) return res.status(400).json({ erro: "Falha ao conectar no Bling" });
-
-    // O Scanner: Vai abrir um por um até achar uma foto escondida
-    for (const produto of produtosData.data) {
-      const detalheRes = await fetch(`https://www.bling.com.br/Api/v3/produtos/${produto.id}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-      const detalheData = await detalheRes.json();
-      
-      const produtoCru = detalheData.data;
-      
-      // Transforma tudo em texto para procurar links de imagem
-      const jsonString = JSON.stringify(produtoCru);
-
-      // Se tiver qualquer URL de imagem no meio desse caos, ele para e mostra!
-      if (jsonString.includes('http') && (jsonString.includes('.jpg') || jsonString.includes('.png') || jsonString.includes('.webp') || jsonString.includes('imagem'))) {
-        return res.status(200).json({
-          mensagem: "🚨 ACHEI A FOTO! Copie tudo que está abaixo de 'produtoRaioX' e mande para o Gemini mapear:",
-          produtoRaioX: produtoCru
-        });
-      }
-      
-      // Freio rápido
-      await new Promise(resolve => setTimeout(resolve, 200));
+    if (!buscaData.data || buscaData.data.length === 0) {
+      return res.status(404).json({ erro: `Não achei nenhum produto com o código: ${skuAlvo}` });
     }
 
-    return res.status(200).json({ aviso: "Nenhum dos 50 primeiros produtos possuía um link de imagem legível." });
+    const idProduto = buscaData.data[0].id;
+
+    // 2. Tira um Raio-X completo e profundo desse produto específico
+    const detalheRes = await fetch(`https://www.bling.com.br/Api/v3/produtos/${idProduto}`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    const detalheData = await detalheRes.json();
+
+    // Entrega o mapa do tesouro na tela
+    return res.status(200).json({
+      mensagem: `🚨 RAIO-X DO PRODUTO ${skuAlvo} CONCLUÍDO! Copie TUDO que está abaixo e mande pro Gemini:`,
+      produtoRaioX: detalheData.data
+    });
 
   } catch (error) {
     return res.status(500).json({ error: error.message });
