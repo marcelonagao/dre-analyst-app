@@ -246,21 +246,15 @@ export default function CatalogoB2BTab() {
         
         if (data.success) {
           
-           // O "Adaptador": Traduz as variáveis do Bling para o Front
           const produtosAdaptados = data.produtos.map((p) => {
             const partesNome = p.nome.split('-');
             const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
 
-            let imagemTratada = p.imagemUrl || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+            const urlBlingOriginal = p.imagemUrl || '';
             
-            // Aplica o cache-buster (atualização de hora) APENAS se for do Supabase
-            // O Bling nós deixamos quieto para não quebrar o link original da Amazon
-            if (imagemTratada.includes('supabase.co')) {
-              const horaAtual = new Date().getHours(); 
-              // Verifica se já existe um '?' no link para não bugar a URL
-              const separador = imagemTratada.includes('?') ? '&' : '?';
-              imagemTratada = `${imagemTratada}${separador}v=${horaAtual}`;
-            }
+            // Tenta buscar no Supabase pelo SKU
+            const horaAtual = new Date().getHours();
+            const urlSupabase = `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`;
 
             return {
               id: p.sku, 
@@ -269,7 +263,8 @@ export default function CatalogoB2BTab() {
               category: categoriaDerivada,
               price: Number(p.preco),
               stock: 999,
-              image: imagemTratada,
+              image: urlSupabase,         // 1ª opção: Supabase
+              blingImage: urlBlingOriginal, // 2ª opção: Bling Original
               description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
             };
           });
@@ -950,15 +945,16 @@ export default function CatalogoB2BTab() {
                   <img 
                     src={product.image} 
                     alt={product.name} 
-                    /* 
-                      O segredo aqui é 'object-contain' com 'max-h-full' e 'max-w-full'. 
-                      Ele cresce até onde pode sem perder a proporção e sem estourar o pixel.
-                      O 'group-hover:scale-105' dá um zoom suave e premium, sem exagero.
-                    */
                     className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
                     onError={(e) => {
-                      e.target.onerror = null; 
-                      e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+                      // Se falhar no Supabase, tenta a imagem original do Bling
+                      if (product.blingImage && e.target.src !== product.blingImage) {
+                        e.target.src = product.blingImage;
+                      } else {
+                        // Se falhar no Bling também, aí sim usa o placeholder neutro
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+                      }
                     }}
                   />
                   {product.category && (
