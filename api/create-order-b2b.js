@@ -29,17 +29,33 @@ export default async function handler(req, res) {
         if (buscaData.data && buscaData.data.length > 0) {
           idClienteBling = buscaData.data[0].id;
         } else if (clienteNome) {
+          // ✨ CLIENTE NÃO EXISTE! Vamos tentar criar no Bling
+          const payloadContato = {
+            nome: clienteNome,
+            numeroDocumento: cnpjLimpo,
+            tipo: cnpjLimpo.length === 14 ? 'J' : 'F' // Jurídica (14) ou Física (11)
+          };
+
           const createRes = await fetch('https://www.bling.com.br/Api/v3/contatos', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nome: clienteNome,
-              numeroDocumento: cnpjLimpo,
-              tipo: cnpjLimpo.length === 14 ? 'J' : 'F'
-            })
+            body: JSON.stringify(payloadContato)
           });
+          
           const createData = await createRes.json();
-          if (createData.data && createData.data.id) idClienteBling = createData.data.id;
+          
+          // 🚨 A LUPA: Se o Bling recusar o cadastro, paramos tudo e mostramos o erro!
+          if (!createRes.ok || createData.error) {
+            const detalhesErro = createData.error?.fields || createData.error?.description || createData.error || createData;
+            console.error("❌ ERRO DETALHADO DO BLING (CONTATO):", JSON.stringify(detalhesErro));
+            
+            // Lança o erro para o Front-end mostrar no alert()
+            throw new Error(`Bling recusou o cadastro do CNPJ ${cnpjLimpo}. Motivo: ${JSON.stringify(detalhesErro)}`);
+          }
+          
+          if (createData.data && createData.data.id) {
+            idClienteBling = createData.data.id;
+          }
         }
       }
     }
