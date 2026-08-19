@@ -245,10 +245,24 @@ export default function CatalogoB2BTab() {
         const data = await res.json();
         
         if (data.success) {
+          
           // O "Adaptador": Traduz as variáveis do Bling para o Front
           const produtosAdaptados = data.produtos.map((p) => {
             const partesNome = p.nome.split('-');
             const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
+
+            // 🌟 O TRUQUE DE MESTRE AQUI:
+            let imagemTratada = p.imagemUrl || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+            
+            // 1. Se o link vier do Bling direto, arrancamos a pasta /t/ (miniatura) à força
+            imagemTratada = imagemTratada.replace(/\/t\//g, '/');
+            
+            // 2. Se o link vier do Supabase, adicionamos a HORA atual no final do link.
+            // Isso engana a CDN do Supabase e obriga ela a buscar a foto HD nova!
+            if (imagemTratada.includes('supabase.co')) {
+              const horaAtual = new Date().getHours(); 
+              imagemTratada = `${imagemTratada}?v=${horaAtual}`;
+            }
 
             return {
               id: p.sku, 
@@ -257,7 +271,7 @@ export default function CatalogoB2BTab() {
               category: categoriaDerivada,
               price: Number(p.preco),
               stock: 999,
-              image: p.imagemUrl || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400',
+              image: imagemTratada, // 👈 Usamos a imagem super tratada aqui!
               description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
             };
           });
