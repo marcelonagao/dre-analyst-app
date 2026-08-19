@@ -38,11 +38,14 @@ export default async function handler(req, res) {
     for (const produto of produtosData.data) {
       if (produto.imagemURL) {
         try {
-          // Baixa a imagem da Amazon/Bling
-          const imgResponse = await fetch(produto.imagemURL);
+          // 🌟 O PULO DO GATO: Forçar o link em Alta Definição (HD)
+          // Tira a pasta "/t/" (thumbnail) do meio do link do Bling
+          let urlHD = produto.imagemURL.replace(/\/t\//g, '/');
+          
+          // Baixa a imagem da Amazon/Bling já na versão original
+          const imgResponse = await fetch(urlHD);
           const arrayBuffer = await imgResponse.arrayBuffer();
           
-          // O nome da foto será o SKU! Ex: FB574.jpg
           const nomeArquivo = `${produto.codigo}.jpg`;
 
           // Faz o upload para o seu Supabase
@@ -50,12 +53,12 @@ export default async function handler(req, res) {
             .from('fotos-b2b')
             .upload(nomeArquivo, arrayBuffer, { 
               contentType: 'image/jpeg',
-              upsert: true // Se já existir, ele atualiza a foto
+              upsert: true // Sobrescreve a miniatura borrada pela foto HD
             });
 
           fotosSincronizadas++;
         } catch (imgError) {
-          console.error(`Erro ao salvar foto do SKU ${produto.codigo}:`, imgError);
+          console.error(`Erro ao salvar foto HD do SKU ${produto.codigo}:`, imgError);
         }
       }
     }
