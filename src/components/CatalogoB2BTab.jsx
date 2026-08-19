@@ -492,23 +492,28 @@ export default function CatalogoB2BTab() {
       }
 
       // 3. AÇÃO B: SALVAR NO FIREBASE (Para histórico do app)
-      const orderPath = typeof window !== 'undefined' && window.__app_id
-        ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
-        : collection(db, 'pedidos');
+      try {
+        const orderPath = typeof window !== 'undefined' && window.__app_id
+          ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
+          : collection(db, 'pedidos');
 
-      await addDoc(orderPath, {
-        clienteId: targetClientId,
-        clienteNome: targetClient?.name || 'Cliente GKL',
-        isB2B: targetClient?.isB2B || false,
-        vendedorId: currentUser.isRep ? currentUser.id : null,     
-        vendedorNome: currentUser.isRep ? currentUser.name : null, 
-        itens: cart,
-        total: cartTotal,
-        metodoPagamento: paymentMethod,
-        status: 'Integrado ao Bling', // Mudamos o status para mostrar que deu certo!
-        blingPedidoId: dataBling.pedidoBlingId || 'N/A', // Salva o ID oficial do Bling como comprovante
-        dataCriacao: new Date().toISOString()
-      });
+        await addDoc(orderPath, {
+          clienteId: targetClientId,
+          clienteNome: targetClient?.name || 'Cliente GKL',
+          isB2B: targetClient?.isB2B || false,
+          vendedorId: currentUser.isRep ? currentUser.id : null,     
+          vendedorNome: currentUser.isRep ? currentUser.name : null, 
+          itens: cart,
+          total: cartTotal,
+          metodoPagamento: paymentMethod,
+          status: 'Integrado ao Bling',
+          blingPedidoId: dataBling.pedidoBlingId || 'N/A',
+          dataCriacao: new Date().toISOString()
+        });
+      } catch (firebaseError) {
+        console.warn("⚠️ Pedido salvo no Bling, mas Firebase bloqueou o histórico:", firebaseError);
+        // Não damos alert() aqui para não travar a tela de sucesso do usuário
+      }
 
       // 4. SUCESSO! Limpa o carrinho e avança de tela
       setCart([]); 
