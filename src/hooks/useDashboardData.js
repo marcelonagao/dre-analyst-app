@@ -26,7 +26,7 @@ export function useDashboardData() {
         { data: kits, error: errKits },
         { data: custosFixos, error: errCustos }
       ] = await Promise.all([
-        supabase.from('vendas').select('*'),
+        supabase.from('vendas').select('*').limit(2000),
         supabase.from('produtos').select('*'),
         supabase.from('kits').select('*'),
         supabase.from('custos_fixos').select('*')
