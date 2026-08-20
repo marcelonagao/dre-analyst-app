@@ -361,12 +361,10 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     window.scrollTo(0, 0);
   };
 
-  // Botões de Voltar
   const voltarParaHome = () => {
     setCatalogView('home');
-    setSelectedDept(null);
     setSearchQuery('');
-    setDbProducts([]);
+    buscarProdutos(1, 'Todas'); // 🌟 MÁGICA: Em vez de esvaziar, ele puxa os destaques!
   };
 
   const voltarParaDepartamento = () => {
@@ -377,10 +375,10 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
   // Dispara busca automatica ao mudar a categoria, mas APENAS se estiver na visão de lista
   useEffect(() => {
-    if (firebaseUser && catalogView === 'lista') {
-      buscarProdutos(1, selectedCategory);
+    if (firebaseUser) {
+      buscarProdutos(1, 'Todas');
     }
-  }, [selectedCategory, firebaseUser, currentUser, catalogView]);
+  }, [firebaseUser, currentUser]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !firebaseUser) return;
@@ -1062,33 +1060,70 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         </div>
 
         {/* ========================================= */}
-        {/* MODO 1: HOME (Vitrine) */}
+        {/* MODO 1: HOME (Vitrine Completa) */}
         {/* ========================================= */}
         {catalogView === 'home' && (
-          <div className="max-w-6xl mx-auto px-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-6xl mx-auto px-2 sm:px-4 mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
             {/* CARROSSEL DE BANNERS */}
-            <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-md mb-10 group aspect-[21/9] sm:aspect-[4/1] bg-gray-100">
+            <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-sm mb-6 sm:mb-8 group aspect-[21/9] sm:aspect-[4/1] bg-gray-200">
               {bannersPromocionais.map((banner, index) => (
                 <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
               ))}
-              <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+              <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
                 {bannersPromocionais.map((_, index) => (
-                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-6 sm:w-8' : 'bg-white/70 w-2 sm:w-2.5 hover:bg-white'}`}></button>
+                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}></button>
                 ))}
               </div>
             </div>
 
-            {/* A TELA INICIAL FICOU LIMPA! Você pode adicionar blocos de "Mais Vendidos" aqui no futuro */}
-            <div className="text-center py-10 opacity-60">
-              <SparklesIcon size={48} className="mx-auto text-[#698F8A] mb-4" />
-              <h3 className="text-lg font-bold text-[#4A6B64]">Navegue pelo menu superior</h3>
-              <p className="text-sm text-[#698F8A]">Escolha uma categoria acima para carregar os produtos.</p>
-            </div>
-
+            {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
+            {dbProducts.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <SparklesIcon size={24} className="text-[#8ECAC5]" />
+                  <h3 className="text-xl sm:text-2xl font-black text-[#4A6B64]">Destaques para o seu Negócio</h3>
+                </div>
+                
+                {/* Aqui nós reaproveitamos os cartões lindos que você já tem, mas mostramos só os 10 primeiros! */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                  {dbProducts.slice(0, 10).map(product => (
+                    <div key={product.id} onClick={() => openProductDetails(product)} className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-gray-100 hover:shadow-md transition-all duration-300 cursor-pointer group">
+                      
+                      <div className="h-40 relative p-3 flex justify-center items-center bg-white border-b border-gray-50">
+                        <img 
+                          src={product.image} 
+                          alt={product.name} 
+                          className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+                          onError={(e) => { e.target.onerror = null; e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
+                        />
+                      </div>
+                      
+                      <div className="p-3 flex-1 flex flex-col">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{product.category}</span>
+                        <h3 className="text-xs font-semibold text-[#4A6B64] line-clamp-2 leading-tight mb-2 group-hover:text-[#8ECAC5] transition-colors">{product.name}</h3>
+                        <div className="mt-auto flex justify-between items-end">
+                          <span className="text-base font-black text-[#4A6B64]">R$ {formatPrice(product.price)}</span>
+                          <button onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }} className="w-8 h-8 flex items-center justify-center bg-[#F4F9F8] text-[#8ECAC5] rounded-full hover:bg-[#8ECAC5] hover:text-white transition-colors">
+                            <PlusIcon size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Botão para ir para a lista completa */}
+                <div className="flex justify-center mt-6">
+                  <button onClick={() => abrirMarca('Todas')} className="text-sm font-bold text-[#8ECAC5] hover:text-[#4A6B64] transition-colors border border-[#8ECAC5] hover:border-[#4A6B64] rounded-full px-6 py-2">
+                    Ver todos os produtos
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1638,89 +1673,96 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F9F8] font-sans relative">
+    // 🌟 FUNDO CINZA MERCADO LIVRE (#EBEBEB)
+    <div className="min-h-screen bg-[#EBEBEB] font-sans relative">
+      
       {currentUser && currentScreen !== 'login' && (
-        <header className="bg-white border-b border-[#8ECAC5]/30 text-[#4A6B64] p-3 sm:p-4 sticky top-0 z-20 shadow-sm">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-1.5 sm:gap-2" onClick={() => {
-              if (currentUser.isAdmin) return;
-              if (currentUser.isRep && !selectedClientForRep) return;
-              setCurrentScreen('catalog');
-            }} style={{cursor: (currentUser.isAdmin || (currentUser.isRep && !selectedClientForRep)) ? 'default' : 'pointer'}}>
-              <SparklesIcon size={20} className="text-[#8ECAC5] w-5 h-5 sm:w-6 sm:h-6" />
+        // 🌟 CABEÇALHO UNIFICADO (Cor principal do seu app)
+        <header className="bg-[#4A6B64] sticky top-0 z-40 shadow-md">
+          
+          {/* 1º ANDAR: Logo, Busca, Usuário e Carrinho */}
+          <div className="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-6">
+            
+            {/* LOGO GKL */}
+            <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => { if (!currentUser.isAdmin && !currentUser.isRep) voltarParaHome(); }}>
+              <SparklesIcon size={24} className="text-[#8ECAC5]" />
               <div className="flex flex-col">
-                <span className="font-bold text-sm sm:text-lg leading-tight text-[#8ECAC5]">GKL BRASIL</span>
-                <span className="text-[7px] sm:text-[10px] font-bold tracking-wider uppercase text-[#698F8A] leading-none">
-                  {currentUser.isAdmin ? 'Painel Admin' : currentUser.isRep ? 'Portal Rep.' : 'Distribuidora'}
+                <span className="font-black text-lg sm:text-xl leading-tight text-white tracking-wide">GKL BRASIL</span>
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-[#8ECAC5] leading-none">
+                  {currentUser.isAdmin ? 'Painel Admin' : currentUser.isRep ? 'Portal Rep.' : 'B2B Atacado'}
                 </span>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2 sm:gap-6">
-              <div className="text-xs text-right hidden md:block text-[#698F8A]">
-                {currentUser.isAdmin ? (
-                   <><span className="mr-1">Olá,</span><span className="font-bold text-[#4A6B64]">{currentUser.name}</span><div className="text-xs font-semibold text-gray-500">Acesso Nível Gestão</div></>
-                ) : currentUser.isRep ? (
-                   <>
-                     <span className="font-bold text-indigo-400 mr-1">Rep. {currentUser.name}</span>
-                     <div className="text-xs font-semibold text-[#4A6B64]">
-                       {selectedClientForRep ? `Atendendo: ${selectedClientForRep.name}` : 'Selecione um cliente'}
-                     </div>
-                   </>
-                ) : (
-                   <>
-                     <span className="mr-1">Olá,</span><span className="font-bold text-[#4A6B64]">{currentUser.name}</span>
-                     {currentUser.isB2B && (
-                       <div className="text-xs font-semibold text-[#8ECAC5]">
-                         {currentUser.creditLimit > 0 ? `Limite: R$ ${formatPrice(currentUser.creditLimit)}` : (myOrders.length >= 3 ? 'Conta em Análise' : `Compras: ${myOrders.length}/3`)}
-                       </div>
-                     )}
-                   </>
-                )}
+
+            {/* BARRA DE BUSCA CENTRAL (Ocupa linha inteira no celular, divide espaço no PC) */}
+            {currentScreen === 'catalog' && (
+              <div className="w-full sm:w-auto sm:flex-1 order-3 sm:order-none relative mt-1 sm:mt-0">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar produtos, marcas e muito mais..." 
+                  className="w-full bg-white text-[#4A6B64] rounded-sm py-2.5 sm:py-3 pl-11 pr-4 outline-none shadow-inner text-sm font-medium focus:ring-2 focus:ring-[#8ECAC5] transition-all"
+                  value={searchQuery}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && searchQuery.trim() !== '') abrirMarca(searchQuery); }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* ÁREA DO USUÁRIO E ÍCONES */}
+            <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
+              <div className="text-right hidden md:block">
+                <span className="text-xs text-gray-200 block leading-tight">Olá, <strong className="text-white">{currentUser.name}</strong></span>
+                {currentUser.isB2B && <span className="text-[10px] text-[#8ECAC5] font-bold">Limite: R$ {formatPrice(currentUser.creditLimit)}</span>}
               </div>
 
-              {!currentUser.isAdmin && (!currentUser.isRep || (currentUser.isRep && selectedClientForRep)) && (
+              {!currentUser.isAdmin && (
                 <>
-                  <button 
-                    onClick={() => setCurrentScreen('orders')}
-                    className={`p-1.5 sm:p-2 rounded-full transition ${currentScreen === 'orders' ? 'bg-[#E8F3F2] text-[#4A6B64]' : 'hover:bg-[#E8F3F2] text-[#698F8A]'}`}
-                    title="Histórico de Pedidos"
-                  >
-                    <ClipboardIcon size={20} className="sm:w-6 sm:h-6" />
+                  <button onClick={() => setCurrentScreen('orders')} className="hover:text-[#8ECAC5] transition" title="Meus Pedidos">
+                    <ClipboardIcon size={22} />
                   </button>
-                  
-                  <button 
-                    onClick={() => setCurrentScreen('cart')}
-                    className="relative p-1.5 sm:p-2 hover:bg-[#E8F3F2] rounded-full transition text-[#4A6B64]"
-                  >
-                    <ShoppingCartIcon size={20} className="sm:w-6 sm:h-6" />
+                  <button onClick={() => setCurrentScreen('cart')} className="relative hover:text-[#8ECAC5] transition">
+                    <ShoppingCartIcon size={22} />
                     {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-[#8ECAC5] text-white text-[9px] sm:text-xs font-bold w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full shadow-sm">
+                      <span className="absolute -top-1.5 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
                         {cartItemCount}
                       </span>
                     )}
                   </button>
                 </>
               )}
-
-              {currentUser.isRep && selectedClientForRep && currentScreen !== 'rep_dashboard' && (
-                 <button 
-                   onClick={() => {
-                     setSelectedClientForRep(null);
-                     setCart([]);
-                     setCurrentScreen('rep_dashboard');
-                   }}
-                   className="text-[10px] sm:text-xs font-bold text-indigo-400 bg-indigo-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-indigo-100 transition"
-                 >
-                   Trocar
-                 </button>
-              )}
-
-              <button onClick={handleLogout} className="p-1.5 sm:p-2 text-[#698F8A] hover:text-[#4A6B64] transition" title="Sair">
-                <LogOutIcon size={20} className="sm:w-6 sm:h-6" />
+              <button onClick={handleLogout} className="hover:text-[#8ECAC5] transition ml-1" title="Sair">
+                <LogOutIcon size={22} />
               </button>
             </div>
           </div>
+
+          {/* 2º ANDAR: Menu Persistente de Categorias (Só no PC) */}
+          {currentScreen === 'catalog' && (
+            <div className="bg-[#3A5A53] px-4 hidden sm:block">
+              <div className="max-w-6xl mx-auto flex gap-6 overflow-x-auto whitespace-nowrap scrollbar-none text-[13px] font-semibold text-white/90">
+                <button onClick={voltarParaHome} className={`py-2.5 border-b-[3px] transition-all ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}>
+                  Início
+                </button>
+                {mapaCategorias.map(dept => (
+                  <div key={dept.id} className="relative group">
+                    <button className="flex items-center gap-1.5 py-2.5 border-b-[3px] border-transparent hover:text-white transition-all cursor-pointer">
+                      {dept.nome} <span className="text-[9px] opacity-70">▼</span>
+                    </button>
+                    {/* Dropdown Menu */}
+                    <div className="absolute top-full left-0 mt-0 w-52 bg-white text-[#4A6B64] rounded-b-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border border-gray-200">
+                      <div className="bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500">Marcas Relacionadas</div>
+                      {dept.marcas.map((marca, idx) => (
+                        <button key={idx} onClick={() => abrirMarca(marca.busca)} className="w-full text-left px-4 py-3 hover:bg-[#F4F9F8] hover:text-[#8ECAC5] text-sm font-bold border-b border-gray-100 last:border-0 transition-colors">
+                          {marca.nome}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </header>
       )}
 
