@@ -1041,21 +1041,21 @@ export default function CatalogoB2BTab() {
 
 {/* 🌟 BARRA FLUTUANTE DE CARRINHO NO RODAPÉ */}
 {cartItemCount > 0 && currentScreen === 'catalog' && (
-  <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[500px] bg-[#00897B] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,137,123,0.4)] flex justify-between items-center z-50 animate-in slide-in-from-bottom-5">
-    <div className="flex flex-col">
-      <span className="text-xs font-medium text-emerald-100 flex items-center gap-1">
-        <ShoppingCartIcon size={14} /> Carrinho: {cartItemCount} itens
-      </span>
-      <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
-    </div>
-    <button 
-      onClick={() => setCurrentScreen('cart')}
-      className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
-    >
-      Ver Carrinho
-    </button>
-  </div>
-)}
+            <div className="fixed bottom-24 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 sm:w-[500px] bg-[#00897B] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,137,123,0.4)] flex justify-between items-center z-50 animate-in slide-in-from-bottom-5">
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-emerald-100 flex items-center gap-1">
+                  <ShoppingCartIcon size={14} /> Carrinho: {cartItemCount} itens
+                </span>
+                <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
+              </div>
+              <button 
+                onClick={() => setCurrentScreen('cart')}
+                className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
+              >
+                Ver Carrinho
+              </button>
+            </div>
+          )}
 
 </div>
 </div>
