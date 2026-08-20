@@ -941,19 +941,19 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {/* ========================================= */}
         {/* BARRA GLOBAL DE NAVEGAÇÃO E BUSCA */}
         {/* ========================================= */}
-        <div className="bg-[#4A6B64] p-3 sm:p-4 sticky top-[68px] sm:top-[76px] z-10 shadow-md">
-          <div className="relative max-w-3xl mx-auto flex gap-2">
+        <div className="bg-[#4A6B64] p-3 sm:p-5 sticky top-[68px] sm:top-[76px] z-10 shadow-lg border-b border-[#3A5A53]">
+          <div className="relative max-w-4xl mx-auto flex gap-3 items-center">
             {catalogView === 'lista' && (
-              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] rounded-full transition shadow-sm">
+              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm">
                 <ArrowLeftIcon size={24} />
               </button>
             )}
             <div className="relative flex-1">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
                 type="text" 
                 placeholder="O que o seu negócio precisa hoje?" 
-                className="w-full bg-white text-[#4A6B64] rounded-full py-2.5 sm:py-3 pl-10 pr-4 outline-none shadow-sm text-sm"
+                className="w-full bg-white text-[#4A6B64] rounded-full py-3 sm:py-3.5 pl-12 pr-4 outline-none shadow-inner text-sm sm:text-base font-medium focus:ring-4 focus:ring-[#8ECAC5]/50 transition-all"
                 value={searchQuery}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim() !== '') {
@@ -970,43 +970,47 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {/* MODO 1: VITRINE HUB (Home Premium) */}
         {/* ========================================= */}
         {catalogView === 'home' && (
-          <div className="max-w-6xl mx-auto px-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-6xl mx-auto px-4 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
             {/* BANNER PROMOCIONAL (Área Nobre de Marketing) */}
-            <div className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-2xl p-6 shadow-md mb-8 flex flex-col justify-center items-start overflow-hidden relative min-h-[150px]">
-              <h2 className="text-2xl sm:text-3xl font-black text-yellow-900 z-10 leading-tight max-w-[250px]">
+            <div className="w-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-3xl p-8 sm:p-10 shadow-lg mb-10 flex flex-col justify-center items-start overflow-hidden relative min-h-[160px] sm:min-h-[200px] border border-yellow-300/50">
+              <h2 className="text-3xl sm:text-4xl font-black text-yellow-950 z-10 leading-tight max-w-[280px] sm:max-w-[400px]">
                 Preços de Atacado para o seu Negócio
               </h2>
-              <button className="mt-4 bg-yellow-900 text-yellow-100 px-5 py-2.5 rounded-full text-xs font-extrabold z-10 shadow-sm hover:scale-105 transition-transform">
-                VER OFERTAS
+              <button className="mt-6 bg-yellow-950 text-yellow-50 px-6 py-3 rounded-full text-xs sm:text-sm font-extrabold z-10 shadow-xl hover:scale-105 hover:bg-black transition-all">
+                VER OFERTAS ESPECIAIS
               </button>
-              {/* Opcional: Um ícone gigante de fundo para dar charme */}
-              <div className="absolute right-0 top-0 opacity-20 transform translate-x-4 -translate-y-4">
-                <SparklesIcon size={180} />
+              {/* O ícone de fundo agora se adapta melhor ao tamanho da tela */}
+              <div className="absolute right-[-20px] top-[-20px] sm:right-10 sm:top-0 opacity-20 text-yellow-900 transform rotate-12">
+                <SparklesIcon size={240} />
               </div>
             </div>
 
             {/* ÍCONES REDONDOS (Macro-Categorias) */}
-            <h3 className="text-xs sm:text-sm font-bold text-[#698F8A] mb-3 uppercase tracking-wider">Compre por Categoria</h3>
-            <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-none snap-x">
+            <h3 className="text-sm sm:text-base font-extrabold text-[#698F8A] mb-6 uppercase tracking-widest text-left md:text-center">Compre por Categoria</h3>
+            
+            {/* 🌟 MÁGICA AQUI: Centraliza no Desktop (md:justify-center) e aumenta os tamanhos */}
+            <div className="flex gap-4 sm:gap-8 overflow-x-auto pb-8 scrollbar-none snap-x md:justify-center">
               {macroCategorias.map(cat => (
-                <div key={cat.id} onClick={() => abrirCategoria(cat.busca)} className="snap-start flex flex-col items-center gap-2 cursor-pointer min-w-[76px] group">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#E8F3F2] text-2xl sm:text-3xl group-hover:shadow-md group-hover:border-[#8ECAC5] group-hover:scale-105 transition-all duration-300">
+                <div key={cat.id} onClick={() => abrirCategoria(cat.busca)} className="snap-start flex flex-col items-center gap-3 cursor-pointer min-w-[76px] sm:min-w-[100px] group">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center shadow-sm border-2 border-[#E8F3F2] text-2xl sm:text-4xl group-hover:shadow-xl group-hover:border-[#8ECAC5] group-hover:-translate-y-2 transition-all duration-300">
                     {cat.icon}
                   </div>
-                  <span className="text-[10px] sm:text-xs text-center font-bold text-[#4A6B64] leading-tight group-hover:text-[#8ECAC5]">{cat.nome}</span>
+                  <span className="text-[10px] sm:text-sm text-center font-bold text-[#4A6B64] leading-tight group-hover:text-[#8ECAC5] transition-colors">{cat.nome}</span>
                 </div>
               ))}
             </div>
 
             {/* SESSÃO: MARCAS EM DESTAQUE */}
-            <h3 className="text-xs sm:text-sm font-bold text-[#698F8A] mt-2 mb-3 uppercase tracking-wider">Marcas Parceiras</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12">
-              {marcasDestaque.map(marca => (
-                <button key={marca} onClick={() => abrirCategoria(marca)} className="bg-white py-4 px-2 rounded-xl shadow-sm text-center font-extrabold text-[#4A6B64] border border-[#E8F3F2] hover:border-[#8ECAC5] hover:text-[#8ECAC5] hover:shadow-md transition-all">
-                  {marca}
-                </button>
-              ))}
+            <div className="mt-4 mb-16">
+              <h3 className="text-sm sm:text-base font-extrabold text-[#698F8A] mb-6 uppercase tracking-widest text-left md:text-center">Marcas Parceiras</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                {marcasDestaque.map(marca => (
+                  <button key={marca} onClick={() => abrirCategoria(marca)} className="bg-white py-5 px-3 rounded-2xl shadow-sm text-center font-black text-[#4A6B64] border-2 border-[#E8F3F2] hover:border-[#8ECAC5] hover:text-[#8ECAC5] hover:shadow-lg hover:-translate-y-1 transition-all text-sm sm:text-base">
+                    {marca}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1143,6 +1147,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       </div>
     );
   }; // FIM DO renderCatalog
+
   const renderCart = () => (
     <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
       <div className="flex items-center gap-4 mb-6">
