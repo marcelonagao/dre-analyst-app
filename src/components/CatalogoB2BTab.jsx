@@ -186,17 +186,60 @@ export default function CatalogoB2BTab() {
   const [temMaisProdutos, setTemMaisProdutos] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
 
-// 🌟 NOVO: Controle de Tela (Vitrine Hub vs Lista de Produtos)
-const [catalogView, setCatalogView] = useState('home'); // Inicia sempre na 'home'
+// 🌟 CONTROLE DE TELA (3 Níveis de Navegação)
+const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departamento' | 'lista'
+const [selectedDept, setSelectedDept] = useState(null); // Guarda o departamento escolhido
 
-// 🌟 NOVO: Menu Visual Estilo Marketplace (Você pode alterar os nomes e ícones depois!)
-const macroCategorias = [
-  { id: 'skincare', nome: 'Skincare', icon: '🧴', busca: 'Skincare' },
-  { id: 'make', nome: 'Maquiagem', icon: '💄', busca: 'Make' },
-  { id: 'corpo', nome: 'Corpo & Banho', icon: '🛁', busca: 'Corpo' },
-  { id: 'cabelo', nome: 'Cabelos', icon: '💇‍♀️', busca: 'Cabelo' },
-  { id: 'acessorios', nome: 'Acessórios', icon: '💍', busca: 'Acessório' }
+// 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
+const mapaCategorias = [
+  {
+    id: 'beleza',
+    nome: 'Beleza & Cosméticos',
+    icone: '💄',
+    cor: 'bg-pink-50 text-pink-600 border-pink-100',
+    marcas: [
+      { nome: 'Dermachem', busca: 'Dermachem' },
+      { nome: 'Face Beautiful', busca: 'Face Beautiful' },
+      { nome: 'Porán', busca: 'Poran' },
+      { nome: 'Skincare (Geral)', busca: 'Skincare' }
+    ]
+  },
+  {
+    id: 'ferramentas',
+    nome: 'Ferramentas & Casa',
+    icone: '🛠️',
+    cor: 'bg-orange-50 text-orange-600 border-orange-100',
+    marcas: [
+      { nome: 'Tramontina', busca: 'Tramontina' },
+      { nome: 'Action', busca: 'Action' },
+      { nome: 'Kala', busca: 'Kala' }
+    ]
+  },
+  {
+    id: 'brinquedos',
+    nome: 'Brinquedos & Kids',
+    icone: '🧸',
+    cor: 'bg-blue-50 text-blue-600 border-blue-100',
+    marcas: [
+      { nome: 'Baby Club', busca: 'Baby' },
+      { nome: 'Geral', busca: 'Brinquedo' }
+    ]
+  }
 ];
+
+// Controle do Carrossel de Banners
+const [currentBanner, setCurrentBanner] = useState(0);
+const bannersPromocionais = [
+  { id: 1, imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Make Week' },
+  { id: 2, imagem: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Semana de Ofertas' }
+];
+
+// Motor do Banner
+useEffect(() => {
+  if (catalogView !== 'home') return;
+  const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % bannersPromocionais.length), 4000);
+  return () => clearInterval(timer);
+}, [catalogView]);
 
 const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
@@ -305,17 +348,38 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   // ============================================================================
   // 🌟 NOVO: CONTROLE DE NAVEGAÇÃO DA VITRINE
   // ============================================================================
-  const abrirCategoria = (termo) => {
+  // ============================================================================
+  // 🌟 MOTOR DE NAVEGAÇÃO (3 NÍVEIS)
+  // ============================================================================
+  
+  // Nível 1 para 2: Clicou no Departamento (ex: Beleza)
+  const abrirDepartamento = (dept) => {
+    setSelectedDept(dept);
+    setCatalogView('departamento');
+    window.scrollTo(0, 0);
+  };
+
+  // Nível 2 para 3: Clicou na Marca (ex: Dermachem)
+  const abrirMarca = (termo) => {
     setSearchQuery(termo);
     setSelectedCategory(termo);
     setCatalogView('lista');
-    buscarProdutos(1, termo); // Puxa a página 1 daquela busca específica!
+    buscarProdutos(1, termo); // Agora sim chama o Bling!
+    window.scrollTo(0, 0);
   };
 
+  // Botões de Voltar
   const voltarParaHome = () => {
     setCatalogView('home');
+    setSelectedDept(null);
     setSearchQuery('');
-    setDbProducts([]); // Limpa a memória para o celular não travar com lixo antigo
+    setDbProducts([]);
+  };
+
+  const voltarParaDepartamento = () => {
+    setCatalogView('departamento');
+    setSearchQuery('');
+    setDbProducts([]);
   };
 
   // Dispara busca automatica ao mudar a categoria, mas APENAS se estiver na visão de lista
@@ -943,21 +1007,25 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {/* ========================================= */}
         <div className="bg-[#4A6B64] p-3 sm:p-5 sticky top-[68px] sm:top-[76px] z-10 shadow-lg border-b border-[#3A5A53]">
           <div className="relative max-w-4xl mx-auto flex gap-3 items-center">
-            {catalogView === 'lista' && (
-              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm">
-                <ArrowLeftIcon size={24} />
-              </button>
+            
+            {/* Botão Voltar Dinâmico */}
+            {catalogView === 'departamento' && (
+              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm"><ArrowLeftIcon size={24} /></button>
             )}
+            {catalogView === 'lista' && (
+              <button onClick={selectedDept ? voltarParaDepartamento : voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm"><ArrowLeftIcon size={24} /></button>
+            )}
+
             <div className="relative flex-1">
               <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
                 type="text" 
-                placeholder="O que o seu negócio precisa hoje?" 
+                placeholder="Busque por produtos, marcas ou SKUs..." 
                 className="w-full bg-white text-[#4A6B64] rounded-full py-3 sm:py-3.5 pl-12 pr-4 outline-none shadow-inner text-sm sm:text-base font-medium focus:ring-4 focus:ring-[#8ECAC5]/50 transition-all"
                 value={searchQuery}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim() !== '') {
-                    abrirCategoria(searchQuery);
+                    abrirMarca(searchQuery); // Busca direta ignora departamento
                   }
                 }}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -967,56 +1035,75 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         </div>
 
         {/* ========================================= */}
-        {/* MODO 1: VITRINE HUB (Home Premium) */}
+        {/* NÍVEL 1: HOME (Departamentos) */}
         {/* ========================================= */}
         {catalogView === 'home' && (
           <div className="max-w-6xl mx-auto px-4 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
-            {/* BANNER PROMOCIONAL (Área Nobre de Marketing) */}
-            <div className="w-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-3xl p-8 sm:p-10 shadow-lg mb-10 flex flex-col justify-center items-start overflow-hidden relative min-h-[160px] sm:min-h-[200px] border border-yellow-300/50">
-              <h2 className="text-3xl sm:text-4xl font-black text-yellow-950 z-10 leading-tight max-w-[280px] sm:max-w-[400px]">
-                Preços de Atacado para o seu Negócio
-              </h2>
-              <button className="mt-6 bg-yellow-950 text-yellow-50 px-6 py-3 rounded-full text-xs sm:text-sm font-extrabold z-10 shadow-xl hover:scale-105 hover:bg-black transition-all">
-                VER OFERTAS ESPECIAIS
-              </button>
-              {/* O ícone de fundo agora se adapta melhor ao tamanho da tela */}
-              <div className="absolute right-[-20px] top-[-20px] sm:right-10 sm:top-0 opacity-20 text-yellow-900 transform rotate-12">
-                <SparklesIcon size={240} />
-              </div>
-            </div>
-
-            {/* ÍCONES REDONDOS (Macro-Categorias) */}
-            <h3 className="text-sm sm:text-base font-extrabold text-[#698F8A] mb-6 uppercase tracking-widest text-left md:text-center">Compre por Categoria</h3>
-            
-            {/* 🌟 MÁGICA AQUI: Centraliza no Desktop (md:justify-center) e aumenta os tamanhos */}
-            <div className="flex gap-4 sm:gap-8 overflow-x-auto pb-8 scrollbar-none snap-x md:justify-center">
-              {macroCategorias.map(cat => (
-                <div key={cat.id} onClick={() => abrirCategoria(cat.busca)} className="snap-start flex flex-col items-center gap-3 cursor-pointer min-w-[76px] sm:min-w-[100px] group">
-                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center shadow-sm border-2 border-[#E8F3F2] text-2xl sm:text-4xl group-hover:shadow-xl group-hover:border-[#8ECAC5] group-hover:-translate-y-2 transition-all duration-300">
-                    {cat.icon}
-                  </div>
-                  <span className="text-[10px] sm:text-sm text-center font-bold text-[#4A6B64] leading-tight group-hover:text-[#8ECAC5] transition-colors">{cat.nome}</span>
+            {/* CARROSSEL DE BANNERS */}
+            <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-md mb-10 group aspect-[21/9] sm:aspect-[3/1] bg-gray-100">
+              {bannersPromocionais.map((banner, index) => (
+                <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                 </div>
               ))}
-            </div>
-
-            {/* SESSÃO: MARCAS EM DESTAQUE */}
-            <div className="mt-4 mb-16">
-              <h3 className="text-sm sm:text-base font-extrabold text-[#698F8A] mb-6 uppercase tracking-widest text-left md:text-center">Marcas Parceiras</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                {marcasDestaque.map(marca => (
-                  <button key={marca} onClick={() => abrirCategoria(marca)} className="bg-white py-5 px-3 rounded-2xl shadow-sm text-center font-black text-[#4A6B64] border-2 border-[#E8F3F2] hover:border-[#8ECAC5] hover:text-[#8ECAC5] hover:shadow-lg hover:-translate-y-1 transition-all text-sm sm:text-base">
-                    {marca}
-                  </button>
+              <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                {bannersPromocionais.map((_, index) => (
+                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 ${index === currentBanner ? 'bg-white w-6 sm:w-8' : 'bg-white/50 w-2 sm:w-2.5 hover:bg-white/80'}`}></button>
                 ))}
               </div>
+            </div>
+
+            <h3 className="text-lg sm:text-xl font-black text-[#4A6B64] mb-6 tracking-wide text-center">Nossos Departamentos</h3>
+            
+            {/* GRID DE DEPARTAMENTOS */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto mb-12">
+              {mapaCategorias.map(dept => (
+                <button 
+                  key={dept.id} 
+                  onClick={() => abrirDepartamento(dept)} 
+                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border-2 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 ${dept.cor}`}
+                >
+                  <span className="text-4xl sm:text-5xl mb-3 drop-shadow-sm">{dept.icone}</span>
+                  <span className="font-extrabold text-sm sm:text-lg text-center leading-tight">{dept.nome}</span>
+                  <span className="text-xs font-semibold opacity-70 mt-2">{dept.marcas.length} marcas</span>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
         {/* ========================================= */}
-        {/* MODO 2: LISTA DE PRODUTOS */}
+        {/* NÍVEL 2: DEPARTAMENTO ESCOLHIDO (Marcas) */}
+        {/* ========================================= */}
+        {catalogView === 'departamento' && selectedDept && (
+          <div className="max-w-4xl mx-auto px-4 mt-8 animate-in fade-in slide-in-from-right-4 duration-300">
+            
+            <div className={`p-8 rounded-3xl mb-8 flex items-center gap-4 border ${selectedDept.cor}`}>
+              <span className="text-5xl drop-shadow-md">{selectedDept.icone}</span>
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black">{selectedDept.nome}</h2>
+                <p className="font-semibold opacity-80 mt-1">Selecione uma marca ou categoria para ver os produtos</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {selectedDept.marcas.map((marca, index) => (
+                <button 
+                  key={index} 
+                  onClick={() => abrirMarca(marca.busca)} 
+                  className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8F3F2] hover:border-[#8ECAC5] hover:shadow-md hover:text-[#8ECAC5] text-[#4A6B64] font-extrabold transition-all text-sm sm:text-base flex items-center justify-center text-center min-h-[80px]"
+                >
+                  {marca.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================= */}
+        {/* NÍVEL 3: LISTA DE PRODUTOS */}
         {/* ========================================= */}
         {catalogView === 'lista' && (
           <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
