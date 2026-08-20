@@ -188,7 +188,7 @@ export default function CatalogoB2BTab() {
 
 // 🌟 CONTROLE DE TELA (3 Níveis de Navegação)
 const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departamento' | 'lista'
-const [selectedDept, setSelectedDept] = useState(null); // Guarda o departamento escolhido
+
 
 // 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
 const mapaCategorias = [
@@ -352,14 +352,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   // 🌟 MOTOR DE NAVEGAÇÃO (3 NÍVEIS)
   // ============================================================================
   
-  // Nível 1 para 2: Clicou no Departamento (ex: Beleza)
-  const abrirDepartamento = (dept) => {
-    setSelectedDept(dept);
-    setCatalogView('departamento');
-    window.scrollTo(0, 0);
-  };
-
-  // Nível 2 para 3: Clicou na Marca (ex: Dermachem)
+   // Nível 2 para 3: Clicou na Marca (ex: Dermachem)
   const abrirMarca = (termo) => {
     setSearchQuery(termo);
     setSelectedCategory(termo);
@@ -1003,107 +996,104 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         )}
 
         {/* ========================================= */}
-        {/* BARRA GLOBAL DE NAVEGAÇÃO E BUSCA */}
+        {/* BARRA GLOBAL: BUSCA + MENU MERCADO LIVRE */}
         {/* ========================================= */}
-        <div className="bg-[#4A6B64] p-3 sm:p-5 sticky top-[68px] sm:top-[76px] z-10 shadow-lg border-b border-[#3A5A53]">
-          <div className="relative max-w-4xl mx-auto flex gap-3 items-center">
-            
-            {/* Botão Voltar Dinâmico */}
-            {catalogView === 'departamento' && (
-              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm"><ArrowLeftIcon size={24} /></button>
-            )}
-            {catalogView === 'lista' && (
-              <button onClick={selectedDept ? voltarParaDepartamento : voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm"><ArrowLeftIcon size={24} /></button>
-            )}
+        <div className="bg-[#4A6B64] sticky top-[68px] sm:top-[76px] z-30 shadow-lg">
+          
+          {/* 1º Andar: Barra de Busca */}
+          <div className="p-3 sm:p-4 border-b border-[#3A5A53]">
+            <div className="relative max-w-4xl mx-auto flex gap-3 items-center">
+              {catalogView === 'lista' && (
+                <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] hover:scale-105 rounded-full transition-all shadow-sm">
+                  <ArrowLeftIcon size={24} />
+                </button>
+              )}
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Busque por produtos, marcas ou SKUs..." 
+                  className="w-full bg-white text-[#4A6B64] rounded-full py-3 pl-12 pr-4 outline-none shadow-inner text-sm font-medium focus:ring-4 focus:ring-[#8ECAC5]/50 transition-all"
+                  value={searchQuery}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && searchQuery.trim() !== '') abrirMarca(searchQuery); }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
 
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Busque por produtos, marcas ou SKUs..." 
-                className="w-full bg-white text-[#4A6B64] rounded-full py-3 sm:py-3.5 pl-12 pr-4 outline-none shadow-inner text-sm sm:text-base font-medium focus:ring-4 focus:ring-[#8ECAC5]/50 transition-all"
-                value={searchQuery}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim() !== '') {
-                    abrirMarca(searchQuery); // Busca direta ignora departamento
-                  }
-                }}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          {/* 2º Andar: Menu Persistente de Categorias (A solução!) */}
+          <div className="bg-[#3A5A53] px-4">
+            <div className="max-w-4xl mx-auto flex gap-6 sm:gap-8 overflow-x-auto whitespace-nowrap scrollbar-none text-xs sm:text-sm font-bold text-white/80">
+              
+              <button 
+                onClick={voltarParaHome} 
+                className={`py-3 border-b-4 transition-all ${catalogView === 'home' ? 'border-[#8ECAC5] text-white' : 'border-transparent hover:text-white'}`}
+              >
+                Início
+              </button>
+
+              {mapaCategorias.map(dept => (
+                <div key={dept.id} className="relative group">
+                  {/* Botão do Departamento */}
+                  <button className="flex items-center gap-1.5 py-3 border-b-4 border-transparent hover:text-white transition-all cursor-pointer">
+                    {dept.nome} <span className="text-[9px] opacity-70">▼</span>
+                  </button>
+
+                  {/* O Dropdown (Abre no hover no PC, ou clique no Celular) */}
+                  <div className="absolute top-full left-0 mt-0 w-56 bg-white text-[#4A6B64] rounded-b-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border border-[#E8F3F2]">
+                    <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-[#E8F3F2]">
+                      Marcas de {dept.nome.split('&')[0]}
+                    </div>
+                    {dept.marcas.map((marca, idx) => (
+                      <button 
+                        key={idx} 
+                        onClick={() => abrirMarca(marca.busca)} 
+                        className="w-full text-left px-4 py-3.5 hover:bg-[#E8F3F2] hover:text-[#8ECAC5] text-sm font-bold border-b border-gray-50 last:border-0 transition-colors"
+                      >
+                        {marca.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* ========================================= */}
-        {/* NÍVEL 1: HOME (Departamentos) */}
+        {/* MODO 1: HOME (Vitrine) */}
         {/* ========================================= */}
         {catalogView === 'home' && (
-          <div className="max-w-6xl mx-auto px-4 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-6xl mx-auto px-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
             {/* CARROSSEL DE BANNERS */}
-            <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-md mb-10 group aspect-[21/9] sm:aspect-[3/1] bg-gray-100">
+            <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-md mb-10 group aspect-[21/9] sm:aspect-[4/1] bg-gray-100">
               {bannersPromocionais.map((banner, index) => (
                 <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
               ))}
               <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
                 {bannersPromocionais.map((_, index) => (
-                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 ${index === currentBanner ? 'bg-white w-6 sm:w-8' : 'bg-white/50 w-2 sm:w-2.5 hover:bg-white/80'}`}></button>
+                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-6 sm:w-8' : 'bg-white/70 w-2 sm:w-2.5 hover:bg-white'}`}></button>
                 ))}
               </div>
             </div>
 
-            <h3 className="text-lg sm:text-xl font-black text-[#4A6B64] mb-6 tracking-wide text-center">Nossos Departamentos</h3>
-            
-            {/* GRID DE DEPARTAMENTOS */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto mb-12">
-              {mapaCategorias.map(dept => (
-                <button 
-                  key={dept.id} 
-                  onClick={() => abrirDepartamento(dept)} 
-                  className={`flex flex-col items-center justify-center p-6 sm:p-8 rounded-3xl border-2 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 ${dept.cor}`}
-                >
-                  <span className="text-4xl sm:text-5xl mb-3 drop-shadow-sm">{dept.icone}</span>
-                  <span className="font-extrabold text-sm sm:text-lg text-center leading-tight">{dept.nome}</span>
-                  <span className="text-xs font-semibold opacity-70 mt-2">{dept.marcas.length} marcas</span>
-                </button>
-              ))}
+            {/* A TELA INICIAL FICOU LIMPA! Você pode adicionar blocos de "Mais Vendidos" aqui no futuro */}
+            <div className="text-center py-10 opacity-60">
+              <SparklesIcon size={48} className="mx-auto text-[#698F8A] mb-4" />
+              <h3 className="text-lg font-bold text-[#4A6B64]">Navegue pelo menu superior</h3>
+              <p className="text-sm text-[#698F8A]">Escolha uma categoria acima para carregar os produtos.</p>
             </div>
+
           </div>
         )}
 
         {/* ========================================= */}
-        {/* NÍVEL 2: DEPARTAMENTO ESCOLHIDO (Marcas) */}
-        {/* ========================================= */}
-        {catalogView === 'departamento' && selectedDept && (
-          <div className="max-w-4xl mx-auto px-4 mt-8 animate-in fade-in slide-in-from-right-4 duration-300">
-            
-            <div className={`p-8 rounded-3xl mb-8 flex items-center gap-4 border ${selectedDept.cor}`}>
-              <span className="text-5xl drop-shadow-md">{selectedDept.icone}</span>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black">{selectedDept.nome}</h2>
-                <p className="font-semibold opacity-80 mt-1">Selecione uma marca ou categoria para ver os produtos</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {selectedDept.marcas.map((marca, index) => (
-                <button 
-                  key={index} 
-                  onClick={() => abrirMarca(marca.busca)} 
-                  className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8F3F2] hover:border-[#8ECAC5] hover:shadow-md hover:text-[#8ECAC5] text-[#4A6B64] font-extrabold transition-all text-sm sm:text-base flex items-center justify-center text-center min-h-[80px]"
-                >
-                  {marca.nome}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================= */}
-        {/* NÍVEL 3: LISTA DE PRODUTOS */}
+        {/* MODO 2: LISTA DE PRODUTOS */}
         {/* ========================================= */}
         {catalogView === 'lista' && (
           <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
