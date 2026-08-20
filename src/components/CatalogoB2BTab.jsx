@@ -186,6 +186,20 @@ export default function CatalogoB2BTab() {
   const [temMaisProdutos, setTemMaisProdutos] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
 
+// 🌟 NOVO: Controle de Tela (Vitrine Hub vs Lista de Produtos)
+const [catalogView, setCatalogView] = useState('home'); // Inicia sempre na 'home'
+
+// 🌟 NOVO: Menu Visual Estilo Marketplace (Você pode alterar os nomes e ícones depois!)
+const macroCategorias = [
+  { id: 'skincare', nome: 'Skincare', icon: '🧴', busca: 'Skincare' },
+  { id: 'make', nome: 'Maquiagem', icon: '💄', busca: 'Make' },
+  { id: 'corpo', nome: 'Corpo & Banho', icon: '🛁', busca: 'Corpo' },
+  { id: 'cabelo', nome: 'Cabelos', icon: '💇‍♀️', busca: 'Cabelo' },
+  { id: 'acessorios', nome: 'Acessórios', icon: '💍', busca: 'Acessório' }
+];
+
+const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
+
   // Estado para armazenar o cliente que o Representante está a atender
   const [selectedClientForRep, setSelectedClientForRep] = useState(null);
 
@@ -288,10 +302,28 @@ export default function CatalogoB2BTab() {
     }
   };
 
-  // Gatilho: Quando o usuário muda a categoria, busca a página 1 daquela categoria
+  // ============================================================================
+  // 🌟 NOVO: CONTROLE DE NAVEGAÇÃO DA VITRINE
+  // ============================================================================
+  const abrirCategoria = (termo) => {
+    setSearchQuery(termo);
+    setSelectedCategory(termo);
+    setCatalogView('lista');
+    buscarProdutos(1, termo); // Puxa a página 1 daquela busca específica!
+  };
+
+  const voltarParaHome = () => {
+    setCatalogView('home');
+    setSearchQuery('');
+    setDbProducts([]); // Limpa a memória para o celular não travar com lixo antigo
+  };
+
+  // Dispara busca automatica ao mudar a categoria, mas APENAS se estiver na visão de lista
   useEffect(() => {
-    if (firebaseUser) buscarProdutos(1, selectedCategory);
-  }, [selectedCategory, firebaseUser, currentUser]);
+    if (firebaseUser && catalogView === 'lista') {
+      buscarProdutos(1, selectedCategory);
+    }
+  }, [selectedCategory, firebaseUser, currentUser, catalogView]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !firebaseUser) return;
@@ -880,7 +912,7 @@ export default function CatalogoB2BTab() {
     const isApproved = targetClient?.creditLimit > 0;
 
     return (
-      <div className="pb-24">
+      <div className="pb-24 min-h-screen bg-[#F4F9F8]">
         {/* Barra de Progresso Inteligente */}
         {!isApproved && targetClient && !currentUser.isAdmin && (
           <div className={`p-4 border-b ${hasReachedTarget ? 'bg-[#E8F3F2] border-[#8ECAC5]' : 'bg-yellow-50 border-yellow-200'}`}>
@@ -906,162 +938,211 @@ export default function CatalogoB2BTab() {
           </div>
         )}
 
-        <div className="bg-white p-3 sm:p-4 shadow-sm sticky top-[68px] sm:top-[76px] z-10 mb-2 border-b border-[#8ECAC5]/20">
-          <div className="relative max-w-3xl mx-auto">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#698F8A]" size={20} />
-            <input 
-              type="text" 
-              placeholder="Buscar produtos..." 
-              className="w-full bg-[#F4F9F8] text-[#4A6B64] rounded-xl py-2.5 sm:py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition border border-transparent focus:border-[#8ECAC5] text-sm sm:text-base"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 mb-4 sm:mb-6">
-          <div className="flex gap-2 overflow-x-auto py-2 scrollbar-none">
-            {uniqueCategories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-semibold text-xs sm:text-sm whitespace-nowrap transition-all duration-300 ${
-                  selectedCategory === cat 
-                    ? 'bg-[#4A6B64] text-white shadow-md transform scale-105' 
-                    : 'bg-white text-[#4A6B64] border border-[#E8F3F2] hover:bg-[#E8F3F2]'
-                }`}
-              >
-                {cat}
+        {/* ========================================= */}
+        {/* BARRA GLOBAL DE NAVEGAÇÃO E BUSCA */}
+        {/* ========================================= */}
+        <div className="bg-[#4A6B64] p-3 sm:p-4 sticky top-[68px] sm:top-[76px] z-10 shadow-md">
+          <div className="relative max-w-3xl mx-auto flex gap-2">
+            {catalogView === 'lista' && (
+              <button onClick={voltarParaHome} className="text-white p-2 hover:bg-[#3A5A53] rounded-full transition shadow-sm">
+                <ArrowLeftIcon size={24} />
               </button>
-            ))}
+            )}
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="O que o seu negócio precisa hoje?" 
+                className="w-full bg-white text-[#4A6B64] rounded-full py-2.5 sm:py-3 pl-10 pr-4 outline-none shadow-sm text-sm"
+                value={searchQuery}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim() !== '') {
+                    abrirCategoria(searchQuery);
+                  }
+                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-3 sm:px-4">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
-              {selectedCategory === 'Todas' ? 'Catálogo Geral' : selectedCategory}
-            </h2>
-            <span className="text-xs sm:text-sm text-[#698F8A] font-semibold">{filteredProducts.length} itens</span>
-          </div>
+        {/* ========================================= */}
+        {/* MODO 1: VITRINE HUB (Home Premium) */}
+        {/* ========================================= */}
+        {catalogView === 'home' && (
+          <div className="max-w-6xl mx-auto px-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* BANNER PROMOCIONAL (Área Nobre de Marketing) */}
+            <div className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-2xl p-6 shadow-md mb-8 flex flex-col justify-center items-start overflow-hidden relative min-h-[150px]">
+              <h2 className="text-2xl sm:text-3xl font-black text-yellow-900 z-10 leading-tight max-w-[250px]">
+                Preços de Atacado para o seu Negócio
+              </h2>
+              <button className="mt-4 bg-yellow-900 text-yellow-100 px-5 py-2.5 rounded-full text-xs font-extrabold z-10 shadow-sm hover:scale-105 transition-transform">
+                VER OFERTAS
+              </button>
+              {/* Opcional: Um ícone gigante de fundo para dar charme */}
+              <div className="absolute right-0 top-0 opacity-20 transform translate-x-4 -translate-y-4">
+                <SparklesIcon size={180} />
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {filteredProducts.map(product => (
-              <div 
-                key={product.id} 
-                onClick={() => openProductDetails(product)}
-                className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
-              >
-                {/* CAIXA DE IMAGEM COM ALTURA ADAPTÁVEL E FUNDO CLEAN */}
-                <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
-                  <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
-                    onError={(e) => {
-                      // Se falhar no Supabase, tenta a imagem original do Bling
-                      if (product.blingImage && e.target.src !== product.blingImage) {
-                        e.target.src = product.blingImage;
-                      } else {
-                        // Se falhar no Bling também, aí sim usa o placeholder neutro
-                        e.target.onerror = null;
-                        e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
-                      }
-                    }}
-                  />
-                  {product.category && (
-                    <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest shadow-sm z-10">
-                      {product.category}
-                    </span>
-                  )}
+            {/* ÍCONES REDONDOS (Macro-Categorias) */}
+            <h3 className="text-xs sm:text-sm font-bold text-[#698F8A] mb-3 uppercase tracking-wider">Compre por Categoria</h3>
+            <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-none snap-x">
+              {macroCategorias.map(cat => (
+                <div key={cat.id} onClick={() => abrirCategoria(cat.busca)} className="snap-start flex flex-col items-center gap-2 cursor-pointer min-w-[76px] group">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-[#E8F3F2] text-2xl sm:text-3xl group-hover:shadow-md group-hover:border-[#8ECAC5] group-hover:scale-105 transition-all duration-300">
+                    {cat.icon}
+                  </div>
+                  <span className="text-[10px] sm:text-xs text-center font-bold text-[#4A6B64] leading-tight group-hover:text-[#8ECAC5]">{cat.nome}</span>
                 </div>
-                
-                <div className="p-2 sm:p-3 flex-1 flex flex-col items-center text-center">
-                  <h3 className="text-xs sm:text-sm font-semibold text-[#4A6B64] line-clamp-2 min-h-[32px] sm:min-h-[40px] leading-tight mb-1 group-hover:text-[#8ECAC5] transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-[10px] text-[#698F8A] mb-2">Disponível em Estoque</p>
-                  
-                  <div className="mt-auto w-full flex flex-col items-center">
-                    <span className="text-base sm:text-lg font-extrabold text-[#4A6B64] mb-2">
-                      R$ {formatPrice(product.price)}
-                    </span>
-                    
-                    {(() => {
-                      const itemNoCarrinho = cart.find(item => item.id === product.id);
-                      const qtde = itemNoCarrinho ? itemNoCarrinho.quantity : 0;
+              ))}
+            </div>
 
-                      if (qtde > 0) {
-                        return (
-                          <div className="w-full flex items-center justify-between bg-[#E8F3F2] border border-[#8ECAC5] rounded-lg p-1 overflow-hidden">
-                            <button 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                if (qtde === 1) removeFromCart(product.id); 
-                                else addToCart(product, -1); 
-                              }}
-                              className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
-                            >-</button>
-                            <span className="font-extrabold text-[#4A6B64]">{qtde}</span>
+            {/* SESSÃO: MARCAS EM DESTAQUE */}
+            <h3 className="text-xs sm:text-sm font-bold text-[#698F8A] mt-2 mb-3 uppercase tracking-wider">Marcas Parceiras</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12">
+              {marcasDestaque.map(marca => (
+                <button key={marca} onClick={() => abrirCategoria(marca)} className="bg-white py-4 px-2 rounded-xl shadow-sm text-center font-extrabold text-[#4A6B64] border border-[#E8F3F2] hover:border-[#8ECAC5] hover:text-[#8ECAC5] hover:shadow-md transition-all">
+                  {marca}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================= */}
+        {/* MODO 2: LISTA DE PRODUTOS */}
+        {/* ========================================= */}
+        {catalogView === 'lista' && (
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
+            
+            {/* Cabeçalho da Lista */}
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
+                {selectedCategory ? `Resultados para "${selectedCategory}"` : 'Todos os Produtos'}
+              </h2>
+              <span className="bg-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1 rounded-full">
+                {dbProducts.length} itens encontrados
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+              {filteredProducts.map(product => (
+                <div 
+                  key={product.id} 
+                  onClick={() => openProductDetails(product)}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
+                >
+                  {/* CAIXA DE IMAGEM COM ALTURA ADAPTÁVEL E FUNDO CLEAN */}
+                  <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+                      onError={(e) => {
+                        // Se falhar no Supabase, tenta a imagem original do Bling
+                        if (product.blingImage && e.target.src !== product.blingImage) {
+                          e.target.src = product.blingImage;
+                        } else {
+                          // Se falhar no Bling também, aí sim usa o placeholder neutro
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
+                        }
+                      }}
+                    />
+                    {product.category && (
+                      <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest shadow-sm z-10">
+                        {product.category}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="p-2 sm:p-3 flex-1 flex flex-col items-center text-center">
+                    <h3 className="text-xs sm:text-sm font-semibold text-[#4A6B64] line-clamp-2 min-h-[32px] sm:min-h-[40px] leading-tight mb-1 group-hover:text-[#8ECAC5] transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-[10px] text-[#698F8A] mb-2">Disponível em Estoque</p>
+                    
+                    <div className="mt-auto w-full flex flex-col items-center">
+                      <span className="text-base sm:text-lg font-extrabold text-[#4A6B64] mb-2">
+                        R$ {formatPrice(product.price)}
+                      </span>
+                      
+                      {(() => {
+                        const itemNoCarrinho = cart.find(item => item.id === product.id);
+                        const qtde = itemNoCarrinho ? itemNoCarrinho.quantity : 0;
+
+                        if (qtde > 0) {
+                          return (
+                            <div className="w-full flex items-center justify-between bg-[#E8F3F2] border border-[#8ECAC5] rounded-lg p-1 overflow-hidden">
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (qtde === 1) removeFromCart(product.id); 
+                                  else addToCart(product, -1); 
+                                }}
+                                className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                              >-</button>
+                              <span className="font-extrabold text-[#4A6B64]">{qtde}</span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
+                                className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                              >+</button>
+                            </div>
+                          );
+                        } else {
+                          return (
                             <button 
                               onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
-                              className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
-                            >+</button>
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
-                            className="w-full bg-[#E8F3F2] text-[#4A6B64] font-bold text-xs sm:text-sm py-2 rounded-lg hover:bg-[#8ECAC5] hover:text-white transition-colors"
-                          >
-                            Adicionar
-                          </button>
-                        );
-                      }
-                    })()}
+                              className="w-full bg-[#E8F3F2] text-[#4A6B64] font-bold text-xs sm:text-sm py-2 rounded-lg hover:bg-[#8ECAC5] hover:text-white transition-colors"
+                            >
+                              Adicionar
+                            </button>
+                          );
+                        }
+                      })()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div> {/* FIM DO GRID DE PRODUTOS */}
+              ))}
+            </div> {/* FIM DO GRID DE PRODUTOS */}
 
-{/* 🌟 BOTÃO DE ROLAGEM INFINITA */}
-{temMaisProdutos && !loadingCatalog && (
-  <div className="flex justify-center mt-10 mb-6 pb-20">
-    <button 
-      onClick={() => buscarProdutos(paginaAtual + 1)}
-      disabled={carregandoMais}
-      className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
-    >
-      {carregandoMais ? "Carregando..." : "Carregar mais produtos"}
-    </button>
-  </div>
-)}
-
-{/* 🌟 BARRA FLUTUANTE DE CARRINHO NO RODAPÉ */}
-{cartItemCount > 0 && currentScreen === 'catalog' && (
-            <div className="fixed bottom-24 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 sm:w-[500px] bg-[#00897B] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,137,123,0.4)] flex justify-between items-center z-50 animate-in slide-in-from-bottom-5">
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-emerald-100 flex items-center gap-1">
-                  <ShoppingCartIcon size={14} /> Carrinho: {cartItemCount} itens
-                </span>
-                <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
+            {/* 🌟 BOTÃO DE ROLAGEM INFINITA */}
+            {temMaisProdutos && !loadingCatalog && (
+              <div className="flex justify-center mt-10 mb-6 pb-20">
+                <button 
+                  onClick={() => buscarProdutos(paginaAtual + 1)}
+                  disabled={carregandoMais}
+                  className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                  {carregandoMais ? "Carregando..." : "Carregar mais produtos"}
+                </button>
               </div>
-              <button 
-                onClick={() => setCurrentScreen('cart')}
-                className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
-              >
-                Ver Carrinho
-              </button>
+            )}
+          </div>
+        )}
+
+        {/* 🌟 BARRA FLUTUANTE DE CARRINHO NO RODAPÉ */}
+        {cartItemCount > 0 && currentScreen === 'catalog' && (
+          <div className="fixed bottom-24 left-4 right-4 sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2 sm:w-[500px] bg-[#00897B] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,137,123,0.4)] flex justify-between items-center z-50 animate-in slide-in-from-bottom-5">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-emerald-100 flex items-center gap-1">
+                <ShoppingCartIcon size={14} /> Carrinho: {cartItemCount} itens
+              </span>
+              <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
             </div>
-          )}
-
-</div>
-</div>
-);
-}; // FIM DO renderCatalog
-
+            <button 
+              onClick={() => setCurrentScreen('cart')}
+              className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
+            >
+              Ver Carrinho
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }; // FIM DO renderCatalog
   const renderCart = () => (
     <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
       <div className="flex items-center gap-4 mb-6">
