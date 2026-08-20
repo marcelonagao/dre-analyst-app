@@ -172,7 +172,7 @@ const formatPrice = (value) => {
   return isNaN(num) ? '0.00' : num.toFixed(2);
 };
 
-export default function CatalogoB2BTab() {
+export default function CatalogoB2BTab({ onRoleChange }) {
   const [currentScreen, setCurrentScreen] = useState('login'); 
   const [currentUser, setCurrentUser] = useState(null);
   const [cart, setCart] = useState([]);
@@ -263,6 +263,20 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   // 🌟 NOVO: Estado para sabermos se o Bling está carregando
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
+  useEffect(() => {
+    if (onRoleChange) {
+      // Se não tem ninguém logado ou é cliente B2B comum -> Modo B2B (Sem menu)
+      if (!currentUser || currentUser.isB2B) {
+        onRoleChange('b2b');
+      } 
+      // Se for Admin ou Representante -> Modo Gestão (Com menu)
+      else if (currentUser.isAdmin || currentUser.isRep) {
+        onRoleChange('admin');
+      }
+    }
+  }, [currentUser, onRoleChange]);
 
 
   useEffect(() => {

@@ -39,9 +39,10 @@ export default function App() {
 
   // 🌟 CAMINHO 1: Variável de Controle B2B
   // TODO: Substitua esta variável pelo seu estado real de usuário (ex: currentUser?.isB2B)
-  const isB2BClient = false; 
-
-  const [activeTab, setActiveTab] = useState(isB2BClient ? TABS.CATALOGO_B2B : TABS.VISAO_GERAL);
+  // 🌟 MÁGICA DO LAYOUT: Só é modo B2B se a aba for o catálogo E o usuário NÃO for admin
+  const isB2BClient = activeTab === TABS.CATALOGO_B2B && appUserRole !== 'admin'; 
+  const [appUserRole, setAppUserRole] = useState('b2b');
+  const [activeTab, setActiveTab] = useState(TABS.CATALOGO_B2B);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowMargin, setFilterLowMargin] = useState(false);
   
@@ -227,9 +228,9 @@ export default function App() {
                   margemAtual={kpisExibidos.margemLiquidaMedia} 
                 />
               )}
-              {/* O CATÁLOGO AGORA OCUPA 100% DO ESPAÇO SEM BORDAS BRANCAS */}
+              {/* O CATÁLOGO AGORA OCUPA 100% DO ESPAÇO E AVISA QUEM ESTÁ LOGADO */}
               {activeTab === TABS.CATALOGO_B2B && (
-                <CatalogoB2BTab />
+                <CatalogoB2BTab onRoleChange={setAppUserRole} />
               )}
             </Suspense>
           )}
