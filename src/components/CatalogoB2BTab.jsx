@@ -293,10 +293,61 @@ export default function CatalogoB2BTab() {
     }
   };
 
-  // Chama a página 1 automaticamente quando o usuário faz login
+  // ============================================================================
+  // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO
+  // ============================================================================
+  const buscarProdutos = async (pagina = 1, termoDeBusca = selectedCategory) => {
+    if (!firebaseUser && !currentUser) return;
+
+    if (pagina === 1) {
+      setLoadingCatalog(true);
+      setDbProducts([]); // Limpa a tela ao trocar de categoria
+    } else {
+      setCarregandoMais(true);
+    }
+
+    try {
+      const query = termoDeBusca !== 'Todas' ? termoDeBusca : searchQuery;
+      const res = await fetch(`/api/catalogo-b2b?pagina=${pagina}&busca=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        const produtosAdaptados = data.produtos.map((p) => {
+          const partesNome = p.nome.split('-');
+          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
+          const horaAtual = new Date().getHours();
+          
+          return {
+            id: p.sku, 
+            blingId: p.id, 
+            name: p.nome, 
+            category: categoriaDerivada,
+            price: Number(p.preco), 
+            stock: 999, 
+            image: p.imagemUrl + `?v=${horaAtual}`, 
+            description: `SKU: ${p.sku} | Distribuição Oficial GKL.`
+          };
+        });
+        
+        // Empilha (se for pg > 1) ou Substitui (se for pg 1)
+        if (pagina === 1) setDbProducts(produtosAdaptados);
+        else setDbProducts(prev => [...prev, ...produtosAdaptados]);
+        
+        setTemMaisProdutos(data.temMais);
+        setPaginaAtual(pagina);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar:", error);
+    } finally {
+      setLoadingCatalog(false);
+      setCarregandoMais(false);
+    }
+  };
+
+  // Gatilho: Quando o usuário muda a categoria, busca a página 1 daquela categoria
   useEffect(() => {
-    buscarProdutos(1);
-  }, [firebaseUser, currentUser]);
+    if (firebaseUser) buscarProdutos(1, selectedCategory);
+  }, [selectedCategory, firebaseUser, currentUser]);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !firebaseUser) return;
@@ -991,46 +1042,81 @@ export default function CatalogoB2BTab() {
                     <span className="text-base sm:text-lg font-extrabold text-[#4A6B64] mb-2">
                       R$ {formatPrice(product.price)}
                     </span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation(); 
-                        addToCart(product, 1);
-                      }}
-                      className="w-full bg-[#E8F3F2] text-[#4A6B64] font-bold text-xs sm:text-sm py-1.5 sm:py-2 rounded-lg hover:bg-[#8ECAC5] hover:text-white transition-colors"
-                    >
-                      Adicionar
-                    </button>
+                    
+                    {(() => {
+                      const itemNoCarrinho = cart.find(item => item.id === product.id);
+                      const qtde = itemNoCarrinho ? itemNoCarrinho.quantity : 0;
+
+                      if (qtde > 0) {
+                        return (
+                          <div className="w-full flex items-center justify-between bg-[#E8F3F2] border border-[#8ECAC5] rounded-lg p-1 overflow-hidden">
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (qtde === 1) removeFromCart(product.id); 
+                                else addToCart(product, -1); 
+                              }}
+                              className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                            >-</button>
+                            <span className="font-extrabold text-[#4A6B64]">{qtde}</span>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
+                              className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                            >+</button>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
+                            className="w-full bg-[#E8F3F2] text-[#4A6B64] font-bold text-xs sm:text-sm py-2 rounded-lg hover:bg-[#8ECAC5] hover:text-white transition-colors"
+                          >
+                            Adicionar
+                          </button>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-          {/* 🌟 NOVO: BOTÃO CARREGAR MAIS */}
-          {temMaisProdutos && !loadingCatalog && (
-            <div className="flex justify-center mt-10 mb-6">
-              <button 
-                onClick={() => buscarProdutos(paginaAtual + 1)}
-                disabled={carregandoMais}
-                className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 active:scale-95 flex items-center gap-2"
-              >
-                {carregandoMais ? (
-                  <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Carregando...</>
-                ) : (
-                  "Carregar mais produtos"
-                )}
-              </button>
-            </div>
-          )}
-        </div> 
-        {/* 🌟 NOVO: AVISO FLUTUANTE DE PRODUTO ADICIONADO */}
-      {toastMessage && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#4A6B64] text-white px-6 py-3 rounded-full shadow-2xl z-50 font-bold text-sm sm:text-base whitespace-nowrap flex items-center gap-2 transition-all duration-300">
-          {toastMessage}
-        </div>
-      )}  
-      </div>
-    );
-  };
+          </div> {/* FIM DO GRID DE PRODUTOS */}
+
+{/* 🌟 BOTÃO DE ROLAGEM INFINITA */}
+{temMaisProdutos && !loadingCatalog && (
+  <div className="flex justify-center mt-10 mb-6 pb-20">
+    <button 
+      onClick={() => buscarProdutos(paginaAtual + 1)}
+      disabled={carregandoMais}
+      className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
+    >
+      {carregandoMais ? "Carregando..." : "Carregar mais produtos"}
+    </button>
+  </div>
+)}
+
+{/* 🌟 BARRA FLUTUANTE DE CARRINHO NO RODAPÉ */}
+{cartItemCount > 0 && currentScreen === 'catalog' && (
+  <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[500px] bg-[#00897B] text-white p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,137,123,0.4)] flex justify-between items-center z-50 animate-in slide-in-from-bottom-5">
+    <div className="flex flex-col">
+      <span className="text-xs font-medium text-emerald-100 flex items-center gap-1">
+        <ShoppingCartIcon size={14} /> Carrinho: {cartItemCount} itens
+      </span>
+      <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
+    </div>
+    <button 
+      onClick={() => setCurrentScreen('cart')}
+      className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
+    >
+      Ver Carrinho
+    </button>
+  </div>
+)}
+
+</div>
+</div>
+);
+}; // FIM DO renderCatalog
 
   const renderCart = () => (
     <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
