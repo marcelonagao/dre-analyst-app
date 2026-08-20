@@ -181,6 +181,10 @@ export default function CatalogoB2BTab() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [myOrders, setMyOrders] = useState([]);
+  // Adicione estes estados junto com os que você já tem:
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [temMaisProdutos, setTemMaisProdutos] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
 
   // Estado para armazenar o cliente que o Representante está a atender
   const [selectedClientForRep, setSelectedClientForRep] = useState(null);
@@ -201,6 +205,8 @@ export default function CatalogoB2BTab() {
   
   // 🌟 NOVO: Estado para sabermos se o Bling está carregando
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -232,57 +238,64 @@ export default function CatalogoB2BTab() {
   }, []);
 
   // ============================================================================
-  // 🚀 NOVO MOTOR: SINCRONIZAÇÃO EM TEMPO REAL COM O BLING
+  // 🚀 NOVO MOTOR: ROLAGEM INFINITA E SINCRONIZAÇÃO B2B
   // ============================================================================
-  useEffect(() => {
-    // Só carrega o catálogo de produtos após o login
+  const buscarProdutos = async (pagina = 1) => {
     if (!firebaseUser && !currentUser) return;
 
-    const fetchBlingCatalog = async () => {
-      try {
-        setLoadingCatalog(true);
-        const res = await fetch('/api/catalogo-b2b');
-        const data = await res.json();
+    if (pagina === 1) setLoadingCatalog(true);
+    else setCarregandoMais(true);
+
+    try {
+      // Passa a página na URL para o nosso back-end
+      const res = await fetch(`/api/catalogo-b2b?pagina=${pagina}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        const produtosAdaptados = data.produtos.map((p) => {
+          const partesNome = p.nome.split('-');
+          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
+          const urlBlingOriginal = p.imagemUrl || '';
+          
+          const horaAtual = new Date().getHours();
+          const urlSupabase = `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`;
+
+          return {
+            id: p.sku, 
+            blingId: p.id,
+            name: p.nome,
+            category: categoriaDerivada,
+            price: Number(p.preco),
+            stock: 999,
+            image: urlSupabase,
+            blingImage: urlBlingOriginal,
+            description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
+          };
+        });
         
-        if (data.success) {
-          
-          const produtosAdaptados = data.produtos.map((p) => {
-            const partesNome = p.nome.split('-');
-            const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
-
-            const urlBlingOriginal = p.imagemUrl || '';
-            
-            // Tenta buscar no Supabase pelo SKU
-            const horaAtual = new Date().getHours();
-            const urlSupabase = `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`;
-
-            return {
-              id: p.sku, 
-              blingId: p.id,
-              name: p.nome,
-              category: categoriaDerivada,
-              price: Number(p.preco),
-              stock: 999,
-              image: urlSupabase,         // 1ª opção: Supabase
-              blingImage: urlBlingOriginal, // 2ª opção: Bling Original
-              description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
-            };
-          });
-          
-          setDbProducts(produtosAdaptados);
+        if (pagina === 1) {
+          setDbProducts(produtosAdaptados); // Página 1: Substitui tudo
         } else {
-          console.error("Erro da Vercel:", data.error);
-          setDbProducts(PRODUCTS_FALLBACK);
+          setDbProducts(prev => [...prev, ...produtosAdaptados]); // Página 2+: Empilha!
         }
-      } catch (error) {
-        console.error("Falha de rede ao buscar Bling:", error);
-        setDbProducts(PRODUCTS_FALLBACK);
-      } finally {
-        setLoadingCatalog(false);
+        
+        setTemMaisProdutos(data.temMais);
+        setPaginaAtual(pagina);
+      } else {
+        if (pagina === 1) setDbProducts(PRODUCTS_FALLBACK);
       }
-    };
+    } catch (error) {
+      console.error("Falha de rede ao buscar Bling:", error);
+      if (pagina === 1) setDbProducts(PRODUCTS_FALLBACK);
+    } finally {
+      setLoadingCatalog(false);
+      setCarregandoMais(false);
+    }
+  };
 
-    fetchBlingCatalog();
+  // Chama a página 1 automaticamente quando o usuário faz login
+  useEffect(() => {
+    buscarProdutos(1);
   }, [firebaseUser, currentUser]);
 
   useEffect(() => {
@@ -355,6 +368,10 @@ export default function CatalogoB2BTab() {
       }
       return [...prevCart, { ...product, quantity }];
     });
+
+    // 🌟 NOVO: Feedback Visual (UX)
+    setToastMessage(`✔️ ${quantity}x ${product.name.split('-')[0]} adicionado!`);
+    setTimeout(() => setToastMessage(null), 2500); // Some depois de 2.5 segundos
   };
 
   const removeFromCart = (productId) => {
@@ -988,7 +1005,29 @@ export default function CatalogoB2BTab() {
               </div>
             ))}
           </div>
+          {/* 🌟 NOVO: BOTÃO CARREGAR MAIS */}
+          {temMaisProdutos && !loadingCatalog && (
+            <div className="flex justify-center mt-10 mb-6">
+              <button 
+                onClick={() => buscarProdutos(paginaAtual + 1)}
+                disabled={carregandoMais}
+                className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 active:scale-95 flex items-center gap-2"
+              >
+                {carregandoMais ? (
+                  <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Carregando...</>
+                ) : (
+                  "Carregar mais produtos"
+                )}
+              </button>
+            </div>
+          )}
+        </div> 
+        {/* 🌟 NOVO: AVISO FLUTUANTE DE PRODUTO ADICIONADO */}
+      {toastMessage && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#4A6B64] text-white px-6 py-3 rounded-full shadow-2xl z-50 font-bold text-sm sm:text-base whitespace-nowrap flex items-center gap-2 transition-all duration-300">
+          {toastMessage}
         </div>
+      )}  
       </div>
     );
   };

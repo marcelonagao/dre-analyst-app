@@ -1,47 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
+import { getValidBlingToken } from './_blingAuth.js'; 
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Use GET.' });
+
   try {
-    // 1. RENOVAR TOKEN B2B (Igual fizemos nas vendas)
-    let { data: tokenData } = await supabase.from('bling_tokens').select('refresh_token').eq('conta', 'B2B').single();
-    if (!tokenData) throw new Error("Token B2B não encontrado.");
+    // 1. Usa o Gerenciador Centralizado de Tokens (Evita quebrar o token no checkout!)
+    const accessToken = await getValidBlingToken();
 
-    const credentials = Buffer.from(`${process.env.BLING_B2B_CLIENT_ID}:${process.env.BLING_B2B_CLIENT_SECRET}`).toString('base64');
-    
-    const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${credentials}` },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: tokenData.refresh_token })
-    });
-    
-    const tokenInfo = await tokenResponse.json();
-    if (!tokenResponse.ok) throw new Error("Erro ao renovar token B2B");
+    // 2. Pega a página que o front-end pediu (se não enviar nada, carrega a 1)
+    const pagina = req.query.pagina || 1;
 
-    await supabase.from('bling_tokens').upsert({ conta: 'B2B', refresh_token: tokenInfo.refresh_token });
-    const accessToken = tokenInfo.access_token;
-
-    // 2. BUSCAR PRODUTOS NO BLING (Trazendo o saldo de estoque junto)
-    // O parâmetro situacao=A busca apenas produtos Ativos
-
-    const resProdutos = await fetch(`https://www.bling.com.br/Api/v3/produtos?situacao=A&limite=100`, {
+    // 3. Busca no Bling (situacao=A para Ativos, criterio=5 para Estoque, limite=100, página dinâmica)
+    const resProdutos = await fetch(`https://www.bling.com.br/Api/v3/produtos?situacao=A&criterio=5&limite=100&pagina=${pagina}`, {
       headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
     });
     
     const produtosData = await resProdutos.json();
     
-    if (produtosData.error) throw new Error(produtosData.error.message || "Erro ao buscar produtos.");
+    if (produtosData.error) {
+      throw new Error(produtosData.error.message || "Erro ao buscar produtos.");
+    }
 
-    const projetoSupabase = process.env.VITE_SUPABASE_URL; // Puxa automático da Vercel
+    const produtosBling = produtosData.data || [];
+    const projetoSupabase = process.env.VITE_SUPABASE_URL;
 
-    const catalogoLimpo = produtosData.data.map(p => {
-      // Magia: A foto agora é puxada direto do seu bucket ultra-rápido, baseada no SKU!
-      const fotoPermanente = p.imagemURL 
-        ? `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.codigo}.jpg` 
-        : null;
+    // 4. Mantém a SUA lógica original de limpar e formatar o catálogo!
+    const catalogoLimpo = produtosBling.map(p => {
+      // Aponta direto para o Supabase usando o SKU. O Front-end cuida do Fallback se não existir.
+      const fotoPermanente = `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.codigo}.jpg`;
 
       return {
         id: p.id,
@@ -52,7 +38,11 @@ export default async function handler(req, res) {
       };
     });
 
-    return res.status(200).json({ success: true, produtos: catalogoLimpo });
+    // 5. O truque da rolagem infinita: avisa o front-end se a página veio cheia
+    const temMais = produtosBling.length === 100;
+
+    // Retorna exatamente no formato que o seu front-end já está acostumado
+    return res.status(200).json({ success: true, produtos: catalogoLimpo, temMais });
 
   } catch (error) {
     console.error("Erro no Catálogo B2B:", error);
