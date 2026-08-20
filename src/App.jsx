@@ -37,14 +37,20 @@ export default function App() {
     produtosFiltradosGlobais
   } = useDashboardData();
 
-  // 🌟 CAMINHO 1: Variável de Controle B2B
-  // TODO: Substitua esta variável pelo seu estado real de usuário (ex: currentUser?.isB2B)
-  // 🌟 MÁGICA DO LAYOUT: Só é modo B2B se a aba for o catálogo E o usuário NÃO for admin
-  const isB2BClient = activeTab === TABS.CATALOGO_B2B && appUserRole !== 'admin'; 
+  // =======================================================
+  // 🌟 ORDEM CORRETA: PRIMEIRO DECLARAMOS OS ESTADOS
+  // =======================================================
   const [appUserRole, setAppUserRole] = useState('b2b');
   const [activeTab, setActiveTab] = useState(TABS.CATALOGO_B2B);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowMargin, setFilterLowMargin] = useState(false);
+
+  // =======================================================
+  // 🌟 SEGUNDO: AGORA SIM PODEMOS LER O 'activeTab' e o 'appUserRole'
+  // =======================================================
+
+  const isB2BClient = activeTab === TABS.CATALOGO_B2B && appUserRole !== 'admin'; 
+    
   
   if (loading || !data) {
     return (
