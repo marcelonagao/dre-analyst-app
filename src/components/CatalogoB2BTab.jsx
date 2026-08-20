@@ -237,63 +237,7 @@ export default function CatalogoB2BTab() {
     return () => unsubscribe();
   }, []);
 
-  // ============================================================================
-  // 🚀 NOVO MOTOR: ROLAGEM INFINITA E SINCRONIZAÇÃO B2B
-  // ============================================================================
-  const buscarProdutos = async (pagina = 1) => {
-    if (!firebaseUser && !currentUser) return;
-
-    if (pagina === 1) setLoadingCatalog(true);
-    else setCarregandoMais(true);
-
-    try {
-      // Passa a página na URL para o nosso back-end
-      const res = await fetch(`/api/catalogo-b2b?pagina=${pagina}`);
-      const data = await res.json();
-      
-      if (data.success) {
-        const produtosAdaptados = data.produtos.map((p) => {
-          const partesNome = p.nome.split('-');
-          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
-          const urlBlingOriginal = p.imagemUrl || '';
-          
-          const horaAtual = new Date().getHours();
-          const urlSupabase = `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`;
-
-          return {
-            id: p.sku, 
-            blingId: p.id,
-            name: p.nome,
-            category: categoriaDerivada,
-            price: Number(p.preco),
-            stock: 999,
-            image: urlSupabase,
-            blingImage: urlBlingOriginal,
-            description: `SKU: ${p.sku} | Produto oficial distribuído pela GKL Brasil.`
-          };
-        });
-        
-        if (pagina === 1) {
-          setDbProducts(produtosAdaptados); // Página 1: Substitui tudo
-        } else {
-          setDbProducts(prev => [...prev, ...produtosAdaptados]); // Página 2+: Empilha!
-        }
-        
-        setTemMaisProdutos(data.temMais);
-        setPaginaAtual(pagina);
-      } else {
-        if (pagina === 1) setDbProducts(PRODUCTS_FALLBACK);
-      }
-    } catch (error) {
-      console.error("Falha de rede ao buscar Bling:", error);
-      if (pagina === 1) setDbProducts(PRODUCTS_FALLBACK);
-    } finally {
-      setLoadingCatalog(false);
-      setCarregandoMais(false);
-    }
-  };
-
-  // ============================================================================
+    // ============================================================================
   // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO
   // ============================================================================
   const buscarProdutos = async (pagina = 1, termoDeBusca = selectedCategory) => {
