@@ -250,6 +250,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
   const [novaMarcaInput, setNovaMarcaInput] = useState('');
 
+  const [uploadingMarcaIndex, setUploadingMarcaIndex] = useState(null);
+
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
     if (onRoleChange) {
@@ -537,6 +539,36 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       alert("Houve um erro ao processar a imagem. Verifique suas permissões no Firebase Storage.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+
+  // ============================================================================
+  // 🚀 MOTOR DE UPLOAD PARA FOTOS DAS SUBCATEGORIAS/MARCAS
+  // ============================================================================
+  const handleUploadMarcaImage = async (e, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingMarcaIndex(index); // Liga a rodinha de carregamento apenas nesta marca
+    try {
+      // 1. Sobe a imagem para o Firebase Storage
+      const fileName = `marcas/${Date.now()}_${file.name}`;
+      const imageRef = ref(storage, fileName);
+      await uploadBytes(imageRef, file);
+      const imageUrl = await getDownloadURL(imageRef);
+
+      // 2. Atualiza a lista de marcas colocando a URL da imagem na marca certa
+      setFormDeptMarcas(prev => {
+        const newMarcas = [...prev];
+        newMarcas[index] = { ...newMarcas[index], imagem: imageUrl };
+        return newMarcas;
+      });
+    } catch (error) {
+      console.error("Erro ao subir imagem da marca:", error);
+      alert("Erro ao fazer upload da imagem.");
+    } finally {
+      setUploadingMarcaIndex(null); // Desliga a rodinha
     }
   };
 
@@ -1943,60 +1975,90 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                 </div>
 
   <div className="pt-2">
-  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Subcategorias / Marcas</label>
-  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Elas aparecerão em formato de Cards Circulares na página inicial.</p>
-  
-  <div className="flex gap-2 mb-3">
-    <input 
-      type="text" 
-      placeholder="Ex: Dermachem" 
-      value={novaMarcaInput}
-      onChange={(e) => setNovaMarcaInput(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
+    <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Subcategorias / Marcas</label>
+    <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Elas aparecerão em formato de Cards Circulares na página inicial.</p>
+    
+    {/* Input para adicionar nova marca */}
+    <div className="flex gap-2 mb-3">
+      <input 
+        type="text" 
+        placeholder="Ex: Dermachem" 
+        value={novaMarcaInput}
+        onChange={(e) => setNovaMarcaInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (novaMarcaInput.trim()) {
+              setFormDeptMarcas([...formDeptMarcas, { nome: novaMarcaInput.trim(), busca: novaMarcaInput.trim() }]);
+              setNovaMarcaInput('');
+            }
+          }
+        }}
+        className="flex-1 bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-2.5 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition text-sm"
+      />
+      <button 
+        type="button"
+        onClick={() => {
           if (novaMarcaInput.trim()) {
             setFormDeptMarcas([...formDeptMarcas, { nome: novaMarcaInput.trim(), busca: novaMarcaInput.trim() }]);
             setNovaMarcaInput('');
           }
-        }
-      }}
-      className="flex-1 bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-2.5 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition text-sm"
-    />
-    <button 
-      type="button"
-      onClick={() => {
-        if (novaMarcaInput.trim()) {
-          setFormDeptMarcas([...formDeptMarcas, { nome: novaMarcaInput.trim(), busca: novaMarcaInput.trim() }]);
-          setNovaMarcaInput('');
-        }
-      }}
-      className="bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white px-5 rounded-xl font-bold transition shadow-sm text-sm"
-    >
-      Incluir
-    </button>
+        }}
+        className="bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white px-5 rounded-xl font-bold transition shadow-sm text-sm"
+      >
+        Incluir
+      </button>
+    </div>
+    
+    {/* 🌟 NOVA Lista de Marcas com Upload de Foto Individual (Substituiu os chips antigos) */}
+    <div className="flex flex-col gap-2 mt-4 min-h-[40px] bg-gray-50/50 p-2 rounded-xl border border-dashed border-gray-200 max-h-48 overflow-y-auto">
+      {formDeptMarcas.map((marca, idx) => (
+        <div key={idx} className="flex items-center justify-between bg-white border border-[#E8F3F2] p-2 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+          <div className="flex items-center gap-3">
+            
+            {/* BOTÃO CIRCULAR DE UPLOAD DE FOTO */}
+            <label className="relative w-10 h-10 rounded-full border border-dashed border-[#8ECAC5] flex items-center justify-center bg-[#F4F9F8] cursor-pointer overflow-hidden group/img shrink-0">
+              {uploadingMarcaIndex === idx ? (
+                <div className="w-4 h-4 border-2 border-[#8ECAC5] border-t-transparent rounded-full animate-spin"></div>
+              ) : marca.imagem ? (
+                <>
+                  <img src={marca.imagem} alt={marca.nome} className="w-full h-full object-contain p-1 mix-blend-multiply" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                    <span className="text-white text-[8px] font-bold">Trocar</span>
+                  </div>
+                </>
+              ) : (
+                <span className="text-[9px] text-[#698F8A] font-bold text-center leading-tight">Add<br/>Foto</span>
+              )}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/png, image/jpeg, image/webp"
+                onChange={(e) => handleUploadMarcaImage(e, idx)}
+              />
+            </label>
+            
+            <span className="text-sm font-bold text-[#4A6B64]">{marca.nome}</span>
+          </div>
+          
+          <button 
+            type="button" 
+            onClick={() => setFormDeptMarcas(formDeptMarcas.filter((_, i) => i !== idx))}
+            className="text-red-400 hover:text-red-600 p-2 transition-colors"
+            title="Remover Marca"
+          >
+            <CloseIcon size={16} />
+          </button>
+        </div>
+      ))}
+      
+      {formDeptMarcas.length === 0 && (
+        <span className="text-xs text-gray-400 font-medium w-full text-center py-2">
+          Nenhuma marca adicionada ainda.
+        </span>
+      )}
+    </div>
   </div>
-  
-  <div className="flex flex-wrap gap-2 min-h-[40px] bg-gray-50/50 p-2 rounded-xl border border-dashed border-gray-200">
-    {formDeptMarcas.map((marca, idx) => (
-      <span key={idx} className="bg-white border border-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
-        {marca.nome}
-        <button 
-          type="button" 
-          onClick={() => setFormDeptMarcas(formDeptMarcas.filter((_, i) => i !== idx))}
-          className="text-red-400 hover:text-red-600 font-black text-sm leading-none flex items-center"
-        >
-          ×
-        </button>
-      </span>
-    ))}
-    {formDeptMarcas.length === 0 && (
-      <span className="text-xs text-gray-400 font-medium w-full text-center py-1">
-        Nenhuma marca adicionada ainda.
-      </span>
-    )}
-  </div>
-</div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
                   <button 
