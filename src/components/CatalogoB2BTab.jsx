@@ -1029,30 +1029,12 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {catalogView === 'home' && (
           <div className="max-w-6xl mx-auto px-2 sm:px-4 mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
-            {/* CARROSSEL DE BANNERS */}
-            <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-sm mb-6 sm:mb-8 group aspect-[21/9] sm:aspect-[4/1] bg-gray-200">
-              {bannersPromocionais.map((banner, index) => (
-                <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                  <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-              ))}
-              <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+            {/* AS BOLINHAS ORIGINAIS DO CARROSSEL */}
+            <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
                 {bannersPromocionais.map((_, index) => (
-                  <button 
-                  onClick={() => {
-                    setEditingItem(banner); // Avisa que é edição
-                    setFormBannerName(banner.alt); // Preenche o nome
-                    setFormBannerPreview(banner.imagem); // Preenche a foto
-                    setIsBannerModalOpen(true); // Abre o modal
-                  }} 
-                  className="bg-white/20 hover:bg-white/40 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition"
-                >
-                  Editar
-                </button>
+                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}></button>
                 ))}
               </div>
-            </div>
 
             {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
             {dbProducts.length > 0 && (
@@ -1579,6 +1561,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 </button>
               </div>
 
+              {/* O LUGAR CORRETO DOS BOTÕES DE EDITAR: DENTRO DO ADMIN! */}
               <div className="grid gap-4 md:grid-cols-2">
                 {bannersPromocionais.map((banner, idx) => (
                   <div key={idx} className="relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#8ECAC5] transition-all group">
@@ -1586,7 +1569,20 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4">
                       <span className="text-white font-bold">{banner.alt}</span>
                       <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="bg-white/20 hover:bg-white/40 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition">Editar</button>
+                        
+                        {/* 🌟 AQUI ESTÁ O BOTÃO EDITAR FUNCIONANDO */}
+                        <button 
+                          onClick={() => {
+                            setEditingItem(banner); 
+                            setFormBannerName(banner.alt); 
+                            setFormBannerPreview(banner.imagem); 
+                            setIsBannerModalOpen(true); 
+                          }} 
+                          className="bg-white/20 hover:bg-white/40 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition"
+                        >
+                          Editar
+                        </button>
+
                         <button className="bg-red-500/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition">Remover</button>
                       </div>
                     </div>
