@@ -246,17 +246,19 @@ const mapaCategorias = [
 
 // Controle do Carrossel de Banners
 const [currentBanner, setCurrentBanner] = useState(0);
-const bannersPromocionais = [
-  { id: 1, imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Make Week' },
-  { id: 2, imagem: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Semana de Ofertas' }
-];
+// 🌟 MUDANÇA 1: Banners agora são um Estado Dinâmico
+const [currentBanner, setCurrentBanner] = useState(0);
+const [bannersPromocionais, setBannersPromocionais] = useState([
+  // Deixamos esses dois como "Placeholder" (Apenas para não ficar vazio enquanto o Firebase carrega)
+  { id: 'fallback1', imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Carregando Banners...' }
+]);
 
-// Motor do Banner
+// 🌟 MUDANÇA 2: Motor do Banner atualizado para ler o tamanho real do banco
 useEffect(() => {
-  if (catalogView !== 'home') return;
+  if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
   const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % bannersPromocionais.length), 4000);
   return () => clearInterval(timer);
-}, [catalogView]);
+}, [catalogView, bannersPromocionais.length]);
 
 const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
@@ -474,6 +476,38 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
     return () => unsubscribe();
   }, [firebaseUser, currentUser, selectedClientForRep]);
+
+  // ============================================================================
+  // 🌟 NOVO: ESCUTANDO OS BANNERS DO BANCO DE DADOS EM TEMPO REAL
+  // ============================================================================
+  useEffect(() => {
+    if (!isFirebaseConfigured || !firebaseUser) return;
+    
+    // Caminho da tabela de banners
+    const bannersPath = typeof window !== 'undefined' && window.__app_id 
+      ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners')
+      : collection(db, 'vitrine_banners');
+      
+    const unsubscribe = onSnapshot(bannersPath, (snapshot) => {
+      if (!snapshot.empty) {
+        // Pega todos os banners e coloca a ID do Firebase neles
+        const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Opcional: Ordena para que os mais novos apareçam primeiro
+        fetchedBanners.sort((a, b) => new Date(b.dataCriacao || 0).getTime() - new Date(a.dataCriacao || 0).getTime());
+        
+        // Atualiza a tela!
+        setBannersPromocionais(fetchedBanners);
+      } else {
+        // Se você apagar tudo lá no painel, ele esvazia a tela
+        setBannersPromocionais([]);
+      }
+    }, (error) => {
+      console.error("Erro ao buscar banners em tempo real:", error);
+    });
+    
+    return () => unsubscribe();
+  }, [firebaseUser]);
 
   // ============================================================================
   // 🚀 MOTOR DE UPLOAD E SALVAMENTO (BANNERS)
