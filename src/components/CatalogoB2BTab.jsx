@@ -257,6 +257,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
   const [novaMarcaInput, setNovaMarcaInput] = useState('');
 
+  const [activeDeptHome, setActiveDeptHome] = useState(null);
+
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
     if (onRoleChange) {
@@ -1260,29 +1262,62 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             )}
 
             {/* 🌟 SEÇÃO DE CATEGORIAS EM FORMATO DE CARDS (Estilo Mercado Livre) */}
+            {/* 🌟 SEÇÃO DE CATEGORIAS (Bolinhas) */}
             {mapaCategorias.length > 0 && (
-              <div className="mb-8 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div className="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm sm:text-base font-black text-[#4A6B64] uppercase tracking-wider">Categorias</h3>
                 </div>
                 
-                {/* Grade / Carrossel de ícones circulares */}
-                <div className="flex sm:grid sm:grid-cols-6 gap-4 overflow-x-auto pb-2 scrollbar-none">
-                  {mapaCategorias.map(dept => (
-                    <div 
-                      key={dept.id} 
-                      onClick={() => abrirMarca(dept.nome)}
-                      className="flex flex-col items-center cursor-pointer group shrink-0 w-20 sm:w-auto"
-                    >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-2xl sm:text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300">
-                        {dept.icone || '📦'}
+                {/* Grade / Carrossel de ícones circulares dos Departamentos */}
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+                  {mapaCategorias.map(dept => {
+                    // Define se este departamento é o selecionado no momento
+                    const isSelected = activeDeptHome === dept.id || (!activeDeptHome && dept === mapaCategorias[0]);
+
+                    return (
+                      <div 
+                        key={dept.id} 
+                        onClick={() => setActiveDeptHome(dept.id)}
+                        className={`flex flex-col items-center cursor-pointer group shrink-0 w-20 sm:w-24 p-2 rounded-xl transition-all ${isSelected ? 'bg-[#E8F3F2] border border-[#8ECAC5]' : 'hover:bg-gray-50'}`}
+                      >
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
+                          {dept.icone || '📦'}
+                        </div>
+                        <span className="text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-1">
+                          {dept.nome}
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-1 group-hover:text-[#00897B] transition-colors">
-                        {dept.nome}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
+                {/* 🌟 MARCAS / SUBCATEGORIAS QUE APARECEM EMBAIXO DO DEPARTAMENTO SELECIONADO */}
+                {(() => {
+                  const deptAtual = mapaCategorias.find(d => d.id === activeDeptHome) || mapaCategorias[0];
+                  if (!deptAtual || !deptAtual.marcas || deptAtual.marcas.length === 0) return null;
+
+                  return (
+                    <div className="mt-6 pt-4 border-t border-gray-100 animate-in fade-in duration-300">
+                      <p className="text-xs font-bold text-[#698F8A] uppercase tracking-wider mb-3">
+                        Subcategorias / Marcas de {deptAtual.nome}:
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {deptAtual.marcas.map((marca, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => abrirMarca(marca.busca)}
+                            className="bg-[#F4F9F8] hover:bg-[#8ECAC5] hover:text-white text-[#4A6B64] border border-[#E8F3F2] text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                          >
+                            <span>🏷️</span>
+                            <span>{marca.nome}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -2125,14 +2160,14 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             </div>
 
             {/* BARRA DE BUSCA CENTRAL (Ocupa linha inteira no celular, divide espaço no PC) */}
-            {/* TOPO: Categorias lado a lado (Sem dropdown) */}
+            {/* TOPO: Apenas os departamentos lado a lado, sem duplicar o Início e sem dropdowns */}
           {currentScreen === 'catalog' && (
             <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-30 border-t border-[#4A6B64]">
-              <div className="max-w-6xl mx-auto flex items-center gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-2.5 text-[13px] font-semibold text-white/90">
+              <div className="max-w-6xl mx-auto flex items-center gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-2.5 text-[13px] font-semibold text-white/90">
                 
                 <button 
                   onClick={voltarParaHome} 
-                  className={`py-1 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
+                  className={`py-1 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' && !selectedDeptHome ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
                 >
                   Início
                 </button>
@@ -2140,7 +2175,11 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 {mapaCategorias.map(dept => (
                   <button 
                     key={dept.id} 
-                    onClick={() => abrirMarca(dept.nome)}
+                    onClick={() => {
+                      // Clicar no topo já seleciona o departamento para exibir as marcas dele embaixo
+                      setActiveDeptHome(dept.id);
+                      if (catalogView !== 'home') voltarParaHome();
+                    }}
                     className="py-1 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0"
                   >
                     {dept.nome}
@@ -2150,6 +2189,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </div>
             </div>
           )}
+          
 
             {/* ÁREA DO USUÁRIO E ÍCONES */}
             <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
