@@ -220,6 +220,8 @@ const [bannersPromocionais, setBannersPromocionais] = useState([
 
 const [activeDropdown, setActiveDropdown] = useState(null);
 
+const [selectedDeptHome, setSelectedDeptHome] = useState(null);
+
 // 🌟 MUDANÇA 2: Motor do Banner atualizado para ler o tamanho real do banco
 useEffect(() => {
   if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
