@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 // --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+// 🌟 NOVO: Importando o "Drive" de imagens do Firebase
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // --- COMPONENTES NATIVOS DE ÍCONES EM SVG ---
 const ShoppingCartIcon = ({ size = 24, className = "" }) => (
@@ -154,6 +156,7 @@ const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app); // 🌟 NOVO: Inicializando o Storage
 
 const PRODUCTS_FALLBACK = [
   { id: 1, name: 'Produto Falso - Erro API', category: 'Erro', price: 0.00, stock: 0, image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400' }
@@ -200,6 +203,8 @@ const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departament
   const [formBannerName, setFormBannerName] = useState('');
   const [formBannerImageFile, setFormBannerImageFile] = useState(null);
   const [formBannerPreview, setFormBannerPreview] = useState(null);
+
+  const [isUploading, setIsUploading] = useState(false);
 
 
 // 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
@@ -469,6 +474,80 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
     return () => unsubscribe();
   }, [firebaseUser, currentUser, selectedClientForRep]);
+
+  // ============================================================================
+  // 🚀 MOTOR DE UPLOAD E SALVAMENTO (BANNERS)
+  // ============================================================================
+  const handleSaveBanner = async () => {
+    if (!formBannerName) {
+      alert("Por favor, dê um nome para a campanha.");
+      return;
+    }
+
+    if (!editingItem && !formBannerImageFile) {
+      alert("Por favor, selecione uma imagem para o novo banner.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      let imageUrl = formBannerPreview; // Começa com a imagem antiga (se for edição)
+
+      // 1. SE O USUÁRIO ESCOLHEU UMA FOTO NOVA, FAZ O UPLOAD PARA A NUVEM
+      if (formBannerImageFile) {
+        // Cria um nome único para o arquivo não substituir outro sem querer
+        const fileName = `banners/${Date.now()}_${formBannerImageFile.name}`;
+        const imageRef = ref(storage, fileName);
+        
+        // Sobe o arquivo
+        await uploadBytes(imageRef, formBannerImageFile);
+        
+        // Pega o link público gerado
+        imageUrl = await getDownloadURL(imageRef);
+      }
+
+      const bannersPath = typeof window !== 'undefined' && window.__app_id 
+        ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners')
+        : collection(db, 'vitrine_banners');
+
+      // 2. SALVA NO BANCO DE DADOS (Firestore)
+      if (editingItem) {
+        // Atualizando um existente
+        const bannerRef = typeof window !== 'undefined' && window.__app_id 
+          ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners', editingItem.id)
+          : doc(db, 'vitrine_banners', editingItem.id);
+          
+        await updateDoc(bannerRef, {
+          alt: formBannerName,
+          imagem: imageUrl,
+          dataAtualizacao: new Date().toISOString()
+        });
+        alert("Banner atualizado com sucesso!");
+      } else {
+        // Criando um novo
+        await addDoc(bannersPath, {
+          alt: formBannerName,
+          imagem: imageUrl,
+          dataCriacao: new Date().toISOString()
+        });
+        alert("Novo banner adicionado à vitrine!");
+      }
+
+      // 3. LIMPA A TELA E FECHA O MODAL
+      setIsBannerModalOpen(false);
+      setEditingItem(null);
+      setFormBannerName('');
+      setFormBannerImageFile(null);
+      setFormBannerPreview(null);
+
+    } catch (error) {
+      console.error("Erro ao salvar banner:", error);
+      alert("Houve um erro ao processar a imagem. Verifique suas permissões no Firebase Storage.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const addToCart = (product, quantity = 1) => {
     setCart((prevCart) => {
@@ -1700,11 +1779,23 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
-                  <button onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); }} className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition">
+                  <button 
+                    onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); setFormBannerImageFile(null); }} 
+                    disabled={isUploading}
+                    className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
+                  >
                     Cancelar
                   </button>
-                  <button className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95">
-                    {editingItem ? 'Salvar Edição' : 'Adicionar Banner'}
+                  <button 
+                    onClick={handleSaveBanner}
+                    disabled={isUploading}
+                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                  >
+                    {isUploading ? (
+                      <> <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Salvando... </>
+                    ) : (
+                      editingItem ? 'Salvar Edição' : 'Adicionar Banner'
+                    )}
                   </button>
                 </div>
               </div>
