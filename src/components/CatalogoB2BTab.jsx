@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 // 🌟 NOVO: Importando o "Drive" de imagens do Firebase
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // --- COMPONENTES NATIVOS DE ÍCONES EM SVG ---
 const ShoppingCartIcon = ({ size = 24, className = "" }) => (
@@ -625,6 +625,49 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       alert("Erro ao salvar. Verifique sua conexão ou permissões.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // ============================================================================
+  // 🗑️ FUNÇÕES DE EXCLUSÃO (Banners e Departamentos)
+  // ============================================================================
+  const handleDeleteBanner = async (banner) => {
+    // 1. Pede confirmação para evitar cliques acidentais!
+    const confirmacao = window.confirm(`Tem a certeza que deseja excluir o banner "${banner.alt}"?`);
+    if (!confirmacao) return;
+
+    try {
+      // 2. Apaga a ID no Banco de Dados
+      const bannerRef = typeof window !== 'undefined' && window.__app_id 
+        ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners', banner.id)
+        : doc(db, 'vitrine_banners', banner.id);
+      
+      await deleteDoc(bannerRef);
+
+      // 3. Limpeza inteligente: Apaga a foto do Storage para liberar espaço
+      if (banner.imagem && banner.imagem.includes('firebasestorage')) {
+        const imageRef = ref(storage, banner.imagem);
+        await deleteObject(imageRef).catch(e => console.warn("Imagem já apagada ou sem permissão no Storage."));
+      }
+    } catch (error) {
+      console.error("Erro ao excluir banner:", error);
+      alert("Erro ao excluir. Verifique a sua conexão.");
+    }
+  };
+
+  const handleDeleteCategory = async (dept) => {
+    const confirmacao = window.confirm(`Tem a certeza que deseja excluir o departamento "${dept.nome}"?`);
+    if (!confirmacao) return;
+
+    try {
+      const deptRef = typeof window !== 'undefined' && window.__app_id 
+        ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos', dept.id)
+        : doc(db, 'vitrine_departamentos', dept.id);
+        
+      await deleteDoc(deptRef);
+    } catch (error) {
+      console.error("Erro ao excluir departamento:", error);
+      alert("Erro ao excluir. Verifique a sua conexão.");
     }
   };
 
@@ -1761,7 +1804,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                           Editar
                         </button>
 
-                        <button className="bg-red-500/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition">Remover</button>
+                        <button onClick={() => handleDeleteBanner(banner)} className="bg-red-500/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition">Remover</button>
                       </div>
                     </div>
                   </div>
@@ -1792,18 +1835,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                       </div>
                     </div>
                     <div className="flex gap-2">
-                    <button 
-  onClick={() => {
-    setEditingItem(dept);
-    setFormDeptName(dept.nome);
-    setFormDeptIcon(dept.icone);
-    setIsCategoryModalOpen(true);
-  }} 
-  className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"
->
-  Editar
-</button>
-                      <button className="flex-1 sm:flex-none text-center bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold transition">Excluir</button>
+                    <button onClick={() => {setEditingItem(dept); setFormDeptName(dept.nome); setFormDeptIcon(dept.icone); setIsCategoryModalOpen(true); }} className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"> Editar </button>
+                    <button onClick={() => handleDeleteCategory(dept)} className="flex-1 sm:flex-none text-center bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold transition"> Excluir </button>
                     </div>
                   </div>
                 ))}
