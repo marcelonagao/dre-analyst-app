@@ -2151,17 +2151,28 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 {mapaCategorias.map(dept => (
                   <div key={dept.id} className="relative group">
                     <button className="flex items-center gap-1.5 py-2.5 border-b-[3px] border-transparent hover:text-white transition-all cursor-pointer">
-                      {dept.nome} <span className="text-[9px] opacity-70">▼</span>
+                      {dept.nome} 
+                      {/* Só mostra a setinha se tiver subcategorias */}
+                      {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
                     </button>
-                    {/* Dropdown Menu */}
-                    <div className="absolute top-full left-0 mt-0 w-52 bg-white text-[#4A6B64] rounded-b-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border border-gray-200">
-                      <div className="bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500">Marcas Relacionadas</div>
-                      {dept.marcas.map((marca, idx) => (
-                        <button key={idx} onClick={() => abrirMarca(marca.busca)} className="w-full text-left px-4 py-3 hover:bg-[#F4F9F8] hover:text-[#8ECAC5] text-sm font-bold border-b border-gray-100 last:border-0 transition-colors">
-                          {marca.nome}
-                        </button>
-                      ))}
-                    </div>
+                    
+                    {/* 🌟 MÁGICA: Dropdown Menu (Só existe se tiver marcas cadastradas!) */}
+                    {dept.marcas && dept.marcas.length > 0 && (
+                      <div className="absolute top-full left-0 mt-0 w-52 bg-white text-[#4A6B64] rounded-b-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border border-gray-200">
+                        <div className="bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                          Opções
+                        </div>
+                        {dept.marcas.map((marca, idx) => (
+                          <button 
+                            key={idx} 
+                            onClick={() => abrirMarca(marca.busca)} 
+                            className="w-full text-left px-4 py-3 hover:bg-[#F4F9F8] hover:text-[#8ECAC5] text-sm font-bold border-b border-gray-100 last:border-0 transition-colors"
+                          >
+                            {marca.nome}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
