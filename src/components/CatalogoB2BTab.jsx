@@ -1137,17 +1137,37 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {/* ========================================= */}
         {/* MODO 1: HOME (Vitrine Completa) */}
         {/* ========================================= */}
+        {/* ========================================= */}
+        {/* MODO 1: HOME (Vitrine Completa) */}
+        {/* ========================================= */}
         {catalogView === 'home' && (
           <div className="max-w-6xl mx-auto px-2 sm:px-4 mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
-            {/* AS BOLINHAS ORIGINAIS DO CARROSSEL */}
-            <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-                {bannersPromocionais.map((_, index) => (
-                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}></button>
+            {/* 🌟 CARROSSEL DE BANNERS DA LOJA */}
+            {bannersPromocionais.length > 0 && (
+              <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-sm mb-6 sm:mb-8 group aspect-[21/9] sm:aspect-[4/1] bg-gray-200">
+                {bannersPromocionais.map((banner, index) => (
+                  <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
                 ))}
+                
+                {/* BOLINHAS DE NAVEGAÇÃO DO CARROSSEL */}
+                <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                  {bannersPromocionais.map((_, index) => (
+                    <button 
+                      key={index} 
+                      onClick={() => setCurrentBanner(index)} 
+                      className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}
+                    ></button>
+                  ))}
+                </div>
               </div>
+            )}
 
             {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
+            {/* (O seu código dos destaques continua normal aqui para baixo...) */}
             {dbProducts.length > 0 && (
               <div className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
