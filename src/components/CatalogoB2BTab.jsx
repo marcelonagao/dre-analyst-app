@@ -1202,7 +1202,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     const isApproved = targetClient?.creditLimit > 0;
 
     return (
-      <div className="pb-24 min-h-screen bg-[#F4F9F8]">
+      <div className="pb-24 min-h-screen bg-[#F4F9F8] pt-4">
         {/* Barra de Progresso Inteligente */}
         {!isApproved && targetClient && !currentUser.isAdmin && (
           <div className={`p-4 border-b ${hasReachedTarget ? 'bg-[#E8F3F2] border-[#8ECAC5]' : 'bg-yellow-50 border-yellow-200'}`}>
@@ -1228,9 +1228,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
           </div>
         )}
 
-        {/* ========================================= */}
-        {/* MODO 1: HOME (Vitrine Completa) */}
-        {/* ========================================= */}
         {/* ========================================= */}
         {/* MODO 1: HOME (Vitrine Completa) */}
         {/* ========================================= */}
@@ -1478,7 +1475,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 >
                   Remover
                 </button>
-              </div>
+              </div>-3
             </div>
           ))}
           
