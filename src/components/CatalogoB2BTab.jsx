@@ -1839,7 +1839,19 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                       </div>
                     </div>
                     <div className="flex gap-2">
-                    <button onClick={() => {setEditingItem(dept); setFormDeptName(dept.nome); setFormDeptIcon(dept.icone); setIsCategoryModalOpen(true); }} className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"> Editar </button>
+                    <button 
+  onClick={() => {
+    setEditingItem(dept);
+    setFormDeptName(dept.nome);
+    setFormDeptIcon(dept.icone);
+    // 🌟 A MÁGICA ACONTECE AQUI: Puxa as marcas salvas no banco para a caixinha!
+    setFormDeptMarcas(dept.marcas || []); 
+    setIsCategoryModalOpen(true);
+  }} 
+  className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"
+>
+  Editar
+</button>
                     <button onClick={() => handleDeleteCategory(dept)} className="flex-1 sm:flex-none text-center bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold transition"> Excluir </button>
                     </div>
                   </div>
