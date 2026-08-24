@@ -276,6 +276,10 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
+  // Dados do formulário de Departamento
+  const [formDeptName, setFormDeptName] = useState('');
+  const [formDeptIcon, setFormDeptIcon] = useState(''); 
+
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
     if (onRoleChange) {
@@ -1035,7 +1039,17 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               ))}
               <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
                 {bannersPromocionais.map((_, index) => (
-                  <button key={index} onClick={() => setCurrentBanner(index)} className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}></button>
+                  <button 
+                  onClick={() => {
+                    setEditingItem(banner); // Avisa que é edição
+                    setFormBannerName(banner.alt); // Preenche o nome
+                    setFormBannerPreview(banner.imagem); // Preenche a foto
+                    setIsBannerModalOpen(true); // Abre o modal
+                  }} 
+                  className="bg-white/20 hover:bg-white/40 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm transition"
+                >
+                  Editar
+                </button>
                 ))}
               </div>
             </div>
@@ -1588,7 +1602,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   <h3 className="text-xl font-extrabold text-[#4A6B64]">Departamentos & Categorias</h3>
                   <p className="text-sm text-[#698F8A]">O menu superior e os atalhos de busca do cliente.</p>
                 </div>
-                <button onClick={() => setIsBannerModalOpen(true)} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button onClick={() => { setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); setIsCategoryModalOpen(true); }} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
                   <PlusIcon size={16} /> Novo Departamento
                 </button>
               </div>
@@ -1604,7 +1618,17 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition">Editar</button>
+                    <button 
+  onClick={() => {
+    setEditingItem(dept);
+    setFormDeptName(dept.nome);
+    setFormDeptIcon(dept.icone);
+    setIsCategoryModalOpen(true);
+  }} 
+  className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"
+>
+  Editar
+</button>
                       <button className="flex-1 sm:flex-none text-center bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold transition">Excluir</button>
                     </div>
                   </div>
@@ -1685,6 +1709,60 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   </button>
                   <button className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95">
                     {editingItem ? 'Salvar Edição' : 'Adicionar Banner'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================= */}
+        {/* MODAL: CRIAR / EDITAR DEPARTAMENTO */}
+        {/* ========================================= */}
+        {isCategoryModalOpen && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-[#4A6B64] flex items-center gap-2">
+                  <SparklesIcon size={24} className="text-[#8ECAC5]" />
+                  {editingItem ? 'Editar Departamento' : 'Novo Departamento'}
+                </h3>
+                <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                  <CloseIcon size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Nome do Departamento</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Skincare & Cuidados" 
+                    value={formDeptName}
+                    onChange={(e) => setFormDeptName(e.target.value)}
+                    className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Emoji / Ícone</label>
+                  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Copie e cole um Emoji (Windows + Ponto) para ilustrar a categoria.</p>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: ✨" 
+                    value={formDeptIcon}
+                    onChange={(e) => setFormDeptIcon(e.target.value)}
+                    className="w-20 text-center text-3xl bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+                  <button onClick={() => setIsCategoryModalOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition">
+                    Cancelar
+                  </button>
+                  <button className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95">
+                    {editingItem ? 'Salvar Edição' : 'Adicionar'}
                   </button>
                 </div>
               </div>
