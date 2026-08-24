@@ -599,19 +599,18 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         await updateDoc(deptRef, {
           nome: formDeptName,
           icone: formDeptIcon,
+          marcas: formDeptMarcas, // 🌟 NOVO AQUI
           dataAtualizacao: new Date().toISOString()
         });
-        alert("Departamento atualizado com sucesso!");
       } else {
         // Criando um departamento totalmente novo
         await addDoc(deptPath, {
           nome: formDeptName,
           icone: formDeptIcon,
-          marcas: [], // Nasce vazio, depois podemos adicionar as subcategorias
-          cor: 'bg-teal-50 text-teal-600 border-teal-100', // Cor padrão elegante
+          marcas: formDeptMarcas, // 🌟 NOVO AQUI
+          cor: 'bg-teal-50 text-teal-600 border-teal-100',
           dataCriacao: new Date().toISOString()
         });
-        alert("Novo departamento criado!");
       }
 
       // Limpa a tela
@@ -619,6 +618,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       setEditingItem(null);
       setFormDeptName('');
       setFormDeptIcon('');
+      setFormDeptMarcas([]); // 🌟 NOVO AQUI
+      setNovaMarcaInput(''); // 🌟 NOVO AQUI
 
     } catch (error) {
       console.error("Erro ao salvar departamento:", error);
@@ -1999,6 +2000,64 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       </div>
     );
   };
+
+  {/* 🌟 NOVO: CAMPO DE SUBCATEGORIAS / MARCAS */}
+  <div className="pt-2">
+  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Subcategorias / Marcas</label>
+  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Estas opções aparecerão no menu dropdown para o cliente clicar.</p>
+  
+  <div className="flex gap-2 mb-3">
+    <input 
+      type="text" 
+      placeholder="Ex: Dermachem" 
+      value={novaMarcaInput}
+      onChange={(e) => setNovaMarcaInput(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (novaMarcaInput.trim()) {
+            setFormDeptMarcas([...formDeptMarcas, { nome: novaMarcaInput.trim(), busca: novaMarcaInput.trim() }]);
+            setNovaMarcaInput('');
+          }
+        }
+      }}
+      className="flex-1 bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-2.5 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition text-sm"
+    />
+    <button 
+      type="button"
+      onClick={() => {
+        if (novaMarcaInput.trim()) {
+          setFormDeptMarcas([...formDeptMarcas, { nome: novaMarcaInput.trim(), busca: novaMarcaInput.trim() }]);
+          setNovaMarcaInput('');
+        }
+      }}
+      className="bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white px-5 rounded-xl font-bold transition shadow-sm text-sm"
+    >
+      Incluir
+    </button>
+  </div>
+  
+  {/* Lista de tags (chips) flutuantes */}
+  <div className="flex flex-wrap gap-2 min-h-[40px] bg-gray-50/50 p-2 rounded-xl border border-dashed border-gray-200">
+    {formDeptMarcas.map((marca, idx) => (
+      <span key={idx} className="bg-white border border-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
+        {marca.nome}
+        <button 
+          type="button" 
+          onClick={() => setFormDeptMarcas(formDeptMarcas.filter((_, i) => i !== idx))}
+          className="text-red-400 hover:text-red-600 font-black text-sm leading-none flex items-center"
+        >
+          ×
+        </button>
+      </span>
+    ))}
+    {formDeptMarcas.length === 0 && (
+      <span className="text-xs text-gray-400 font-medium w-full text-center py-1">
+        Nenhuma marca adicionada ainda.
+      </span>
+    )}
+  </div>
+</div>
 
   return (
     // 🌟 FUNDO CINZA MERCADO LIVRE (#EBEBEB)
