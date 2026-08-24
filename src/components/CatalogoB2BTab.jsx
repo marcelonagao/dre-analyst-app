@@ -2074,7 +2074,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     );
   };
 
- 
+  console.log("Conteúdo atual de mapaCategorias:", mapaCategorias);
 
   return (
     // 🌟 FUNDO CINZA MERCADO LIVRE (#EBEBEB)
