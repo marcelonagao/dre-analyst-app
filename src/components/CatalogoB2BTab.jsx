@@ -1980,31 +1980,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
-                  <button 
-                    onClick={() => { setIsCategoryModalOpen(false); setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); }} 
-                    disabled={isUploading}
-                    className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={handleSaveCategory}
-                    disabled={isUploading}
-                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
-                  >
-                    {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  {/* 🌟 NOVO: CAMPO DE SUBCATEGORIAS / MARCAS */}
+                 {/* 🌟 NOVO: CAMPO DE SUBCATEGORIAS / MARCAS */}
   <div className="pt-2">
   <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Subcategorias / Marcas</label>
   <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Estas opções aparecerão no menu dropdown para o cliente clicar.</p>
@@ -2061,6 +2037,32 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     )}
   </div>
 </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+                  <button 
+                    onClick={() => { setIsCategoryModalOpen(false); setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); }} 
+                    disabled={isUploading}
+                    className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleSaveCategory}
+                    disabled={isUploading}
+                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
+                  >
+                    {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+ 
 
   return (
     // 🌟 FUNDO CINZA MERCADO LIVRE (#EBEBEB)
