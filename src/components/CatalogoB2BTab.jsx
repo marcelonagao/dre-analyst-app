@@ -244,8 +244,6 @@ const mapaCategorias = [
   }
 ];
 
-// Controle do Carrossel de Banners
-const [currentBanner, setCurrentBanner] = useState(0);
 // 🌟 MUDANÇA 1: Banners agora são um Estado Dinâmico
 const [currentBanner, setCurrentBanner] = useState(0);
 const [bannersPromocionais, setBannersPromocionais] = useState([
