@@ -251,6 +251,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   // Dados do formulário de Departamento
   const [formDeptName, setFormDeptName] = useState('');
   const [formDeptIcon, setFormDeptIcon] = useState(''); 
+  // 🌟 NOVO: Controla a lista de marcas e o campo de digitação
+  const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
+  const [novaMarcaInput, setNovaMarcaInput] = useState('');
 
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
