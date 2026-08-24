@@ -208,41 +208,8 @@ const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departament
 
 
 // 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
-const mapaCategorias = [
-  {
-    id: 'beleza',
-    nome: 'Beleza & Cosméticos',
-    icone: '💄',
-    cor: 'bg-pink-50 text-pink-600 border-pink-100',
-    marcas: [
-      { nome: 'Dermachem', busca: 'Dermachem' },
-      { nome: 'Face Beautiful', busca: 'Face Beautiful' },
-      { nome: 'Porán', busca: 'Poran' },
-      { nome: 'Skincare (Geral)', busca: 'Skincare' }
-    ]
-  },
-  {
-    id: 'ferramentas',
-    nome: 'Ferramentas & Casa',
-    icone: '🛠️',
-    cor: 'bg-orange-50 text-orange-600 border-orange-100',
-    marcas: [
-      { nome: 'Tramontina', busca: 'Tramontina' },
-      { nome: 'Action', busca: 'Action' },
-      { nome: 'Kala', busca: 'Kala' }
-    ]
-  },
-  {
-    id: 'brinquedos',
-    nome: 'Brinquedos & Kids',
-    icone: '🧸',
-    cor: 'bg-blue-50 text-blue-600 border-blue-100',
-    marcas: [
-      { nome: 'Baby Club', busca: 'Baby' },
-      { nome: 'Geral', busca: 'Brinquedo' }
-    ]
-  }
-];
+// 🌟 ESTADO DINÂMICO DOS DEPARTAMENTOS
+const [mapaCategorias, setMapaCategorias] = useState([]);
 
 // 🌟 MUDANÇA 1: Banners agora são um Estado Dinâmico
 const [currentBanner, setCurrentBanner] = useState(0);
@@ -328,6 +295,32 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     });
     return () => unsubscribe();
   }, []);
+
+// ============================================================================
+  // 🌟 ESCUTANDO OS DEPARTAMENTOS DO BANCO DE DADOS
+  // ============================================================================
+  useEffect(() => {
+    if (!isFirebaseConfigured || !firebaseUser) return;
+    
+    const deptPath = typeof window !== 'undefined' && window.__app_id 
+      ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos')
+      : collection(db, 'vitrine_departamentos');
+      
+    const unsubscribe = onSnapshot(deptPath, (snapshot) => {
+      if (!snapshot.empty) {
+        const fetchedDepts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Ordena em ordem alfabética
+        fetchedDepts.sort((a, b) => a.nome.localeCompare(b.nome));
+        setMapaCategorias(fetchedDepts);
+      } else {
+        setMapaCategorias([]);
+      }
+    }, (error) => {
+      console.error("Erro ao buscar departamentos:", error);
+    });
+    
+    return () => unsubscribe();
+  }, [firebaseUser]);
 
     // ============================================================================
   // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO
@@ -576,6 +569,60 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     } catch (error) {
       console.error("Erro ao salvar banner:", error);
       alert("Houve um erro ao processar a imagem. Verifique suas permissões no Firebase Storage.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // ============================================================================
+  // 🚀 MOTOR DE SALVAMENTO (DEPARTAMENTOS)
+  // ============================================================================
+  const handleSaveCategory = async () => {
+    if (!formDeptName || !formDeptIcon) {
+      alert("Por favor, preencha o nome e o ícone (emoji) do departamento.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const deptPath = typeof window !== 'undefined' && window.__app_id 
+        ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos')
+        : collection(db, 'vitrine_departamentos');
+
+      if (editingItem) {
+        // Atualizando um departamento existente
+        const deptRef = typeof window !== 'undefined' && window.__app_id 
+          ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos', editingItem.id)
+          : doc(db, 'vitrine_departamentos', editingItem.id);
+          
+        await updateDoc(deptRef, {
+          nome: formDeptName,
+          icone: formDeptIcon,
+          dataAtualizacao: new Date().toISOString()
+        });
+        alert("Departamento atualizado com sucesso!");
+      } else {
+        // Criando um departamento totalmente novo
+        await addDoc(deptPath, {
+          nome: formDeptName,
+          icone: formDeptIcon,
+          marcas: [], // Nasce vazio, depois podemos adicionar as subcategorias
+          cor: 'bg-teal-50 text-teal-600 border-teal-100', // Cor padrão elegante
+          dataCriacao: new Date().toISOString()
+        });
+        alert("Novo departamento criado!");
+      }
+
+      // Limpa a tela
+      setIsCategoryModalOpen(false);
+      setEditingItem(null);
+      setFormDeptName('');
+      setFormDeptIcon('');
+
+    } catch (error) {
+      console.error("Erro ao salvar departamento:", error);
+      alert("Erro ao salvar. Verifique sua conexão ou permissões.");
     } finally {
       setIsUploading(false);
     }
@@ -1832,22 +1879,18 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
                   <button 
-                    onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); setFormBannerImageFile(null); }} 
+                    onClick={() => { setIsCategoryModalOpen(false); setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); }} 
                     disabled={isUploading}
                     className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button 
-                    onClick={handleSaveBanner}
+                    onClick={handleSaveCategory}
                     disabled={isUploading}
-                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
                   >
-                    {isUploading ? (
-                      <> <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Salvando... </>
-                    ) : (
-                      editingItem ? 'Salvar Edição' : 'Adicionar Banner'
-                    )}
+                    {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
                   </button>
                 </div>
               </div>
