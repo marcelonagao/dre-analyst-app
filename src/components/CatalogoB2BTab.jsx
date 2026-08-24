@@ -218,6 +218,8 @@ const [bannersPromocionais, setBannersPromocionais] = useState([
   { id: 'fallback1', imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Carregando Banners...' }
 ]);
 
+const [activeDropdown, setActiveDropdown] = useState(null);
+
 // 🌟 MUDANÇA 2: Motor do Banner atualizado para ler o tamanho real do banco
 useEffect(() => {
   if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
@@ -2138,60 +2140,67 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             </div>
           </div>
 
-          {/* 2º ANDAR: Menu de Categorias (Adaptado para PC e Celular) */}
+          {/* 2º ANDAR: Menu de Categorias Moderno (Adaptado para PC e Mobile) */}
           {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-30 border-t border-[#4A6B64]">
-              {/* Adicionamos overflow-x-auto e removemos o 'hidden' para aparecer no celular também! */}
-              <div className="max-w-6xl mx-auto flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-1 text-[13px] font-semibold text-white/90">
+            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-50 border-t border-[#4A6B64]">
+              <div className="max-w-6xl mx-auto flex items-center gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-1.5 text-[13px] font-semibold text-white/90">
                 
                 <button 
-                  onClick={voltarParaHome} 
-                  className={`py-2 px-2 sm:px-0 border-b-[3px] transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}
+                  onClick={() => { setActiveDropdown(null); voltarParaHome(); }} 
+                  className={`py-2 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
                 >
                   Início
                 </button>
 
-                {mapaCategorias.map(dept => (
-                  <div key={dept.id} className="relative group py-2 shrink-0">
-                    <button 
-                      onClick={() => {
-                        // No celular ou PC, se clicar no departamento e ele tiver marcas, abre a primeira ou busca o nome
-                        if (dept.marcas && dept.marcas.length > 0) {
-                          abrirMarca(dept.marcas[0].busca);
-                        } else {
-                          abrirMarca(dept.nome);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 py-1 px-3 rounded-lg bg-white/5 sm:bg-transparent border-b-[3px] border-transparent hover:bg-white/10 hover:text-white transition-all cursor-pointer"
-                    >
-                      <span>{dept.icone}</span>
-                      <span>{dept.nome}</span>
-                      {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
-                    </button>
-                    
-                    {/* Dropdown Flutuante (Funciona no Hover no PC) */}
-                    {dept.marcas && dept.marcas.length > 0 && (
-                      <div className="absolute top-full left-0 hidden group-hover:block w-56 bg-white text-[#4A6B64] rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-100 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
-                        <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-gray-100">
-                          Marcas / Categorias
+                {mapaCategorias.map(dept => {
+                  const isOpen = activeDropdown === dept.id;
+
+                  return (
+                    <div key={dept.id} className="relative shrink-0">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (dept.marcas && dept.marcas.length > 0) {
+                            // Se tiver marcas, alterna entre abrir ou fechar o menu ao clicar
+                            setActiveDropdown(isOpen ? null : dept.id);
+                          } else {
+                            setActiveDropdown(null);
+                            abrirMarca(dept.nome);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all cursor-pointer ${isOpen ? 'bg-white/20 text-white font-bold' : 'hover:bg-white/10'}`}
+                      >
+                        <span>{dept.icone}</span>
+                        <span>{dept.nome}</span>
+                        {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
+                      </button>
+                      
+                      {/* Dropdown Controlado por Estado (Não sofre corte de overflow) */}
+                      {isOpen && dept.marcas && dept.marcas.length > 0 && (
+                        <div className="absolute top-full left-0 mt-2 w-56 bg-white text-[#4A6B64] rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-100 py-1 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-gray-100 flex justify-between items-center">
+                            <span>Subcategorias</span>
+                            <button onClick={() => setActiveDropdown(null)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
+                          </div>
+                          {dept.marcas.map((marca, idx) => (
+                            <button 
+                              key={idx} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdown(null);
+                                abrirMarca(marca.busca);
+                              }} 
+                              className="w-full text-left px-4 py-2.5 hover:bg-[#E8F3F2] hover:text-[#4A6B64] text-sm font-bold border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between cursor-pointer"
+                            >
+                              <span>{marca.nome}</span>
+                              <span className="text-xs text-gray-300">›</span>
+                            </button>
+                          ))}
                         </div>
-                        {dept.marcas.map((marca, idx) => (
-                          <button 
-                            key={idx} 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              abrirMarca(marca.busca);
-                            }} 
-                            className="w-full text-left px-4 py-2.5 hover:bg-[#E8F3F2] hover:text-[#4A6B64] text-sm font-bold border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between cursor-pointer"
-                          >
-                            <span>{marca.nome}</span>
-                            <span className="text-xs text-gray-300">›</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
 
               </div>
             </div>
