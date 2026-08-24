@@ -189,6 +189,18 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 // 🌟 CONTROLE DE TELA (3 Níveis de Navegação)
 const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departamento' | 'lista'
 
+// ============================================================================
+  // 🌟 ESTADOS PARA GESTÃO DA VITRINE (Modais e Uploads)
+  // ============================================================================
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null); // Guarda o ID se for edição, ou null se for novo
+
+  // Dados do formulário de Banner
+  const [formBannerName, setFormBannerName] = useState('');
+  const [formBannerImageFile, setFormBannerImageFile] = useState(null);
+  const [formBannerPreview, setFormBannerPreview] = useState(null);
+
 
 // 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
 const mapaCategorias = [
@@ -1548,7 +1560,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   <h3 className="text-xl font-extrabold text-[#4A6B64]">Banners Promocionais</h3>
                   <p className="text-sm text-[#698F8A]">Gerencie o carrossel da tela inicial.</p>
                 </div>
-                <button className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button onClick={() => setIsBannerModalOpen(true)} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
                   <PlusIcon size={16} /> Novo Banner
                 </button>
               </div>
@@ -1576,7 +1588,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   <h3 className="text-xl font-extrabold text-[#4A6B64]">Departamentos & Categorias</h3>
                   <p className="text-sm text-[#698F8A]">O menu superior e os atalhos de busca do cliente.</p>
                 </div>
-                <button className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button onClick={() => setIsBannerModalOpen(true)} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
                   <PlusIcon size={16} /> Novo Departamento
                 </button>
               </div>
@@ -1607,6 +1619,76 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </button>
             </div>
 
+          </div>
+        )}
+        {/* ========================================= */}
+        {/* MODAL: CRIAR / EDITAR BANNER */}
+        {/* ========================================= */}
+        {isBannerModalOpen && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-black text-[#4A6B64] flex items-center gap-2">
+                  <SparklesIcon size={24} className="text-[#8ECAC5]" />
+                  {editingItem ? 'Editar Banner' : 'Novo Banner'}
+                </h3>
+                <button onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); }} className="text-gray-400 hover:text-gray-600 transition">
+                  <CloseIcon size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Nome de controle da Campanha</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Ofertas de Black Friday" 
+                    value={formBannerName}
+                    onChange={(e) => setFormBannerName(e.target.value)}
+                    className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Imagem do Banner</label>
+                  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Tamanho recomendado: 1200x300 pixels (JPG ou PNG). Máx 2MB.</p>
+                  
+                  {/* Área de Upload Estilo Drag & Drop (Simplificada) */}
+                  <label className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-[#8ECAC5] border-dashed rounded-2xl cursor-pointer bg-[#F4F9F8] hover:bg-[#E8F3F2] transition relative overflow-hidden">
+                    {formBannerPreview ? (
+                      <img src={formBannerPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <PlusIcon size={32} className="text-[#8ECAC5] mb-2" />
+                        <p className="text-sm font-bold text-[#4A6B64]">Clique para selecionar o arquivo</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/png, image/jpeg, image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setFormBannerImageFile(file);
+                          setFormBannerPreview(URL.createObjectURL(file)); // Gera um link temporário para mostrar na hora!
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+                  <button onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); }} className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition">
+                    Cancelar
+                  </button>
+                  <button className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95">
+                    {editingItem ? 'Salvar Edição' : 'Adicionar Banner'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
