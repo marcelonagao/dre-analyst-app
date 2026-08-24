@@ -2143,41 +2143,59 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
           {/* 2º ANDAR: Menu Persistente de Categorias (Só no PC) */}
           {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-4 hidden sm:block">
-              <div className="max-w-6xl mx-auto flex gap-6 overflow-x-auto whitespace-nowrap scrollbar-none text-[13px] font-semibold text-white/90">
-                <button onClick={voltarParaHome} className={`py-2.5 border-b-[3px] transition-all ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}>
+            <div className="bg-[#3A5A53] px-4 hidden sm:block relative z-30">
+              <div className="max-w-6xl mx-auto flex items-center gap-6 text-[13px] font-semibold text-white/90">
+                
+                <button 
+                  onClick={voltarParaHome} 
+                  className={`py-2.5 border-b-[3px] transition-all cursor-pointer ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}
+                >
                   Início
                 </button>
+
                 {mapaCategorias.map(dept => (
-                  <div key={dept.id} className="relative group">
-                    <button className="flex items-center gap-1.5 py-2.5 border-b-[3px] border-transparent hover:text-white transition-all cursor-pointer">
-                      {dept.nome} 
-                      {/* Só mostra a setinha se tiver subcategorias */}
+                  <div key={dept.id} className="relative group py-2.5">
+                    <button 
+                      onClick={() => {
+                        if (dept.marcas && dept.marcas.length > 0) {
+                          abrirMarca(dept.marcas[0].busca);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 border-b-[3px] border-transparent group-hover:text-white group-hover:border-[#8ECAC5] transition-all cursor-pointer"
+                    >
+                      <span>{dept.icone}</span>
+                      <span>{dept.nome}</span>
                       {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
                     </button>
                     
-                    {/* 🌟 MÁGICA: Dropdown Menu (Só existe se tiver marcas cadastradas!) */}
+                    {/* 🌟 MÁGICA: Dropdown Flutuante (Aparece no Hover sem ser cortado!) */}
                     {dept.marcas && dept.marcas.length > 0 && (
-                      <div className="absolute top-full left-0 mt-0 w-52 bg-white text-[#4A6B64] rounded-b-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden border border-gray-200">
-                        <div className="bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-500">
-                          Opções
+                      <div className="absolute top-full left-0 hidden group-hover:block w-56 bg-white text-[#4A6B64] rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-100 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                        <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-gray-100">
+                          Marcas / Categorias
                         </div>
                         {dept.marcas.map((marca, idx) => (
                           <button 
                             key={idx} 
-                            onClick={() => abrirMarca(marca.busca)} 
-                            className="w-full text-left px-4 py-3 hover:bg-[#F4F9F8] hover:text-[#8ECAC5] text-sm font-bold border-b border-gray-100 last:border-0 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirMarca(marca.busca);
+                            }} 
+                            className="w-full text-left px-4 py-2.5 hover:bg-[#E8F3F2] hover:text-[#4A6B64] text-sm font-bold border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between cursor-pointer"
                           >
-                            {marca.nome}
+                            <span>{marca.nome}</span>
+                            <span className="text-xs text-gray-300">›</span>
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
                 ))}
+
               </div>
             </div>
           )}
+         
         </header>
       )}
 
