@@ -2141,34 +2141,38 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             </div>
           </div>
 
-          {/* 2º ANDAR: Menu Persistente de Categorias (Só no PC) */}
+          {/* 2º ANDAR: Menu de Categorias (Adaptado para PC e Celular) */}
           {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-4 hidden sm:block relative z-30">
-              <div className="max-w-6xl mx-auto flex items-center gap-6 text-[13px] font-semibold text-white/90">
+            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-30 border-t border-[#4A6B64]">
+              {/* Adicionamos overflow-x-auto e removemos o 'hidden' para aparecer no celular também! */}
+              <div className="max-w-6xl mx-auto flex items-center gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-1 text-[13px] font-semibold text-white/90">
                 
                 <button 
                   onClick={voltarParaHome} 
-                  className={`py-2.5 border-b-[3px] transition-all cursor-pointer ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}
+                  className={`py-2 px-2 sm:px-0 border-b-[3px] transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'border-[#8ECAC5] text-white font-bold' : 'border-transparent hover:text-white'}`}
                 >
                   Início
                 </button>
 
                 {mapaCategorias.map(dept => (
-                  <div key={dept.id} className="relative group py-2.5">
+                  <div key={dept.id} className="relative group py-2 shrink-0">
                     <button 
                       onClick={() => {
+                        // No celular ou PC, se clicar no departamento e ele tiver marcas, abre a primeira ou busca o nome
                         if (dept.marcas && dept.marcas.length > 0) {
                           abrirMarca(dept.marcas[0].busca);
+                        } else {
+                          abrirMarca(dept.nome);
                         }
                       }}
-                      className="flex items-center gap-1.5 border-b-[3px] border-transparent group-hover:text-white group-hover:border-[#8ECAC5] transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 py-1 px-3 rounded-lg bg-white/5 sm:bg-transparent border-b-[3px] border-transparent hover:bg-white/10 hover:text-white transition-all cursor-pointer"
                     >
                       <span>{dept.icone}</span>
                       <span>{dept.nome}</span>
                       {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
                     </button>
                     
-                    {/* 🌟 MÁGICA: Dropdown Flutuante (Aparece no Hover sem ser cortado!) */}
+                    {/* Dropdown Flutuante (Funciona no Hover no PC) */}
                     {dept.marcas && dept.marcas.length > 0 && (
                       <div className="absolute top-full left-0 hidden group-hover:block w-56 bg-white text-[#4A6B64] rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-100 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
                         <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-gray-100">
