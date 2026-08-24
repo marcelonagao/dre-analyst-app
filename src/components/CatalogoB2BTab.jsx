@@ -156,14 +156,13 @@ const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // 🌟 NOVO: Inicializando o Storage
+const storage = getStorage(app); 
 
 const PRODUCTS_FALLBACK = [
   { id: 1, name: 'Produto Falso - Erro API', category: 'Erro', price: 0.00, stock: 0, image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400' }
 ];
 
 const MOCK_USERS = {
-  // Troquei o nif da Teste Ltda por um CNPJ matematicamente válido
   b2b_approved: { id: 'u2', name: 'Teste Ltda', isB2B: true, creditLimit: 5000.00, status: 'aprovado', nif: '45997418000153' },
   b2b_novato: { id: 'u3', name: 'Nova Loja (Novo)', isB2B: true, creditLimit: 0.00, status: 'pendente', nif: '98765432000199' },
   rep: { id: 'rep_1', name: 'Carlos Vendedor', isRep: true },
@@ -184,20 +183,20 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [myOrders, setMyOrders] = useState([]);
-  // Adicione estes estados junto com os que você já tem:
+  
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [temMaisProdutos, setTemMaisProdutos] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
 
-// 🌟 CONTROLE DE TELA (3 Níveis de Navegação)
-const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departamento' | 'lista'
+  // 🌟 CONTROLE DE TELA (3 Níveis de Navegação)
+  const [catalogView, setCatalogView] = useState('home'); // 'home' | 'lista'
 
-// ============================================================================
+  // ============================================================================
   // 🌟 ESTADOS PARA GESTÃO DA VITRINE (Modais e Uploads)
   // ============================================================================
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null); // Guarda o ID se for edição, ou null se for novo
+  const [editingItem, setEditingItem] = useState(null); 
 
   // Dados do formulário de Banner
   const [formBannerName, setFormBannerName] = useState('');
@@ -207,34 +206,28 @@ const [catalogView, setCatalogView] = useState('home'); // 'home' | 'departament
   const [isUploading, setIsUploading] = useState(false);
 
 
-// 🌟 O "MAPA DO SUPERMERCADO" (Futuramente vira dinâmico do Supabase)
-// 🌟 ESTADO DINÂMICO DOS DEPARTAMENTOS
-const [mapaCategorias, setMapaCategorias] = useState([]);
+  // 🌟 ESTADO DINÂMICO DOS DEPARTAMENTOS E BANNERS
+  const [mapaCategorias, setMapaCategorias] = useState([]);
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const [bannersPromocionais, setBannersPromocionais] = useState([
+    { id: 'fallback1', imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Carregando Banners...' }
+  ]);
 
-// 🌟 MUDANÇA 1: Banners agora são um Estado Dinâmico
-const [currentBanner, setCurrentBanner] = useState(0);
-const [bannersPromocionais, setBannersPromocionais] = useState([
-  // Deixamos esses dois como "Placeholder" (Apenas para não ficar vazio enquanto o Firebase carrega)
-  { id: 'fallback1', imagem: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=1200&h=400', alt: 'Carregando Banners...' }
-]);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [selectedDeptHome, setSelectedDeptHome] = useState(null);
+  const [activeDeptHome, setActiveDeptHome] = useState(null);
 
-const [activeDropdown, setActiveDropdown] = useState(null);
+  // Motor do Banner
+  useEffect(() => {
+    if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
+    const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % bannersPromocionais.length), 4000);
+    return () => clearInterval(timer);
+  }, [catalogView, bannersPromocionais.length]);
 
-const [selectedDeptHome, setSelectedDeptHome] = useState(null);
+  const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
-// 🌟 MUDANÇA 2: Motor do Banner atualizado para ler o tamanho real do banco
-useEffect(() => {
-  if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
-  const timer = setInterval(() => setCurrentBanner((prev) => (prev + 1) % bannersPromocionais.length), 4000);
-  return () => clearInterval(timer);
-}, [catalogView, bannersPromocionais.length]);
-
-const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
-
-  // Estado para armazenar o cliente que o Representante está a atender
   const [selectedClientForRep, setSelectedClientForRep] = useState(null);
 
-  // Estados de Abas para Painéis de Gestão
   const [adminTab, setAdminTab] = useState('clientes');
   const [repTab, setRepTab] = useState('clientes');
 
@@ -248,27 +241,21 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   const [dbProducts, setDbProducts] = useState([]);
   const [dbClients, setDbClients] = useState([]);
   
-  // 🌟 NOVO: Estado para sabermos se o Bling está carregando
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Dados do formulário de Departamento
   const [formDeptName, setFormDeptName] = useState('');
   const [formDeptIcon, setFormDeptIcon] = useState(''); 
-  // 🌟 NOVO: Controla a lista de marcas e o campo de digitação
   const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
   const [novaMarcaInput, setNovaMarcaInput] = useState('');
-
-  const [activeDeptHome, setActiveDeptHome] = useState(null);
 
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
     if (onRoleChange) {
-      // Se não tem ninguém logado ou é cliente B2B comum -> Modo B2B (Sem menu)
       if (!currentUser || currentUser.isB2B) {
         onRoleChange('b2b');
       } 
-      // Se for Admin ou Representante -> Modo Gestão (Com menu)
       else if (currentUser.isAdmin || currentUser.isRep) {
         onRoleChange('admin');
       }
@@ -305,7 +292,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     return () => unsubscribe();
   }, []);
 
-// ============================================================================
+  // ============================================================================
   // 🌟 ESCUTANDO OS DEPARTAMENTOS DO BANCO DE DADOS
   // ============================================================================
   useEffect(() => {
@@ -318,7 +305,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     const unsubscribe = onSnapshot(deptPath, (snapshot) => {
       if (!snapshot.empty) {
         const fetchedDepts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Ordena em ordem alfabética
         fetchedDepts.sort((a, b) => a.nome.localeCompare(b.nome));
         setMapaCategorias(fetchedDepts);
       } else {
@@ -331,7 +317,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     return () => unsubscribe();
   }, [firebaseUser]);
 
-    // ============================================================================
+  // ============================================================================
   // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO
   // ============================================================================
   const buscarProdutos = async (pagina = 1, termoDeBusca = selectedCategory) => {
@@ -367,7 +353,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
           };
         });
         
-        // Empilha (se for pg > 1) ou Substitui (se for pg 1)
         if (pagina === 1) setDbProducts(produtosAdaptados);
         else setDbProducts(prev => [...prev, ...produtosAdaptados]);
         
@@ -383,34 +368,23 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   };
 
   // ============================================================================
-  // 🌟 NOVO: CONTROLE DE NAVEGAÇÃO DA VITRINE
-  // ============================================================================
-  // ============================================================================
-  // 🌟 MOTOR DE NAVEGAÇÃO (3 NÍVEIS)
+  // 🌟 MOTOR DE NAVEGAÇÃO
   // ============================================================================
   
-   // Nível 2 para 3: Clicou na Marca (ex: Dermachem)
   const abrirMarca = (termo) => {
     setSearchQuery(termo);
     setSelectedCategory(termo);
     setCatalogView('lista');
-    buscarProdutos(1, termo); // Agora sim chama o Bling!
+    buscarProdutos(1, termo); 
     window.scrollTo(0, 0);
   };
 
   const voltarParaHome = () => {
     setCatalogView('home');
     setSearchQuery('');
-    buscarProdutos(1, 'Todas'); // 🌟 MÁGICA: Em vez de esvaziar, ele puxa os destaques!
+    buscarProdutos(1, 'Todas');
   };
 
-  const voltarParaDepartamento = () => {
-    setCatalogView('departamento');
-    setSearchQuery('');
-    setDbProducts([]);
-  };
-
-  // Dispara busca automatica ao mudar a categoria, mas APENAS se estiver na visão de lista
   useEffect(() => {
     if (firebaseUser) {
       buscarProdutos(1, 'Todas');
@@ -478,28 +452,21 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   }, [firebaseUser, currentUser, selectedClientForRep]);
 
   // ============================================================================
-  // 🌟 NOVO: ESCUTANDO OS BANNERS DO BANCO DE DADOS EM TEMPO REAL
+  // 🌟 ESCUTANDO OS BANNERS DO BANCO DE DADOS EM TEMPO REAL
   // ============================================================================
   useEffect(() => {
     if (!isFirebaseConfigured || !firebaseUser) return;
     
-    // Caminho da tabela de banners
     const bannersPath = typeof window !== 'undefined' && window.__app_id 
       ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners')
       : collection(db, 'vitrine_banners');
       
     const unsubscribe = onSnapshot(bannersPath, (snapshot) => {
       if (!snapshot.empty) {
-        // Pega todos os banners e coloca a ID do Firebase neles
         const fetchedBanners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Opcional: Ordena para que os mais novos apareçam primeiro
         fetchedBanners.sort((a, b) => new Date(b.dataCriacao || 0).getTime() - new Date(a.dataCriacao || 0).getTime());
-        
-        // Atualiza a tela!
         setBannersPromocionais(fetchedBanners);
       } else {
-        // Se você apagar tudo lá no painel, ele esvazia a tela
         setBannersPromocionais([]);
       }
     }, (error) => {
@@ -526,18 +493,12 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     setIsUploading(true);
 
     try {
-      let imageUrl = formBannerPreview; // Começa com a imagem antiga (se for edição)
+      let imageUrl = formBannerPreview; 
 
-      // 1. SE O USUÁRIO ESCOLHEU UMA FOTO NOVA, FAZ O UPLOAD PARA A NUVEM
       if (formBannerImageFile) {
-        // Cria um nome único para o arquivo não substituir outro sem querer
         const fileName = `banners/${Date.now()}_${formBannerImageFile.name}`;
         const imageRef = ref(storage, fileName);
-        
-        // Sobe o arquivo
         await uploadBytes(imageRef, formBannerImageFile);
-        
-        // Pega o link público gerado
         imageUrl = await getDownloadURL(imageRef);
       }
 
@@ -545,9 +506,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners')
         : collection(db, 'vitrine_banners');
 
-      // 2. SALVA NO BANCO DE DADOS (Firestore)
       if (editingItem) {
-        // Atualizando um existente
         const bannerRef = typeof window !== 'undefined' && window.__app_id 
           ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners', editingItem.id)
           : doc(db, 'vitrine_banners', editingItem.id);
@@ -559,7 +518,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         });
         alert("Banner atualizado com sucesso!");
       } else {
-        // Criando um novo
         await addDoc(bannersPath, {
           alt: formBannerName,
           imagem: imageUrl,
@@ -568,7 +526,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         alert("Novo banner adicionado à vitrine!");
       }
 
-      // 3. LIMPA A TELA E FECHA O MODAL
       setIsBannerModalOpen(false);
       setEditingItem(null);
       setFormBannerName('');
@@ -600,7 +557,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         : collection(db, 'vitrine_departamentos');
 
       if (editingItem) {
-        // Atualizando um departamento existente
         const deptRef = typeof window !== 'undefined' && window.__app_id 
           ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos', editingItem.id)
           : doc(db, 'vitrine_departamentos', editingItem.id);
@@ -608,27 +564,25 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         await updateDoc(deptRef, {
           nome: formDeptName,
           icone: formDeptIcon,
-          marcas: formDeptMarcas, // 🌟 NOVO AQUI
+          marcas: formDeptMarcas,
           dataAtualizacao: new Date().toISOString()
         });
       } else {
-        // Criando um departamento totalmente novo
         await addDoc(deptPath, {
           nome: formDeptName,
           icone: formDeptIcon,
-          marcas: formDeptMarcas, // 🌟 NOVO AQUI
+          marcas: formDeptMarcas,
           cor: 'bg-teal-50 text-teal-600 border-teal-100',
           dataCriacao: new Date().toISOString()
         });
       }
 
-      // Limpa a tela
       setIsCategoryModalOpen(false);
       setEditingItem(null);
       setFormDeptName('');
       setFormDeptIcon('');
-      setFormDeptMarcas([]); // 🌟 NOVO AQUI
-      setNovaMarcaInput(''); // 🌟 NOVO AQUI
+      setFormDeptMarcas([]);
+      setNovaMarcaInput('');
 
     } catch (error) {
       console.error("Erro ao salvar departamento:", error);
@@ -642,19 +596,16 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
   // 🗑️ FUNÇÕES DE EXCLUSÃO (Banners e Departamentos)
   // ============================================================================
   const handleDeleteBanner = async (banner) => {
-    // 1. Pede confirmação para evitar cliques acidentais!
     const confirmacao = window.confirm(`Tem a certeza que deseja excluir o banner "${banner.alt}"?`);
     if (!confirmacao) return;
 
     try {
-      // 2. Apaga a ID no Banco de Dados
       const bannerRef = typeof window !== 'undefined' && window.__app_id 
         ? doc(db, 'artifacts', appId, 'public', 'data', 'vitrine_banners', banner.id)
         : doc(db, 'vitrine_banners', banner.id);
       
       await deleteDoc(bannerRef);
 
-      // 3. Limpeza inteligente: Apaga a foto do Storage para liberar espaço
       if (banner.imagem && banner.imagem.includes('firebasestorage')) {
         const imageRef = ref(storage, banner.imagem);
         await deleteObject(imageRef).catch(e => console.warn("Imagem já apagada ou sem permissão no Storage."));
@@ -692,9 +643,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       return [...prevCart, { ...product, quantity }];
     });
 
-    // 🌟 NOVO: Feedback Visual (UX)
     setToastMessage(`✔️ ${quantity}x ${product.name.split('-')[0]} adicionado!`);
-    setTimeout(() => setToastMessage(null), 2500); // Some depois de 2.5 segundos
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   const removeFromCart = (productId) => {
@@ -807,11 +757,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     }
 
     try {
-      // 1. DADOS DO CLIENTE (Firebase)
       const targetClient = currentUser.isRep ? selectedClientForRep : currentUser;
       const targetClientId = targetClient?.id || firebaseUser.uid;
 
-      // 2. AÇÃO A: INJETAR NO BLING (Via Vercel)
       const itensBling = cart.map(item => ({
         sku: item.id, 
         id: item.blingId, 
@@ -820,24 +768,22 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         preco: item.price
       }));
 
-      // Dispara para a nuvem enviando também os dados do cliente!
       const resBling = await fetch('/api/create-order-b2b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           itens: itensBling,
-          clienteCnpj: targetClient?.nif,  // Envia o CNPJ salvo no Firebase
-          clienteNome: targetClient?.name  // Envia o Nome salvo no Firebase
+          clienteCnpj: targetClient?.nif,  
+          clienteNome: targetClient?.name  
         })
       });
       const dataBling = await resBling.json();
 
       if (!dataBling.success) {
         alert(`❌ Erro retornado pelo Bling: ${dataBling.error}`);
-        return; // Interrompe o processo e não salva no Firebase se o Bling recusar!
+        return; 
       }
 
-      // 3. AÇÃO B: SALVAR NO FIREBASE (Para histórico do app)
       try {
         const orderPath = typeof window !== 'undefined' && window.__app_id
           ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
@@ -858,10 +804,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         });
       } catch (firebaseError) {
         console.warn("⚠️ Pedido salvo no Bling, mas Firebase bloqueou o histórico:", firebaseError);
-        // Não damos alert() aqui para não travar a tela de sucesso do usuário
       }
 
-      // 4. SUCESSO! Limpa o carrinho e avança de tela
       setCart([]); 
       setCurrentScreen('success');
 
@@ -1188,8 +1132,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
       );
     }
 
-    const uniqueCategories = ['Todas', ...Array.from(new Set(dbProducts.map(p => p.category).filter(Boolean)))];
-
     const filteredProducts = dbProducts.filter(p => {
       const nameMatch = p.name ? p.name.toLowerCase().includes(searchQuery.toLowerCase()) : false;
       const categorySearchMatch = p.category ? p.category.toLowerCase().includes(searchQuery.toLowerCase()) : false;
@@ -1199,7 +1141,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     });
 
     const targetClient = currentUser?.isRep ? selectedClientForRep : currentUser;
-
     const targetOrders = 3;
     const currentOrders = myOrders.length;
     const remainingOrders = Math.max(0, targetOrders - currentOrders);
@@ -1263,68 +1204,48 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </div>
             )}
 
-            {/* 🌟 SEÇÃO DE CATEGORIAS EM FORMATO DE CARDS (Estilo Mercado Livre) */}
-            {/* 🌟 SEÇÃO DE CATEGORIAS (Bolinhas) */}
-            {mapaCategorias.length > 0 && (
-              <div className="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm sm:text-base font-black text-[#4A6B64] uppercase tracking-wider">Categorias</h3>
-                </div>
-                
-                {/* Grade / Carrossel de ícones circulares dos Departamentos */}
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-                  {mapaCategorias.map(dept => {
-                    // Define se este departamento é o selecionado no momento
-                    const isSelected = activeDeptHome === dept.id || (!activeDeptHome && dept === mapaCategorias[0]);
+            {/* 🌟 SEÇÃO DE CATEGORIAS (MOLDURA MERCADO LIVRE - BOLAS PARA AS SUBCATEGORIAS) */}
+            {(() => {
+              // Puxa o departamento selecionado do menu de cima, ou o primeiro por padrão
+              const deptAtual = mapaCategorias.find(d => d.id === activeDeptHome) || mapaCategorias[0];
+              if (!deptAtual) return null;
 
-                    return (
-                      <div 
-                        key={dept.id} 
-                        onClick={() => setActiveDeptHome(dept.id)}
-                        className={`flex flex-col items-center cursor-pointer group shrink-0 w-20 sm:w-24 p-2 rounded-xl transition-all ${isSelected ? 'bg-[#E8F3F2] border border-[#8ECAC5]' : 'hover:bg-gray-50'}`}
-                      >
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform">
-                          {dept.icone || '📦'}
+              return (
+                <div className="mb-8 bg-white py-6 px-4 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-center mb-6">
+                    <h3 className="text-sm sm:text-base font-black text-[#4A6B64] uppercase tracking-wider flex items-center gap-2">
+                      {deptAtual.icone} {deptAtual.nome}
+                    </h3>
+                  </div>
+
+                  {deptAtual.marcas && deptAtual.marcas.length > 0 ? (
+                    <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scrollbar-none justify-start sm:justify-center">
+                      {deptAtual.marcas.map((marca, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => abrirMarca(marca.busca)}
+                          className="flex flex-col items-center cursor-pointer group shrink-0 w-[76px] sm:w-24"
+                        >
+                          <div className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300">
+                            {/* Como as marcas ainda não têm ícone de imagem no Firebase, usamos o emoji da categoria pai! */}
+                            <span className="opacity-80">{deptAtual.icone || '🏷️'}</span>
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-2 leading-tight group-hover:text-[#00897B] transition-colors">
+                            {marca.nome}
+                          </span>
                         </div>
-                        <span className="text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-1">
-                          {dept.nome}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* 🌟 MARCAS / SUBCATEGORIAS QUE APARECEM EMBAIXO DO DEPARTAMENTO SELECIONADO */}
-                {(() => {
-                  const deptAtual = mapaCategorias.find(d => d.id === activeDeptHome) || mapaCategorias[0];
-                  if (!deptAtual || !deptAtual.marcas || deptAtual.marcas.length === 0) return null;
-
-                  return (
-                    <div className="mt-6 pt-4 border-t border-gray-100 animate-in fade-in duration-300">
-                      <p className="text-xs font-bold text-[#698F8A] uppercase tracking-wider mb-3">
-                        Subcategorias / Marcas de {deptAtual.nome}:
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {deptAtual.marcas.map((marca, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => abrirMarca(marca.busca)}
-                            className="bg-[#F4F9F8] hover:bg-[#8ECAC5] hover:text-white text-[#4A6B64] border border-[#E8F3F2] text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
-                          >
-                            <span>🏷️</span>
-                            <span>{marca.nome}</span>
-                          </button>
-                        ))}
-                      </div>
+                      ))}
                     </div>
-                  );
-                })()}
-              </div>
-            )}
+                  ) : (
+                    <div className="text-center py-4 text-[#698F8A] text-sm">
+                      Nenhuma subcategoria cadastrada para este departamento.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
-            {/* (O seu código dos destaques continua normal aqui para baixo...) */}
             {dbProducts.length > 0 && (
               <div className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
@@ -1332,7 +1253,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   <h3 className="text-xl sm:text-2xl font-black text-[#4A6B64]">Destaques para o seu Negócio</h3>
                 </div>
                 
-                {/* Aqui nós reaproveitamos os cartões lindos que você já tem, mas mostramos só os 10 primeiros! */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                   {dbProducts.slice(0, 10).map(product => (
                     <div key={product.id} onClick={() => openProductDetails(product)} className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-gray-100 hover:shadow-md transition-all duration-300 cursor-pointer group">
@@ -1360,7 +1280,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   ))}
                 </div>
                 
-                {/* Botão para ir para a lista completa */}
                 <div className="flex justify-center mt-6">
                   <button onClick={() => abrirMarca('Todas')} className="text-sm font-bold text-[#8ECAC5] hover:text-[#4A6B64] transition-colors border border-[#8ECAC5] hover:border-[#4A6B64] rounded-full px-6 py-2">
                     Ver todos os produtos
@@ -1377,7 +1296,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         {catalogView === 'lista' && (
           <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
             
-            {/* Cabeçalho da Lista */}
             <div className="flex justify-between items-center mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
                 {selectedCategory ? `Resultados para "${selectedCategory}"` : 'Todos os Produtos'}
@@ -1394,18 +1312,15 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   onClick={() => openProductDetails(product)}
                   className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
                 >
-                  {/* CAIXA DE IMAGEM COM ALTURA ADAPTÁVEL E FUNDO CLEAN */}
                   <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
                     <img 
                       src={product.image} 
                       alt={product.name} 
                       className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
                       onError={(e) => {
-                        // Se falhar no Supabase, tenta a imagem original do Bling
                         if (product.blingImage && e.target.src !== product.blingImage) {
                           e.target.src = product.blingImage;
                         } else {
-                          // Se falhar no Bling também, aí sim usa o placeholder neutro
                           e.target.onerror = null;
                           e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
                         }
@@ -1466,9 +1381,8 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   </div>
                 </div>
               ))}
-            </div> {/* FIM DO GRID DE PRODUTOS */}
+            </div>
 
-            {/* 🌟 BOTÃO DE ROLAGEM INFINITA */}
             {temMaisProdutos && !loadingCatalog && (
               <div className="flex justify-center mt-10 mb-6 pb-20">
                 <button 
@@ -1541,7 +1455,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 >
                   Remover
                 </button>
-              </div>-3
+              </div>
             </div>
           ))}
           
@@ -1783,7 +1697,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
           </div>
         </div>
 
-        {/* 🌟 ATUALIZADO: Menu de Abas do Admin com 3 botões */}
         <div className="flex bg-[#F4F9F8] rounded-xl p-1 mb-8 border border-[#E8F3F2] max-w-2xl">
           <button
             onClick={() => setAdminTab('clientes')}
@@ -1801,7 +1714,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
           >
             <ListIcon size={16} /> Todos os Pedidos ({myOrders.length})
           </button>
-          {/* 🌟 NOVO: Botão da Vitrine */}
           <button
             onClick={() => setAdminTab('vitrine')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
@@ -1813,27 +1725,18 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
         </div>
 
         {adminTab === 'clientes' && (
-           // MANTENHA O CÓDIGO DE CLIENTES EXATAMENTE COMO ESTAVA ANTES...
-           // (Para encurtar aqui na resposta, imagine que o código de aprovar clientes continua intacto aqui)
            <div className="space-y-8">
-             {/* ... O conteúdo original da aba de clientes ... */}
              <h3 className="text-xl font-bold text-yellow-700 mb-4 flex items-center gap-2">
                <AlertCircleIcon size={24} /> Aguardando Aprovação Financeira ({pendingClients.length})
              </h3>
-             {/* ... */}
            </div>
         )}
 
         {adminTab === 'pedidos' && (
-           // MANTENHA O CÓDIGO DE PEDIDOS EXATAMENTE COMO ESTAVA ANTES...
            <div className="space-y-4">
-             {/* ... O conteúdo original da aba de pedidos ... */}
            </div>
         )}
 
-        {/* ========================================= */}
-        {/* 🌟 NOVA ABA: GESTÃO DA VITRINE */}
-        {/* ========================================= */}
         {adminTab === 'vitrine' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
@@ -1849,7 +1752,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 </button>
               </div>
 
-              {/* O LUGAR CORRETO DOS BOTÕES DE EDITAR: DENTRO DO ADMIN! */}
               <div className="grid gap-4 md:grid-cols-2">
                 {bannersPromocionais.map((banner, idx) => (
                   <div key={idx} className="relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#8ECAC5] transition-all group">
@@ -1858,7 +1760,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                       <span className="text-white font-bold">{banner.alt}</span>
                       <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         
-                        {/* 🌟 AQUI ESTÁ O BOTÃO EDITAR FUNCIONANDO */}
                         <button 
                           onClick={() => {
                             setEditingItem(banner); 
@@ -1884,9 +1785,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-xl font-extrabold text-[#4A6B64]">Departamentos & Categorias</h3>
-                  <p className="text-sm text-[#698F8A]">O menu superior e os atalhos de busca do cliente.</p>
+                  <p className="text-sm text-[#698F8A]">O menu superior e as marcas em formato de card.</p>
                 </div>
-                <button onClick={() => { setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); setIsCategoryModalOpen(true); }} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button onClick={() => { setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); setFormDeptMarcas([]); setIsCategoryModalOpen(true); }} className="bg-[#E8F3F2] hover:bg-[#8ECAC5] text-[#4A6B64] hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
                   <PlusIcon size={16} /> Novo Departamento
                 </button>
               </div>
@@ -1895,10 +1796,10 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 {mapaCategorias.map((dept, idx) => (
                   <div key={idx} className="border border-[#E8F3F2] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition">
                     <div className="flex items-center gap-4">
-                      <span className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl ${dept.cor.split(' ')[0]}`}>{dept.icone}</span>
+                      <span className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl bg-teal-50 text-teal-600`}>{dept.icone}</span>
                       <div>
                         <h4 className="font-bold text-[#4A6B64] text-lg">{dept.nome}</h4>
-                        <p className="text-xs text-[#698F8A]">{dept.marcas.length} subcategorias/marcas cadastradas</p>
+                        <p className="text-xs text-[#698F8A]">{dept.marcas?.length || 0} subcategorias/marcas cadastradas</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -1907,7 +1808,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     setEditingItem(dept);
     setFormDeptName(dept.nome);
     setFormDeptIcon(dept.icone);
-    // 🌟 A MÁGICA ACONTECE AQUI: Puxa as marcas salvas no banco para a caixinha!
     setFormDeptMarcas(dept.marcas || []); 
     setIsCategoryModalOpen(true);
   }} 
@@ -1922,18 +1822,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </div>
             </div>
 
-            {/* BOTÃO SALVAR (Visual) */}
-            <div className="flex justify-end pt-4 border-t border-[#E8F3F2]">
-              <button className="bg-[#4A6B64] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-[#3A5A53] transition">
-                Salvar Alterações no Supabase
-              </button>
-            </div>
-
           </div>
         )}
-        {/* ========================================= */}
-        {/* MODAL: CRIAR / EDITAR BANNER */}
-        {/* ========================================= */}
+        
         {isBannerModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
@@ -1964,7 +1855,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Imagem do Banner</label>
                   <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Tamanho recomendado: 1200x300 pixels (JPG ou PNG). Máx 2MB.</p>
                   
-                  {/* Área de Upload Estilo Drag & Drop (Simplificada) */}
                   <label className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-[#8ECAC5] border-dashed rounded-2xl cursor-pointer bg-[#F4F9F8] hover:bg-[#E8F3F2] transition relative overflow-hidden">
                     {formBannerPreview ? (
                       <img src={formBannerPreview} alt="Preview" className="w-full h-full object-cover" />
@@ -1982,7 +1872,7 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                         const file = e.target.files[0];
                         if (file) {
                           setFormBannerImageFile(file);
-                          setFormBannerPreview(URL.createObjectURL(file)); // Gera um link temporário para mostrar na hora!
+                          setFormBannerPreview(URL.createObjectURL(file)); 
                         }
                       }}
                     />
@@ -2014,9 +1904,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
           </div>
         )}
 
-        {/* ========================================= */}
-        {/* MODAL: CRIAR / EDITAR DEPARTAMENTO */}
-        {/* ========================================= */}
         {isCategoryModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
@@ -2055,10 +1942,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                   />
                 </div>
 
-                 {/* 🌟 NOVO: CAMPO DE SUBCATEGORIAS / MARCAS */}
   <div className="pt-2">
   <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Subcategorias / Marcas</label>
-  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Estas opções aparecerão no menu dropdown para o cliente clicar.</p>
+  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Elas aparecerão em formato de Cards Circulares na página inicial.</p>
   
   <div className="flex gap-2 mb-3">
     <input 
@@ -2091,7 +1977,6 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     </button>
   </div>
   
-  {/* Lista de tags (chips) flutuantes */}
   <div className="flex flex-wrap gap-2 min-h-[40px] bg-gray-50/50 p-2 rounded-xl border border-dashed border-gray-200">
     {formDeptMarcas.map((marca, idx) => (
       <span key={idx} className="bg-white border border-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
@@ -2137,20 +2022,14 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
     );
   };
 
-  console.log("Conteúdo atual de mapaCategorias:", mapaCategorias);
-
   return ( 
-    // 🌟 FUNDO CINZA MERCADO LIVRE (#EBEBEB)
-    <div onClick={() => setActiveDropdown(null)} className="min-h-screen bg-[#EBEBEB] font-sans relative">
+    <div className="min-h-screen bg-[#EBEBEB] font-sans relative">
       
       {currentUser && currentScreen !== 'login' && (
-        // 🌟 CABEÇALHO UNIFICADO (Cor principal do seu app)
         <header className="bg-[#4A6B64] sticky top-0 z-40 shadow-md">
           
-          {/* 1º ANDAR: Logo, Busca, Usuário e Carrinho */}
           <div className="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-6">
             
-            {/* LOGO GKL */}
             <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => { if (!currentUser.isAdmin && !currentUser.isRep) voltarParaHome(); }}>
               <SparklesIcon size={24} className="text-[#8ECAC5]" />
               <div className="flex flex-col">
@@ -2161,39 +2040,9 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </div>
             </div>
 
-            {/* BARRA DE BUSCA CENTRAL (Ocupa linha inteira no celular, divide espaço no PC) */}
-            {/* TOPO: Apenas os departamentos lado a lado, sem duplicar o Início e sem dropdowns */}
-          {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-30 border-t border-[#4A6B64]">
-              <div className="max-w-6xl mx-auto flex items-center gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-2.5 text-[13px] font-semibold text-white/90">
-                
-                <button 
-                  onClick={voltarParaHome} 
-                  className={`py-1 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' && !selectedDeptHome ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
-                >
-                  Início
-                </button>
+            {/* BARRA DE BUSCA CENTRAL (Visível apenas se desejar inserir input text depois) */}
+            <div className="flex-1"></div>
 
-                {mapaCategorias.map(dept => (
-                  <button 
-                    key={dept.id} 
-                    onClick={() => {
-                      // Clicar no topo já seleciona o departamento para exibir as marcas dele embaixo
-                      setActiveDeptHome(dept.id);
-                      if (catalogView !== 'home') voltarParaHome();
-                    }}
-                    className="py-1 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0"
-                  >
-                    {dept.nome}
-                  </button>
-                ))}
-
-              </div>
-            </div>
-          )}
-          
-
-            {/* ÁREA DO USUÁRIO E ÍCONES */}
             <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
               <div className="text-right hidden md:block">
                 <span className="text-xs text-gray-200 block leading-tight">Olá, <strong className="text-white">{currentUser.name}</strong></span>
@@ -2221,72 +2070,40 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             </div>
           </div>
 
-          {/* 2º ANDAR: Menu de Categorias Moderno (Adaptado para PC e Mobile) */}
+          {/* 🌟 2º ANDAR: Menu Superior Deslizante (Estilo Abas) */}
           {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-50 border-t border-[#4A6B64]">
-              <div className="max-w-6xl mx-auto flex items-center gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-1.5 text-[13px] font-semibold text-white/90">
+            <div className="bg-[#3A5A53] px-0 relative z-30 border-t border-[#4A6B64] shadow-sm">
+              <div className="max-w-6xl mx-auto flex items-center overflow-x-auto whitespace-nowrap scrollbar-none text-[13px] font-semibold text-white/80">
                 
+                {/* Aba "Destaques / Início" */}
                 <button 
-                  onClick={() => { setActiveDropdown(null); voltarParaHome(); }} 
-                  className={`py-2 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
+                  onClick={() => { setActiveDeptHome(null); voltarParaHome(); }} 
+                  className={`py-3 px-5 transition-all cursor-pointer shrink-0 border-b-[3px] ${(!activeDeptHome && catalogView === 'home') ? 'border-white text-white font-bold bg-white/5' : 'border-transparent hover:bg-white/5 hover:text-white'}`}
                 >
-                  Início
+                  Destaques
                 </button>
 
                 {mapaCategorias.map(dept => {
-                  const isOpen = activeDropdown === dept.id;
-
+                  // Verifica se este é o departamento ativo
+                  const isSelected = activeDeptHome === dept.id;
+                  
                   return (
-                    <div key={dept.id} className="relative shrink-0">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (dept.marcas && dept.marcas.length > 0) {
-                            // Se tiver marcas, alterna entre abrir ou fechar o menu ao clicar
-                            setActiveDropdown(isOpen ? null : dept.id);
-                          } else {
-                            setActiveDropdown(null);
-                            abrirMarca(dept.nome);
-                          }
-                        }}
-                        className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg transition-all cursor-pointer ${isOpen ? 'bg-white/20 text-white font-bold' : 'hover:bg-white/10'}`}
-                      >
-                        <span>{dept.icone}</span>
-                        <span>{dept.nome}</span>
-                        {dept.marcas && dept.marcas.length > 0 && <span className="text-[9px] opacity-70">▼</span>}
-                      </button>
-                      
-                      {/* Dropdown Controlado por Estado (Não sofre corte de overflow) */}
-                      {isOpen && dept.marcas && dept.marcas.length > 0 && (
-                        <div className="absolute top-full left-0 mt-2 w-56 bg-white text-[#4A6B64] rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-100 py-1 animate-in fade-in zoom-in-95 duration-150">
-                          <div className="bg-[#F4F9F8] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#698F8A] border-b border-gray-100 flex justify-between items-center">
-                            <span>Subcategorias</span>
-                            <button onClick={() => setActiveDropdown(null)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
-                          </div>
-                          {dept.marcas.map((marca, idx) => (
-                            <button 
-                              key={idx} 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveDropdown(null);
-                                abrirMarca(marca.busca);
-                              }} 
-                              className="w-full text-left px-4 py-2.5 hover:bg-[#E8F3F2] hover:text-[#4A6B64] text-sm font-bold border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between cursor-pointer"
-                            >
-                              <span>{marca.nome}</span>
-                              <span className="text-xs text-gray-300">›</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <button 
+                      key={dept.id} 
+                      onClick={() => {
+                        setActiveDeptHome(dept.id);
+                        if (catalogView !== 'home') voltarParaHome();
+                      }}
+                      className={`py-3 px-5 transition-all cursor-pointer shrink-0 border-b-[3px] ${isSelected ? 'border-[#8ECAC5] text-white font-bold bg-white/5' : 'border-transparent hover:bg-white/5 hover:text-white'}`}
+                    >
+                      {dept.nome}
+                    </button>
                   );
                 })}
-
               </div>
             </div>
           )}
-         
+          
         </header>
       )}
 
