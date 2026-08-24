@@ -1259,6 +1259,33 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
               </div>
             )}
 
+            {/* 🌟 SEÇÃO DE CATEGORIAS EM FORMATO DE CARDS (Estilo Mercado Livre) */}
+            {mapaCategorias.length > 0 && (
+              <div className="mb-8 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm sm:text-base font-black text-[#4A6B64] uppercase tracking-wider">Categorias</h3>
+                </div>
+                
+                {/* Grade / Carrossel de ícones circulares */}
+                <div className="flex sm:grid sm:grid-cols-6 gap-4 overflow-x-auto pb-2 scrollbar-none">
+                  {mapaCategorias.map(dept => (
+                    <div 
+                      key={dept.id} 
+                      onClick={() => abrirMarca(dept.nome)}
+                      className="flex flex-col items-center cursor-pointer group shrink-0 w-20 sm:w-auto"
+                    >
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-2xl sm:text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300">
+                        {dept.icone || '📦'}
+                      </div>
+                      <span className="text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-1 group-hover:text-[#00897B] transition-colors">
+                        {dept.nome}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
             {/* (O seu código dos destaques continua normal aqui para baixo...) */}
             {dbProducts.length > 0 && (
@@ -2098,19 +2125,31 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
             </div>
 
             {/* BARRA DE BUSCA CENTRAL (Ocupa linha inteira no celular, divide espaço no PC) */}
-            {currentScreen === 'catalog' && (
-              <div className="w-full sm:w-auto sm:flex-1 order-3 sm:order-none relative mt-1 sm:mt-0">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar produtos, marcas e muito mais..." 
-                  className="w-full bg-white text-[#4A6B64] rounded-sm py-2.5 sm:py-3 pl-11 pr-4 outline-none shadow-inner text-sm font-medium focus:ring-2 focus:ring-[#8ECAC5] transition-all"
-                  value={searchQuery}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && searchQuery.trim() !== '') abrirMarca(searchQuery); }}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            {/* TOPO: Categorias lado a lado (Sem dropdown) */}
+          {currentScreen === 'catalog' && (
+            <div className="bg-[#3A5A53] px-3 sm:px-4 relative z-30 border-t border-[#4A6B64]">
+              <div className="max-w-6xl mx-auto flex items-center gap-6 overflow-x-auto whitespace-nowrap scrollbar-none py-2.5 text-[13px] font-semibold text-white/90">
+                
+                <button 
+                  onClick={voltarParaHome} 
+                  className={`py-1 px-3 rounded-lg transition-all cursor-pointer shrink-0 ${catalogView === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/5'}`}
+                >
+                  Início
+                </button>
+
+                {mapaCategorias.map(dept => (
+                  <button 
+                    key={dept.id} 
+                    onClick={() => abrirMarca(dept.nome)}
+                    className="py-1 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-all cursor-pointer shrink-0"
+                  >
+                    {dept.nome}
+                  </button>
+                ))}
+
               </div>
-            )}
+            </div>
+          )}
 
             {/* ÁREA DO USUÁRIO E ÍCONES */}
             <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
