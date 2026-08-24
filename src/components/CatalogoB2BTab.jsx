@@ -1879,18 +1879,22 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
                   <button 
-                    onClick={() => { setIsCategoryModalOpen(false); setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); }} 
+                    onClick={() => { setIsBannerModalOpen(false); setFormBannerPreview(null); setFormBannerImageFile(null); }} 
                     disabled={isUploading}
                     className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button 
-                    onClick={handleSaveCategory}
+                    onClick={handleSaveBanner}
                     disabled={isUploading}
-                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
+                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                   >
-                    {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
+                    {isUploading ? (
+                      <> <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Salvando... </>
+                    ) : (
+                      editingItem ? 'Salvar Edição' : 'Adicionar Banner'
+                    )}
                   </button>
                 </div>
               </div>
@@ -1940,11 +1944,19 @@ const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
-                  <button onClick={() => setIsCategoryModalOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition">
+                  <button 
+                    onClick={() => { setIsCategoryModalOpen(false); setEditingItem(null); setFormDeptName(''); setFormDeptIcon(''); }} 
+                    disabled={isUploading}
+                    className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
+                  >
                     Cancelar
                   </button>
-                  <button className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95">
-                    {editingItem ? 'Salvar Edição' : 'Adicionar'}
+                  <button 
+                    onClick={handleSaveCategory}
+                    disabled={isUploading}
+                    className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
+                  >
+                    {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
                   </button>
                 </div>
               </div>
