@@ -1258,10 +1258,15 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                           onClick={() => abrirMarca(marca.busca)}
                           className="flex flex-col items-center cursor-pointer group shrink-0 w-[76px] sm:w-24"
                         >
-                          <div className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300">
-                            {/* Como as marcas ainda não têm ícone de imagem no Firebase, usamos o emoji da categoria pai! */}
-                            <span className="opacity-80">{deptAtual.icone || '🏷️'}</span>
+                          {/* 🌟 MÁGICA AQUI: Lógica de renderizar a foto da marca ou o emoji */}
+                          <div className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300 overflow-hidden relative">
+                            {marca.imagem ? (
+                              <img src={marca.imagem} alt={marca.nome} className="w-full h-full object-contain p-2 mix-blend-multiply hover:scale-110 transition-transform duration-500" />
+                            ) : (
+                              <span className="opacity-80">{deptAtual.icone || '🏷️'}</span>
+                            )}
                           </div>
+                          
                           <span className="text-[10px] sm:text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-2 leading-tight group-hover:text-[#00897B] transition-colors">
                             {marca.nome}
                           </span>
