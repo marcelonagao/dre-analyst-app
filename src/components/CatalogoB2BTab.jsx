@@ -777,21 +777,35 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     setCurrentScreen('login');
   };
 
+  // ============================================================================
+  // 🚀 MOTOR DE CHECKOUT E INTEGRAÇÃO (BLING + FIREBASE)
+  // ============================================================================
   const handleFinalizeOrder = async (paymentMethod) => {
-    if (!isFirebaseConfigured) {
-      alert("Modo de Simulação: Configure o Firebase.");
-      return;
-    }
-
-    if (!firebaseUser) {
+    if (!isFirebaseConfigured || !firebaseUser) {
        alert("Aguarde a conexão com o banco de dados e tente novamente.");
        return;
     }
 
+    if (cart.length === 0) {
+      alert("Seu carrinho está vazio!");
+      return;
+    }
+
     try {
+      // 1. IDENTIFICA QUEM É O DONO DO PEDIDO (Lojista direto ou Representante vendendo para Lojista)
       const targetClient = currentUser.isRep ? selectedClientForRep : currentUser;
       const targetClientId = targetClient?.id || firebaseUser.uid;
 
+      // 2. TRAVA DE SEGURANÇA (Se for boleto, valida o limite antes de tentar ir para o Bling)
+      if (paymentMethod === 'boleto_faturado') {
+        const isApproved = targetClient?.status === 'aprovado' && targetClient?.creditLimit > 0;
+        if (!isApproved || cartTotal > targetClient.creditLimit) {
+          alert("❌ Operação bloqueada: O cliente não possui limite de crédito suficiente ou o cadastro não está aprovado.");
+          return;
+        }
+      }
+
+      // 3. PREPARA OS DADOS PARA O ERP (Bling)
       const itensBling = cart.map(item => ({
         sku: item.id, 
         id: item.blingId, 
@@ -800,22 +814,24 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         preco: item.price
       }));
 
+      // 4. DISPARA PARA O BLING
       const resBling = await fetch('/api/create-order-b2b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           itens: itensBling,
-          clienteCnpj: targetClient?.nif,  
-          clienteNome: targetClient?.name  
+          clienteCnpj: targetClient?.nif,  // Envia o CNPJ do Lojista
+          clienteNome: targetClient?.name  // Envia o Nome do Lojista
         })
       });
       const dataBling = await resBling.json();
 
       if (!dataBling.success) {
-        alert(`❌ Erro retornado pelo Bling: ${dataBling.error}`);
-        return; 
+        alert(`❌ Erro retornado pelo ERP Bling: ${dataBling.error}`);
+        return; // Interrompe para não sujar o histórico se o Bling recusar
       }
 
+      // 5. SALVA NO HISTÓRICO DO APP (Firebase) COM RASTREIO DE VENDEDOR
       try {
         const orderPath = typeof window !== 'undefined' && window.__app_id
           ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
@@ -824,9 +840,10 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         await addDoc(orderPath, {
           clienteId: targetClientId,
           clienteNome: targetClient?.name || 'Cliente GKL',
+          clienteCnpj: targetClient?.nif || 'Não informado', // 🌟 NOVO: CNPJ gravado para auditoria
           isB2B: targetClient?.isB2B || false,
-          vendedorId: currentUser.isRep ? currentUser.id : null,     
-          vendedorNome: currentUser.isRep ? currentUser.name : null, 
+          vendedorId: currentUser.isRep ? currentUser.id : null,     // 🌟 NOVO: Rastreio de comissão
+          vendedorNome: currentUser.isRep ? currentUser.name : null, // 🌟 NOVO: Rastreio de comissão
           itens: cart,
           total: cartTotal,
           metodoPagamento: paymentMethod,
@@ -835,15 +852,16 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           dataCriacao: new Date().toISOString()
         });
       } catch (firebaseError) {
-        console.warn("⚠️ Pedido salvo no Bling, mas Firebase bloqueou o histórico:", firebaseError);
+        console.warn("⚠️ Pedido salvo no Bling, mas erro no histórico local:", firebaseError);
       }
 
+      // 6. SUCESSO! Limpa a tela
       setCart([]); 
       setCurrentScreen('success');
 
     } catch (error) {
       console.error("Erro ao guardar pedido:", error);
-      alert("❌ Falha de comunicação ao finalizar pedido. Tente novamente.");
+      alert("❌ Falha de comunicação ao finalizar pedido. Verifique sua conexão e tente novamente.");
     }
   };
 
@@ -1529,9 +1547,13 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   );
 
   const renderCheckout = () => {
+    // 1. Define de quem é o pedido (Se o representante estiver usando, o alvo é o cliente dele)
     const targetClient = currentUser?.isRep ? selectedClientForRep : currentUser;
-    const isApproved = targetClient?.creditLimit > 0;
+    
+    // 2. Regras B2B Dinâmicas
+    const isApproved = targetClient?.status === 'aprovado' && targetClient?.creditLimit > 0;
     const canUseCredit = targetClient?.isB2B && isApproved && targetClient.creditLimit >= cartTotal;
+    const isLimitExceeded = isApproved && targetClient.creditLimit < cartTotal;
     
     const currentOrders = myOrders.length;
     const hasReachedTarget = currentOrders >= 3;
@@ -1542,23 +1564,43 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           <button onClick={() => setCurrentScreen('cart')} className="p-2 hover:bg-[#E8F3F2] text-[#4A6B64] rounded-full transition">
             <ArrowLeftIcon size={24} />
           </button>
-          <h2 className="text-2xl font-bold text-[#4A6B64]">Pagamento</h2>
+          <h2 className="text-2xl font-bold text-[#4A6B64]">Finalizar Pedido</h2>
         </div>
 
+        {/* 🌟 QUADRO RESUMO DO CLIENTE */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E8F3F2] mb-6">
-          <h3 className="font-bold text-[#698F8A] mb-2">Resumo do Pedido</h3>
+          <div className="flex justify-between items-start mb-4 border-b border-[#F4F9F8] pb-4">
+            <div>
+              <h3 className="font-bold text-[#698F8A] text-xs uppercase tracking-wider mb-1">Faturar para:</h3>
+              <p className="font-bold text-[#4A6B64] text-lg">{targetClient?.name}</p>
+              <p className="text-[#698F8A] text-sm">CNPJ: {targetClient?.nif || 'Não cadastrado'}</p>
+            </div>
+            {currentUser?.isRep && (
+              <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                Venda do Representante
+              </span>
+            )}
+          </div>
+
+          <h3 className="font-bold text-[#698F8A] mb-2">Resumo Financeiro</h3>
           <p className="text-[#4A6B64]">Valor total a pagar: <strong className="text-2xl ml-2 text-[#8ECAC5]">R$ {formatPrice(cartTotal)}</strong></p>
           
           {targetClient?.isB2B && (
             <div className={`mt-4 p-4 rounded-xl text-sm border ${canUseCredit ? 'bg-[#E8F3F2] border-[#8ECAC5] text-[#4A6B64]' : 'bg-red-50 border-red-200 text-red-800'}`}>
-              <strong className="text-base">Limite B2B do Lojista: R$ {formatPrice(targetClient.creditLimit)}</strong>
+              <strong className="text-base flex items-center gap-2">
+                Limite B2B Disponível: R$ {formatPrice(targetClient?.creditLimit || 0)}
+              </strong>
+              
               {!isApproved ? (
-                <p className="mt-1 font-semibold flex items-center gap-1">
+                <p className="mt-1 font-semibold flex items-center gap-1 text-yellow-700">
                   <AlertCircleIcon size={14}/> 
-                  {hasReachedTarget ? 'Crédito bloqueado. Cadastro em análise comercial.' : `Faltam ${3 - currentOrders} compras para liberar avaliação.`}
+                  {hasReachedTarget ? 'Crédito bloqueado. O cadastro encontra-se em análise comercial.' : `Atenção: Faltam ${3 - currentOrders} compras à vista para liberar a avaliação de crédito.`}
                 </p>
-              ) : !canUseCredit ? (
-                <p className="mt-1">O valor do pedido excede o limite de crédito aprovado deste cliente.</p>
+              ) : isLimitExceeded ? (
+                <p className="mt-1 font-semibold flex items-center gap-1 text-red-600">
+                  <AlertCircleIcon size={14}/> 
+                  O valor do pedido excede o seu limite aprovado. Reduza os itens do carrinho ou escolha PIX/Cartão.
+                </p>
               ) : null}
             </div>
           )}
@@ -1567,6 +1609,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         <h3 className="font-bold text-[#4A6B64] mb-4 ml-2">Escolha a forma de pagamento:</h3>
         
         <div className="space-y-3">
+          {/* BOTÃO BOLETO FATURADO (Com trava) */}
           <button 
             onClick={() => {
               if (canUseCredit) handleFinalizeOrder('boleto_faturado');
@@ -1583,12 +1626,13 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               <div>
                 <h4 className={`font-bold text-lg ${canUseCredit ? 'text-[#4A6B64]' : 'text-gray-500'}`}>Boleto Faturado (30/60/90)</h4>
                 <p className={`text-sm ${canUseCredit ? 'text-[#698F8A]' : 'text-gray-400'}`}>
-                  {!isApproved ? (hasReachedTarget ? 'Em análise financeira.' : `Exige 3 compras à vista (o cliente tem ${currentOrders}).`) : 'Utilizar limite de crédito aprovado.'}
+                  {!isApproved ? 'Exclusivo para clientes com crédito aprovado.' : isLimitExceeded ? 'Limite insuficiente para esta compra.' : 'Utilizar limite de crédito da loja.'}
                 </p>
               </div>
             </div>
           </button>
 
+          {/* BOTÃO PIX */}
           <button 
             onClick={() => handleFinalizeOrder('pix')}
             className="w-full flex items-center justify-between p-4 bg-white border border-[#E8F3F2] rounded-xl hover:border-[#8ECAC5] transition text-left shadow-sm"
@@ -1597,11 +1641,12 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               <div className="bg-teal-50 p-3 rounded-xl text-teal-500"><QrCodeIcon size={24} /></div>
               <div>
                 <h4 className="font-bold text-[#4A6B64] text-lg">PIX</h4>
-                <p className="text-[#698F8A] text-sm">Aprovação imediata. Separação rápida.</p>
+                <p className="text-[#698F8A] text-sm">Aprovação imediata. Separação rápida no estoque.</p>
               </div>
             </div>
           </button>
 
+          {/* BOTÃO CARTÃO */}
           <button 
             onClick={() => handleFinalizeOrder('cartao')}
             className="w-full flex items-center justify-between p-4 bg-white border border-[#E8F3F2] rounded-xl hover:border-[#8ECAC5] transition text-left shadow-sm"
@@ -1610,7 +1655,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               <div className="bg-blue-50 p-3 rounded-xl text-blue-500"><CreditCardIcon size={24} /></div>
               <div>
                 <h4 className="font-bold text-[#4A6B64] text-lg">Cartão de Crédito</h4>
-                <p className="text-[#698F8A] text-sm">Cobrado com o cliente na máquina ou link online.</p>
+                <p className="text-[#698F8A] text-sm">Cobrado com o cliente na máquina ou via link online.</p>
               </div>
             </div>
           </button>
