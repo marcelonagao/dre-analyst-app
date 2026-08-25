@@ -1334,8 +1334,13 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
             
             <div className="flex justify-between items-center mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
-                {selectedCategory ? `Resultados para "${selectedCategory}"` : 'Todos os Produtos'}
+            <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
+                {/* Se clicou na categoria, mostra a categoria. Se digitou livremente, mostra o texto digitado */}
+                {selectedCategory 
+                  ? `Resultados para "${selectedCategory}"` 
+                  : searchQuery 
+                    ? `Buscando por "${searchQuery}"` 
+                    : 'Todos os Produtos'}
               </h2>
               <span className="bg-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1 rounded-full">
                 {dbProducts.length} itens encontrados
@@ -2107,8 +2112,47 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               </div>
             </div>
 
-            {/* BARRA DE BUSCA CENTRAL (Visível apenas se desejar inserir input text depois) */}
-            <div className="flex-1"></div>
+            {/* 🌟 BARRA DE BUSCA GLOBAL (Responsiva: Centro no PC, Linha inteira no Celular) */}
+            {currentScreen === 'catalog' ? (
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault(); // Impede a página de recarregar
+                  if (searchQuery.trim()) {
+                    setSelectedCategory(''); // Deixa vazio para indicar que é busca livre
+                    setCatalogView('lista'); // Muda a tela para a lista de resultados
+                    buscarProdutos(1, searchQuery.trim()); // Dispara a busca na API
+                    window.scrollTo(0, 0); // Joga a tela pro topo
+                  }
+                }} 
+                className="flex-1 w-full sm:w-auto order-3 sm:order-none mt-2 sm:mt-0 max-w-2xl mx-auto"
+              >
+                <div className="relative flex items-center w-full group">
+                  <SearchIcon size={20} className="absolute left-4 text-[#698F8A] group-focus-within:text-[#8ECAC5] transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produtos, marcas ou categorias..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white/95 text-[#4A6B64] font-semibold rounded-full py-2.5 sm:py-3 pl-12 pr-10 outline-none focus:bg-white focus:ring-4 focus:ring-[#8ECAC5]/30 transition-all shadow-inner"
+                  />
+                  {/* Botão para limpar a busca rapidamente */}
+                  {searchQuery && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setSearchQuery('');
+                        if (catalogView === 'lista') voltarParaHome();
+                      }}
+                      className="absolute right-4 text-gray-400 hover:text-[#4A6B64] transition-colors"
+                    >
+                      <CloseIcon size={16} />
+                    </button>
+                  )}
+                </div>
+              </form>
+            ) : (
+              <div className="flex-1"></div>
+            )}
 
             <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
               <div className="text-right hidden md:block">
