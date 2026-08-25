@@ -2003,7 +2003,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         
         {isBannerModalOpen && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            {/* 🌟 MUDANÇA AQUI: Adicionado max-h-[90vh] e overflow-y-auto */}
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 scrollbar-none">
               
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-black text-[#4A6B64] flex items-center gap-2">
