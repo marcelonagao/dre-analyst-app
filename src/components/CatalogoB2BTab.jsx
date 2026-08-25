@@ -266,6 +266,41 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [pixQrCode, setPixQrCode] = useState(null); // Receberá o código PIX do Mercado Pago
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // ============================================================================
+  // 🌟 ESTADOS DE AUTENTICAÇÃO E CADASTRO COMPLETO
+  // ============================================================================
+  // (Mantenha os que você já tem: authEmail, authPassword, authName, authNIF...)
+  const [authWhatsApp, setAuthWhatsApp] = useState('');
+  const [authCEP, setAuthCEP] = useState('');
+  const [authRua, setAuthRua] = useState('');
+  const [authNumero, setAuthNumero] = useState('');
+  const [authBairro, setAuthBairro] = useState('');
+  const [authCidade, setAuthCidade] = useState('');
+  const [authEstado, setAuthEstado] = useState('');
+
+  // 🚀 BUSCADOR DE CEP AUTOMÁTICO (VIACEP)
+  const handleCepSearch = async (cepInput) => {
+    const cep = cepInput.replace(/\D/g, '');
+    setAuthCEP(cep); // Atualiza o que o usuário digita
+
+    if (cep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setAuthRua(data.logradouro || '');
+          setAuthBairro(data.bairro || '');
+          setAuthCidade(data.localidade || '');
+          setAuthEstado(data.uf || '');
+          // O foco vai naturalmente para o campo "Número" depois disso
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+      }
+    }
+  };
+
   // 🚀 LÓGICA DE VALIDAÇÃO DE CEP (Grande SP e Vale do Paraíba/Litoral)
   const handleCalculateShipping = (cepValue) => {
     const cleanCEP = cepValue.replace(/\D/g, '');
@@ -803,10 +838,17 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       const newUser = {
         name: authName,
         email: authEmail,
+        nif: authNIF,
+        whatsapp: authWhatsApp, // 🌟 NOVO
+        cep: authCEP,           // 🌟 NOVO
+        rua: authRua,           // 🌟 NOVO
+        numero: authNumero,     // 🌟 NOVO
+        bairro: authBairro,     // 🌟 NOVO
+        cidade: authCidade,     // 🌟 NOVO
+        estado: authEstado,     // 🌟 NOVO
         isB2B: true, 
         creditLimit: 0.00,
         status: 'pendente',
-        nif: authNIF,
         dataCriacao: new Date().toISOString()
       };
 
@@ -1087,32 +1129,81 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         </div>
 
         <form onSubmit={handleAuthSubmit} className="space-y-4">
+          {/* ABA: CRIAR CADASTRO */}
           {activeAuthTab === 'register' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Razão Social / Nome Fantasia</label>
-                <input
-                  type="text"
-                  placeholder="Nome da sua loja ou empresa"
-                  value={authName}
-                  onChange={(e) => setAuthFormName(e.target.value)}
-                  className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
-                  required
-                />
+            <form onSubmit={handleAuthSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Razão Social / Nome Fantasia</label>
+                  <input type="text" placeholder="Nome da sua loja ou empresa" value={authName} onChange={(e) => setAuthName(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">CNPJ</label>
+                  <input type="text" placeholder="00.000.000/0000-00" value={authNIF} onChange={(e) => setAuthNIF(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">WhatsApp (Comercial)</label>
+                  <input type="text" placeholder="(11) 99999-9999" value={authWhatsApp} onChange={(e) => setAuthWhatsApp(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Endereço de Email</label>
+                  <input type="email" placeholder="contato@sualoja.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                </div>
+              </div>
+
+              {/* 🌟 MÓDULO DE ENDEREÇO INTELIGENTE */}
+              <div className="bg-white border border-[#E8F3F2] p-4 rounded-xl shadow-sm">
+                <h4 className="text-xs font-bold text-[#8ECAC5] uppercase mb-3 flex items-center gap-2">
+                  <MapPinIcon size={14}/> Endereço Fiscal (Sede)
+                </h4>
+                
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">CEP</label>
+                    <input type="text" maxLength="9" placeholder="00000-000" value={authCEP} onChange={(e) => handleCepSearch(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] font-bold border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Rua / Logradouro</label>
+                    <input type="text" value={authRua} onChange={(e) => setAuthRua(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3 mb-3">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Nº</label>
+                    <input type="text" value={authNumero} onChange={(e) => setAuthNumero(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                  </div>
+                  <div className="col-span-3">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Bairro</label>
+                    <input type="text" value={authBairro} onChange={(e) => setAuthBairro(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Cidade</label>
+                    <input type="text" value={authCidade} onChange={(e) => setAuthCidade(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition cursor-not-allowed" readOnly/>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-[#698F8A] mb-1">UF</label>
+                    <input type="text" value={authEstado} onChange={(e) => setAuthEstado(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] font-bold border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition text-center cursor-not-allowed" readOnly/>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">CNPJ</label>
-                <input
-                  type="text"
-                  placeholder="00.000.000/0000-00"
-                  value={authNIF}
-                  onChange={(e) => setAuthFormNif(e.target.value)}
-                  className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
-                  required
-                />
+                <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1 mt-2">Palavra-passe (Senha Segura)</label>
+                <input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
               </div>
-            </>
+
+              <button type="submit" className="w-full bg-[#4A6B64] hover:bg-[#3A5A53] text-white py-4 rounded-xl font-black text-lg transition shadow-md mt-6 active:scale-95">
+                Criar Conta e Acessar
+              </button>
+            </form>
           )}
 
           <div>
