@@ -683,8 +683,16 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     setCart((prevCart) => prevCart.filter(item => item.id !== productId));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.price || 0) * item.quantity), 0);
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  // 🌟 NOVO: Função para atualizar a quantidade diretamente (quando o usuário digita)
+  const updateCartQuantity = (productId, newQuantity) => {
+    setCart((prevCart) => prevCart.map(item => 
+      item.id === productId ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
+  // 🌟 ATUALIZADO: Protegendo os totais caso o usuário apague o número (vazio = 0)
+  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 0)), 0);
+  const cartItemCount = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
   const handleLogin = (userType) => {
     setCurrentUser(MOCK_USERS[userType]);
@@ -1425,13 +1433,31 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                                 onClick={(e) => { 
                                   e.stopPropagation(); 
                                   if (qtde === 1) removeFromCart(product.id); 
-                                  else addToCart(product, -1); 
+                                  else updateCartQuantity(product.id, qtde - 1); 
                                 }}
                                 className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
                               >-</button>
-                              <span className="font-extrabold text-[#4A6B64]">{qtde}</span>
+                              
+                              <input 
+                                type="text"
+                                inputMode="numeric"
+                                value={qtde}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^0-9]/g, '');
+                                  updateCartQuantity(product.id, val === '' ? '' : Number(val));
+                                }}
+                                onBlur={(e) => {
+                                  if (qtde === '' || qtde <= 0) removeFromCart(product.id);
+                                }}
+                                className="w-10 text-center font-extrabold text-[#4A6B64] bg-transparent outline-none"
+                              />
+
                               <button 
-                                onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  updateCartQuantity(product.id, Number(qtde || 0) + 1); 
+                                }}
                                 className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
                               >+</button>
                             </div>
@@ -1501,29 +1527,67 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-[#E8F3F2]">
           <ShoppingCartIcon size={48} className="mx-auto text-[#8ECAC5]/50 mb-4" />
           <p className="text-[#698F8A]">Seu carrinho está vazio.</p>
-          <button 
-            onClick={() => setCurrentScreen('catalog')}
-            className="mt-4 text-[#8ECAC5] font-bold hover:underline"
-          >
+          <button onClick={() => setCurrentScreen('catalog')} className="mt-4 text-[#8ECAC5] font-bold hover:underline">
             Voltar ao catálogo
           </button>
         </div>
       ) : (
         <div className="space-y-4">
           {cart.map(item => (
-            <div key={item.id} className="flex items-center bg-white p-4 rounded-xl shadow-sm border border-[#E8F3F2]">
-              <img src={item.image} alt={item.name} className="w-16 h-16 object-contain mix-blend-multiply rounded-lg mr-4 border border-[#F4F9F8] p-1 bg-white" />
-              <div className="flex-1">
-                <h3 className="font-bold text-[#4A6B64] text-sm sm:text-base line-clamp-1">{item.name}</h3>
-                <p className="text-[#698F8A] text-sm">R$ {formatPrice(item.price)} x {item.quantity}</p>
+            <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-[#E8F3F2]">
+              <div className="flex items-center justify-center w-24 h-24 shrink-0 bg-white border border-[#F4F9F8] rounded-xl p-2 mx-auto sm:mx-0">
+                <img src={item.image} alt={item.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
               </div>
-              <div className="text-right">
-                <p className="font-bold text-[#4A6B64]">R$ {formatPrice(item.price * item.quantity)}</p>
+              
+              <div className="flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-[#4A6B64] text-sm sm:text-base line-clamp-2">{item.name}</h3>
+                  <p className="text-[#698F8A] text-xs mt-1">Ref: {item.id}</p>
+                </div>
+                
+                <div className="flex items-center gap-4 mt-4 sm:mt-0">
+                  {/* 🌟 MÁGICA: Controle de Quantidade Editável */}
+                  <div className="flex items-center bg-[#F4F9F8] border border-[#8ECAC5] rounded-lg p-1 w-32 justify-between shadow-sm">
+                    <button 
+                      onClick={() => {
+                        if (item.quantity <= 1) removeFromCart(item.id);
+                        else updateCartQuantity(item.id, Number(item.quantity) - 1);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                    >-</button>
+                    <input 
+                      type="text" 
+                      inputMode="numeric"
+                      value={item.quantity} 
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, ''); // Aceita só números
+                        updateCartQuantity(item.id, val === '' ? '' : Number(val));
+                      }}
+                      onBlur={(e) => {
+                        // Se clicar fora e estiver vazio ou zero, remove do carrinho
+                        if (item.quantity === '' || item.quantity <= 0) removeFromCart(item.id);
+                      }}
+                      className="w-10 text-center font-extrabold text-[#4A6B64] bg-transparent outline-none"
+                    />
+                    <button 
+                      onClick={() => updateCartQuantity(item.id, Number(item.quantity || 0) + 1)}
+                      className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
+                    >+</button>
+                  </div>
+                  <span className="text-[#698F8A] text-sm font-bold">R$ {formatPrice(item.price)} / un</span>
+                </div>
+              </div>
+              
+              <div className="text-center sm:text-right flex flex-col justify-between items-center sm:items-end mt-2 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-[#F4F9F8]">
+                <div className="flex sm:flex-col items-center sm:items-end w-full sm:w-auto justify-between sm:justify-start">
+                  <span className="text-[#698F8A] text-xs sm:hidden">Subtotal:</span>
+                  <p className="font-black text-[#4A6B64] text-xl">R$ {formatPrice(Number(item.price) * Number(item.quantity || 0))}</p>
+                </div>
                 <button 
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-red-400 text-xs sm:text-sm font-semibold mt-1 hover:underline"
+                  onClick={() => removeFromCart(item.id)} 
+                  className="text-red-400 text-sm font-bold hover:underline mt-4 sm:mt-0 flex items-center gap-1"
                 >
-                  Remover
+                  <CloseIcon size={14} /> Remover
                 </button>
               </div>
             </div>
@@ -1531,14 +1595,14 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           
           <div className="bg-[#4A6B64] text-white p-6 rounded-2xl mt-8 shadow-lg">
             <div className="flex justify-between items-center mb-6">
-              <span className="text-lg text-[#E8F3F2]">Total do Pedido</span>
-              <span className="text-3xl font-bold text-[#8ECAC5]">R$ {formatPrice(cartTotal)}</span>
+              <span className="text-lg text-[#E8F3F2] font-semibold">Total do Pedido</span>
+              <span className="text-3xl font-black text-[#8ECAC5]">R$ {formatPrice(cartTotal)}</span>
             </div>
             <button 
               onClick={() => setCurrentScreen('checkout')}
-              className="w-full bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white py-4 rounded-xl font-bold text-lg transition shadow-md"
+              className="w-full bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white py-4 rounded-xl font-bold text-lg transition shadow-md flex justify-center items-center gap-2"
             >
-              Avançar para Pagamento
+              <ShoppingCartIcon size={24} /> Avançar para Pagamento
             </button>
           </div>
         </div>
@@ -2329,18 +2393,30 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center bg-white border border-[#E8F3F2] rounded-xl p-1 shadow-sm">
+                <div className="flex items-center bg-white border border-[#E8F3F2] rounded-xl p-1 shadow-sm">
                     <button 
-                      onClick={() => setModalQuantity(prev => Math.max(1, prev - 1))}
+                      onClick={() => setModalQuantity(prev => Math.max(1, Number(prev || 1) - 1))}
                       className="p-2 text-[#4A6B64] hover:bg-[#F4F9F8] rounded-lg transition"
                     >
                       <MinusIcon size={16} />
                     </button>
-                    <span className="px-4 font-bold text-[#4A6B64] min-w-[32px] text-center">
-                      {modalQuantity}
-                    </span>
+                    
+                    <input 
+                      type="text"
+                      inputMode="numeric"
+                      value={modalQuantity}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        setModalQuantity(val === '' ? '' : Number(val));
+                      }}
+                      onBlur={() => {
+                        if (modalQuantity === '' || modalQuantity <= 0) setModalQuantity(1);
+                      }}
+                      className="px-4 font-bold text-[#4A6B64] w-16 text-center bg-transparent outline-none"
+                    />
+
                     <button 
-                      onClick={() => setModalQuantity(prev => Math.min(selectedProduct.stock || 999, prev + 1))}
+                      onClick={() => setModalQuantity(prev => Math.min(selectedProduct.stock || 999, Number(prev || 0) + 1))}
                       className="p-2 text-[#4A6B64] hover:bg-[#F4F9F8] rounded-lg transition"
                     >
                       <PlusIcon size={16} />
