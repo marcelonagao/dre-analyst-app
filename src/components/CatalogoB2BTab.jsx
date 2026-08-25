@@ -152,6 +152,13 @@ const TruckIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+const MapPinIcon = ({ size = 24, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+    <circle cx="12" cy="10" r="3"></circle>
+  </svg>
+);
+
 // ============================================================================
 // CONFIGURAÇÕES DO FIREBASE
 // ============================================================================
@@ -881,10 +888,16 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   // ============================================================================
   const handleFinalizeOrder = async (paymentMethod) => {
     if (cart.length === 0) return alert("Seu carrinho está vazio!");
-    if (!checkoutCEP || checkoutCEP.length < 8) return alert("Por favor, digite um CEP válido para entrega.");
 
     const targetClient = currentUser.isRep ? selectedClientForRep : currentUser;
-    const finalTotal = cartTotal + (shippingCost || 0); // Soma o frete ao total
+    
+    // Recalcula o frete aqui dentro pra garantir
+    const clientCEP = targetClient?.cep || '12010000';
+    const prefix = parseInt(clientCEP.replace(/\D/g, '').substring(0, 5) || '0');
+    const isFreeShipping = ((prefix >= 1000 && prefix <= 9999) || (prefix >= 11600 && prefix <= 12999)) && cartTotal >= 400;
+    const shippingCost = isFreeShipping ? 0 : 45;
+    
+    const finalTotal = cartTotal + shippingCost; // Soma o frete ao total
 
     // 1. TRAVA B2B PARA BOLETO
     if (paymentMethod === 'boleto_faturado') {
@@ -1794,14 +1807,30 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   );
 
   const renderCheckout = () => {
-    // 1. Define de quem é o pedido (Se o representante estiver usando, o alvo é o cliente dele)
     const targetClient = currentUser?.isRep ? selectedClientForRep : currentUser;
     
-    // 2. Regras B2B Dinâmicas
-    const isApproved = targetClient?.status === 'aprovado' && targetClient?.creditLimit > 0;
-    const canUseCredit = targetClient?.isB2B && isApproved && targetClient.creditLimit >= cartTotal;
-    const isLimitExceeded = isApproved && targetClient.creditLimit < cartTotal;
+    // 🚀 CALCULADORA INTELIGENTE (Lê o CEP do cadastro do cliente)
+    const clientCEP = targetClient?.cep || '12010000'; // Usa o CEP do cliente, ou Taubaté como fallback de teste
     
+    const getShippingInfo = (cep, total) => {
+      const cleanCEP = cep.replace(/\D/g, '');
+      if (cleanCEP.length < 8) return { cost: 45.00, isFree: false };
+      
+      const prefix = parseInt(cleanCEP.substring(0, 5));
+      const isGrandeSP = prefix >= 1000 && prefix <= 9999;
+      const isValeParaiba = (prefix >= 11600 && prefix <= 11699) || (prefix >= 12000 && prefix <= 12999);
+      
+      if ((isGrandeSP || isValeParaiba) && total >= 400) return { cost: 0, isFree: true };
+      return { cost: 45.00, isFree: false };
+    };
+
+    const shipping = getShippingInfo(clientCEP, cartTotal);
+    const finalTotal = cartTotal + shipping.cost;
+
+    // ... regras B2B Dinâmicas mantidas iguais ...
+    const isApproved = targetClient?.status === 'aprovado' && targetClient?.creditLimit > 0;
+    const canUseCredit = targetClient?.isB2B && isApproved && targetClient.creditLimit >= finalTotal; // Atualizado para usar o finalTotal
+    const isLimitExceeded = isApproved && targetClient.creditLimit < finalTotal;
     const currentOrders = myOrders.length;
     const hasReachedTarget = currentOrders >= 3;
 
@@ -1832,33 +1861,45 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           {/* 🌟 INÍCIO DA SUBSTITUIÇÃO DO RESUMO E PAGAMENTOS */}
           <h3 className="font-bold text-[#698F8A] mb-2 border-t border-[#F4F9F8] pt-4">Resumo Financeiro & Logística</h3>
           
-          {/* MÓDULO DE CEP E FRETE */}
-          <div className="mb-4">
-            <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-2">CEP de Entrega</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                maxLength="9"
-                placeholder="00000-000"
-                value={checkoutCEP}
-                onChange={(e) => handleCalculateShipping(e.target.value)}
-                className="w-40 bg-[#F4F9F8] text-[#4A6B64] font-bold rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] border border-[#E8F3F2]"
-              />
-              {shippingCost !== null && (
-                <div className="flex-1 flex items-center px-3 rounded-xl border border-[#E8F3F2] bg-white">
-                  {isFreeShipping ? (
-                    <span className="text-green-600 font-bold flex items-center gap-2 text-sm">
-                      <TruckIcon size={16} /> Frete Grátis (Logística Própria GKL)
-                    </span>
-                  ) : (
-                    <span className="text-[#698F8A] font-bold text-sm">Frete: R$ {formatPrice(shippingCost)}</span>
-                  )}
+          {/* 🌟 MÓDULO DE LOGÍSTICA B2B (TRAVADO NO ENDEREÇO DO CNPJ) */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-2">Endereço de Entrega (Sede do CNPJ)</label>
+            <div className="bg-white border border-[#E8F3F2] rounded-xl p-4 shadow-sm">
+              <div className="flex justify-between items-start mb-3 border-b border-[#F4F9F8] pb-3">
+                <div className="flex items-start gap-3">
+                  <div className="bg-[#F4F9F8] p-2 rounded-lg text-[#8ECAC5] mt-1"><MapPinIcon size={20}/></div>
+                  <div>
+                    {/* Aqui ele puxa a rua, numero, bairro direto do cadastro do cliente */}
+                    <p className="text-[#4A6B64] font-bold text-sm">{targetClient?.rua || 'R. XV de Novembro'}, {targetClient?.numero || '1000'}</p>
+                    <p className="text-[#698F8A] text-xs mt-0.5">{targetClient?.bairro || 'Centro'} - {targetClient?.cidade || 'Taubaté'}/{targetClient?.estado || 'SP'}</p>
+                    <p className="text-[#698F8A] font-mono text-xs mt-0.5">CEP: {clientCEP}</p>
+                  </div>
                 </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                {shipping.isFree ? (
+                  <span className="text-green-600 font-bold flex items-center gap-2 text-sm bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                    <TruckIcon size={16} /> Frete Grátis (Logística Própria GKL)
+                  </span>
+                ) : (
+                  <span className="text-[#698F8A] font-bold text-sm flex items-center gap-2">
+                    <TruckIcon size={16} /> Frete Transportadora: R$ {formatPrice(shipping.cost)}
+                  </span>
+                )}
+              </div>
+              {cartTotal < 400 && shipping.isFree === false && (
+                <p className="text-[10px] text-yellow-600 mt-2 font-semibold">Faltam R$ {formatPrice(400 - cartTotal)} para Frete Grátis na Grande SP e Vale do Paraíba.</p>
               )}
             </div>
-            {cartTotal < 400 && checkoutCEP.length >= 8 && (
-              <p className="text-[10px] text-gray-400 mt-1">Faltam R$ {formatPrice(400 - cartTotal)} para Frete Grátis na Grande SP e Vale do Paraíba.</p>
-            )}
+          </div>
+
+          {/* VALOR TOTAL ATUALIZADO (PRODUTOS + FRETE) */}
+          <div className="bg-[#F4F9F8] p-4 rounded-xl flex justify-between items-center mb-4 border border-[#E8F3F2]">
+            <span className="text-[#698F8A] font-bold uppercase text-xs">Total a Pagar</span>
+            <strong className="text-2xl text-[#8ECAC5]">
+              R$ {formatPrice(finalTotal)}
+            </strong>
           </div>
 
           {/* MANTÉM O AVISO DE LIMITE DE CRÉDITO */}
