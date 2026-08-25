@@ -217,6 +217,21 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [selectedDeptHome, setSelectedDeptHome] = useState(null);
   const [activeDeptHome, setActiveDeptHome] = useState(null);
 
+  // ============================================================================
+  // 🌟 ESTADOS DO PAINEL ADMIN (APROVAÇÃO DE CLIENTES)
+  // ============================================================================
+  const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
+  const [evalClient, setEvalClient] = useState(null);
+  const [evalCreditLimit, setEvalCreditLimit] = useState('');
+  const [evalRepId, setEvalRepId] = useState('');
+
+  // 🌟 LISTA DA SUA EQUIPE COMERCIAL (Pode editar os nomes como preferir)
+  const representantesCadastrados = [
+    { id: 'rep_1', name: 'Carlos Vendedor' },
+    { id: 'rep_2', name: 'Ana Costa' },
+    { id: 'rep_3', name: 'Equipe Interna GKL' }
+  ];
+
   // Motor do Banner
   useEffect(() => {
     if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
@@ -886,26 +901,41 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     }
   };
 
-  const handleApproveCredit = async (clientId) => {
+  // ============================================================================
+  // 🚀 MOTOR DE APROVAÇÃO FINANCEIRA (ADMIN)
+  // ============================================================================
+  const handleSaveEvaluation = async () => {
     if (!isFirebaseConfigured) {
-      alert("Simulação: Cliente aprovado localmente.");
+      alert("Modo Simulação: Configure o Firebase para salvar aprovações reais.");
+      setIsEvalModalOpen(false);
       return;
     }
+    
+    setIsUploading(true);
     try {
       const clientDocRef = typeof window !== 'undefined' && window.__app_id
-        ? doc(db, 'artifacts', appId, 'public', 'data', 'clientes', clientId)
-        : doc(db, 'clientes', clientId);
+        ? doc(db, 'artifacts', appId, 'public', 'data', 'clientes', evalClient.id)
+        : doc(db, 'clientes', evalClient.id);
 
+      // Pega o nome do representante selecionado
+      const repSelecionado = representantesCadastrados.find(r => r.id === evalRepId) || { id: null, name: null };
+
+      // Atualiza o cliente no banco de dados!
       await updateDoc(clientDocRef, {
         status: 'aprovado',
-        creditLimit: 5000.00,
-        vendedorId: 'rep_1',
-        vendedorNome: 'Carlos Vendedor'
+        creditLimit: Number(evalCreditLimit) || 0,
+        vendedorId: repSelecionado.id,
+        vendedorNome: repSelecionado.name,
+        dataAprovacao: new Date().toISOString()
       });
-      alert("Crédito de R$ 5.000,00 aprovado e cliente atribuído ao representante!");
+      
+      alert(`✅ Sucesso! A loja ${evalClient.name} foi aprovada com R$ ${evalCreditLimit} de limite e vinculada ao vendedor ${repSelecionado.name || 'Nenhum'}.`);
+      setIsEvalModalOpen(false); // Fecha o modal
     } catch (error) {
       console.error("Erro ao aprovar crédito:", error);
-      alert("Erro ao aprovar cliente. Verifique as permissões.");
+      alert("Erro de comunicação ao aprovar o cliente.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -1901,11 +1931,96 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         </div>
 
         {adminTab === 'clientes' && (
-           <div className="space-y-8">
-             <h3 className="text-xl font-bold text-yellow-700 mb-4 flex items-center gap-2">
-               <AlertCircleIcon size={24} /> Aguardando Aprovação Financeira ({pendingClients.length})
-             </h3>
-           </div>
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* 🟡 PAINEL DE PENDENTES (Lojas Novas) */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-yellow-200">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-extrabold text-yellow-700 flex items-center gap-2">
+                    <AlertCircleIcon size={24} /> Aguardando Aprovação ({pendingClients.length})
+                  </h3>
+                  <p className="text-sm text-[#698F8A]">Lojas novas que precisam de análise de crédito e vinculação.</p>
+                </div>
+              </div>
+
+              {pendingClients.length === 0 ? (
+                <div className="text-center py-6 bg-yellow-50/50 rounded-2xl border border-yellow-100">
+                  <p className="text-yellow-700 font-bold">Nenhum cliente na fila de aprovação! 🎉</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {pendingClients.map(client => {
+                    // Mágica: Conta quantos pedidos este cliente já fez
+                    const comprasFeitas = myOrders.filter(o => o.clienteId === client.id && o.status !== 'Cancelado').length;
+                    
+                    return (
+                      <div key={client.id} className="border border-yellow-200 bg-yellow-50/30 p-5 rounded-2xl flex flex-col justify-between hover:shadow-md transition">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <p className="font-black text-[#4A6B64] text-lg leading-tight">{client.name}</p>
+                            <p className="text-xs text-[#698F8A] mt-1 font-mono">CNPJ: {client.nif}</p>
+                          </div>
+                          <span className="bg-yellow-200 text-yellow-800 text-[10px] font-black px-2 py-1 rounded-md uppercase">
+                            Pendente
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-yellow-200/50">
+                          <div>
+                            <p className="text-[10px] text-[#698F8A] font-bold uppercase mb-1">Meta (3 compras)</p>
+                            <p className="text-sm font-black text-yellow-700">{comprasFeitas} / 3 realizadas</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEvalClient(client);
+                              setEvalCreditLimit('5000'); // Sugestão padrão
+                              setEvalRepId('rep_1'); // Rep padrão
+                              setIsEvalModalOpen(true);
+                            }}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-sm active:scale-95"
+                          >
+                            Avaliar Crédito
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 🟢 PAINEL DE APROVADOS (Carteira Ativa) */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#E8F3F2]">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-extrabold text-[#4A6B64] flex items-center gap-2">
+                    <CheckCircleIcon size={24} className="text-[#8ECAC5]"/> Lojistas Aprovados ({approvedClients.length})
+                  </h3>
+                  <p className="text-sm text-[#698F8A]">Sua carteira de clientes com permissão para compras Faturadas.</p>
+                </div>
+              </div>
+
+              {approvedClients.length === 0 ? (
+                <p className="text-[#698F8A]">Nenhum cliente aprovado ainda.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {approvedClients.map(client => (
+                    <div key={client.id} className="border border-[#E8F3F2] p-5 rounded-2xl flex flex-col justify-between hover:border-[#8ECAC5] transition group bg-white">
+                      <div>
+                        <p className="font-black text-[#4A6B64] truncate group-hover:text-[#8ECAC5] transition">{client.name}</p>
+                        <p className="text-xs text-[#698F8A] mt-1 font-mono">CNPJ: {client.nif}</p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-[#F4F9F8]">
+                        <p className="text-xs text-[#698F8A] mb-1">Limite Aprovado: <strong className="text-[#8ECAC5] text-sm block">R$ {formatPrice(client.creditLimit)}</strong></p>
+                        <p className="text-xs text-[#698F8A] mt-2">Vendedor(a): <strong className="text-indigo-400 block">{client.vendedorNome || 'Sem vendedor vinculado'}</strong></p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {adminTab === 'pedidos' && (
@@ -2219,6 +2334,72 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                     className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
                   >
                     {isUploading ? 'Salvando...' : (editingItem ? 'Salvar Edição' : 'Adicionar')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ========================================= */}
+        {/* MODAL: AVALIAÇÃO DE CRÉDITO E VENDEDOR */}
+        {/* ========================================= */}
+        {isEvalModalOpen && evalClient && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+              
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <div>
+                  <h3 className="text-xl font-black text-[#4A6B64]">Aprovar Cliente</h3>
+                  <p className="text-sm text-[#698F8A] font-bold mt-1">{evalClient.name}</p>
+                </div>
+                <button onClick={() => setIsEvalModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition bg-gray-50 p-2 rounded-full">
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                {/* Definição de Limite */}
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Limite Liberado (R$)</label>
+                  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Valor em reais para compras faturadas.</p>
+                  <input 
+                    type="number" 
+                    value={evalCreditLimit}
+                    onChange={(e) => setEvalCreditLimit(e.target.value)}
+                    className="w-full text-2xl font-black bg-[#F4F9F8] text-[#8ECAC5] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
+                  />
+                </div>
+
+                {/* Delegação do Representante */}
+                <div>
+                  <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Atribuir a um Representante</label>
+                  <p className="text-[10px] text-[#698F8A] mb-2 font-semibold">Quem vai atender e ganhar comissão sobre esta conta?</p>
+                  <select
+                    value={evalRepId}
+                    onChange={(e) => setEvalRepId(e.target.value)}
+                    className="w-full bg-[#F4F9F8] text-[#4A6B64] font-bold border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition cursor-pointer appearance-none"
+                  >
+                    <option value="">Nenhum Vendedor</option>
+                    {representantesCadastrados.map(rep => (
+                      <option key={rep.id} value={rep.id}>{rep.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-6 mt-2">
+                  <button 
+                    onClick={() => setIsEvalModalOpen(false)} 
+                    disabled={isUploading}
+                    className="px-5 py-2.5 rounded-xl font-bold text-[#698F8A] hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleSaveEvaluation}
+                    disabled={isUploading}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition active:scale-95 disabled:opacity-70 flex items-center gap-2"
+                  >
+                    {isUploading ? 'Aprovando...' : 'Liberar Crédito'}
                   </button>
                 </div>
               </div>
