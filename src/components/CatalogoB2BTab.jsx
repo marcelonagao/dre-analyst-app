@@ -135,6 +135,23 @@ const ListIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+const PackageIcon = ({ size = 24, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+  </svg>
+);
+
+const TruckIcon = ({ size = 24, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="1" y="3" width="15" height="13"></rect>
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+  </svg>
+);
+
 // ============================================================================
 // CONFIGURAÇÕES DO FIREBASE
 // ============================================================================
@@ -1920,83 +1937,145 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     </div>
   );
 
-  const renderOrders = () => (
-    <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => setCurrentScreen('catalog')} className="p-2 hover:bg-[#E8F3F2] text-[#4A6B64] rounded-full transition">
-          <ArrowLeftIcon size={24} />
-        </button>
-        <h2 className="text-2xl font-bold text-[#4A6B64]">Histórico de Pedidos</h2>
-      </div>
+  const renderOrders = () => {
+    // Função inteligente que traduz o status do Bling para a barra de progresso visual
+    const getStepFromStatus = (status) => {
+      const s = status ? status.toLowerCase() : '';
+      if (s.includes('cancelado') || s.includes('recusado')) return -1; // Vermelho
+      if (s.includes('faturado') || s.includes('enviado') || s.includes('concluído') || s.includes('atendido')) return 3;
+      if (s.includes('separação') || s.includes('andamento') || s.includes('preparação')) return 2;
+      return 1; // Padrão: Integrado / Em Análise
+    };
 
-      {myOrders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-[#E8F3F2]">
-          <ClipboardIcon size={48} className="mx-auto text-[#8ECAC5]/50 mb-4" />
-          <p className="text-[#698F8A]">Nenhum pedido efetuado até ao momento para este cliente.</p>
-          <button 
-            onClick={() => setCurrentScreen('catalog')}
-            className="mt-4 text-[#8ECAC5] font-bold hover:underline"
-          >
-            Começar a Comprar
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 pb-24 animate-in fade-in duration-300">
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={() => setCurrentScreen('catalog')} className="p-2 hover:bg-[#E8F3F2] text-[#4A6B64] rounded-full transition">
+            <ArrowLeftIcon size={24} />
           </button>
+          <div>
+            <h2 className="text-2xl font-black text-[#4A6B64]">Meus Pedidos</h2>
+            <p className="text-[#698F8A] text-sm">Acompanhe o status das suas compras em tempo real.</p>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {myOrders.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8F3F2] hover:border-[#8ECAC5]/30 transition-all duration-300">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#F4F9F8] pb-4 mb-4 gap-2">
-                <div>
-                  <span className="text-xs font-bold text-[#698F8A] uppercase tracking-wider block">ID do Pedido</span>
-                  <span className="text-sm font-mono text-[#4A6B64] font-bold">{order.id}</span>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-[#698F8A] uppercase tracking-wider block text-left sm:text-right">Data</span>
-                  <span className="text-sm text-[#4A6B64]">
-                    {order.dataCriacao ? new Date(order.dataCriacao).toLocaleDateString('pt-PT', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'Sem data'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-[#698F8A] uppercase tracking-wider block text-left sm:text-right font-bold">Status</span>
-                  <span className="inline-block bg-[#E8F3F2] text-[#4A6B64] text-xs font-extrabold px-3 py-1 rounded-full mt-0.5">
-                    {order.status || 'Autorizado'}
-                  </span>
-                </div>
-              </div>
 
-              <div className="space-y-2 mb-4">
-                {order.itens && Array.isArray(order.itens) ? order.itens.map((item, idx) => (
-                  <div key={idx} className="flex justify-between text-sm text-[#4A6B64]">
-                    <span>{item.name} <strong className="text-[#8ECAC5]">x{item.quantity}</strong></span>
-                    <span>R$ {formatPrice(Number(item.price || 0) * item.quantity)}</span>
-                  </div>
-                )) : null}
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t border-[#F4F9F8]">
-                <div>
-                  <span className="text-xs text-[#698F8A] block">Pagamento</span>
-                  <span className="text-xs font-bold uppercase text-[#4A6B64]">{order.metodoPagamento?.replace('_', ' ') || 'Não especificado'}</span>
-                  {order.vendedorNome && (
-                    <span className="text-xs font-semibold text-indigo-400 block mt-1">Vend. {order.vendedorNome}</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="text-xs text-[#698F8A] block">Total</span>
-                  <span className="text-xl font-black text-[#8ECAC5]">R$ {formatPrice(order.total)}</span>
-                </div>
-              </div>
+        {myOrders.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl shadow-sm border border-[#E8F3F2]">
+            <div className="w-20 h-20 bg-[#F4F9F8] rounded-full flex items-center justify-center mx-auto mb-4">
+              <PackageIcon size={40} className="text-[#8ECAC5]" />
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+            <p className="text-[#698F8A] font-bold text-lg">Nenhum pedido encontrado.</p>
+            <p className="text-sm text-gray-400 mt-1">Sua vitrine está cheia de novidades esperando por você!</p>
+            <button onClick={() => setCurrentScreen('catalog')} className="mt-6 bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3 rounded-xl font-bold transition shadow-md active:scale-95">
+              Começar a Comprar
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {myOrders.map((order) => {
+              const step = getStepFromStatus(order.status);
+              const isCanceled = step === -1;
+
+              return (
+                <div key={order.id} className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 border border-[#E8F3F2] hover:shadow-md transition-shadow">
+                  
+                  {/* CABEÇALHO DO PEDIDO */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
+                    <div>
+                      <span className="text-[10px] font-black text-[#8ECAC5] uppercase tracking-widest block mb-1">Pedido #{order.id.slice(-6)}</span>
+                      <h3 className="text-lg font-bold text-[#4A6B64]">{order.clienteNome}</h3>
+                      <span className="text-xs text-[#698F8A]">
+                        Feito em {order.dataCriacao ? new Date(order.dataCriacao).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Data desconhecida'}
+                      </span>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <span className="text-xs text-[#698F8A] font-bold uppercase block mb-1">Valor Total</span>
+                      <span className="text-2xl font-black text-[#4A6B64]">R$ {formatPrice(order.total)}</span>
+                      <span className="text-[10px] font-bold bg-[#F4F9F8] text-[#698F8A] px-2 py-1 rounded-md ml-2 sm:ml-0 sm:mt-1 inline-block sm:block uppercase">
+                        {order.metodoPagamento?.replace('_', ' ') || 'Padrão'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 🌟 LINHA DO TEMPO VISUAL (RASTREIO) */}
+                  <div className="py-2 mb-8">
+                    {isCanceled ? (
+                      <div className="flex items-center justify-center gap-2 text-red-500 bg-red-50 p-4 rounded-xl border border-red-100">
+                        <AlertCircleIcon size={20} />
+                        <span className="font-bold uppercase tracking-wider text-sm">Pedido Cancelado ou Recusado</span>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {/* Barra de Fundo */}
+                        <div className="absolute left-0 top-5 w-full h-1.5 bg-[#F4F9F8] rounded-full z-0"></div>
+                        {/* Barra de Progresso Animada */}
+                        <div 
+                          className="absolute left-0 top-5 h-1.5 bg-[#8ECAC5] rounded-full z-0 transition-all duration-1000 ease-out" 
+                          style={{ width: step === 1 ? '15%' : step === 2 ? '50%' : step === 3 ? '100%' : '0%' }}
+                        ></div>
+
+                        <div className="flex justify-between relative z-10">
+                          {/* Passo 1 */}
+                          <div className={`flex flex-col items-center w-1/3 ${step >= 1 ? 'text-[#4A6B64]' : 'text-gray-300'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-colors duration-500 ${step >= 1 ? 'bg-[#E8F3F2] border-2 border-[#8ECAC5]' : 'bg-white border-2 border-gray-100'}`}>
+                              <ClipboardIcon size={18} />
+                            </div>
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-center">Recebido</span>
+                            {step === 1 && <span className="text-[9px] text-[#8ECAC5] font-bold mt-1 text-center hidden sm:block">Aprovando</span>}
+                          </div>
+
+                          {/* Passo 2 */}
+                          <div className={`flex flex-col items-center w-1/3 ${step >= 2 ? 'text-[#4A6B64]' : 'text-gray-300'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-colors duration-500 ${step >= 2 ? 'bg-[#E8F3F2] border-2 border-[#8ECAC5]' : 'bg-white border-2 border-gray-100'}`}>
+                              <PackageIcon size={18} />
+                            </div>
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-center">Em Separação</span>
+                            {step === 2 && <span className="text-[9px] text-[#8ECAC5] font-bold mt-1 text-center hidden sm:block">Embalando</span>}
+                          </div>
+
+                          {/* Passo 3 */}
+                          <div className={`flex flex-col items-center w-1/3 ${step >= 3 ? 'text-[#4A6B64]' : 'text-gray-300'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-colors duration-500 ${step >= 3 ? 'bg-[#00897B] text-white shadow-md border-2 border-[#00897B]' : 'bg-white border-2 border-gray-100'}`}>
+                              {step === 3 ? <CheckCircleIcon size={18} /> : <TruckIcon size={18} />}
+                            </div>
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-center">Enviado</span>
+                            {step === 3 && <span className="text-[9px] text-[#00897B] font-bold mt-1 text-center hidden sm:block">Faturado</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LISTA DE PRODUTOS COMPRADOS (Acordeão elegante) */}
+                  <div className="bg-[#F4F9F8]/50 rounded-2xl p-4 border border-[#F4F9F8]">
+                    <p className="text-xs font-bold text-[#698F8A] uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <ListIcon size={14} /> Itens do Pedido ({order.itens?.length || 0})
+                    </p>
+                    <div className="space-y-2">
+                      {order.itens && Array.isArray(order.itens) ? order.itens.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <span className="bg-white border border-[#E8F3F2] text-[#8ECAC5] font-black text-xs w-7 h-7 flex items-center justify-center rounded-lg shrink-0">
+                              {item.quantity}x
+                            </span>
+                            <span className="text-[#4A6B64] font-semibold truncate">{item.name}</span>
+                          </div>
+                          <span className="text-[#4A6B64] font-bold shrink-0 ml-2">
+                            R$ {formatPrice(Number(item.price || 0) * item.quantity)}
+                          </span>
+                        </div>
+                      )) : null}
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderAdmin = () => {
     const pendingClients = dbClients.filter(c => c.status === 'pendente');
