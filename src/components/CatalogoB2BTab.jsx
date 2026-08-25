@@ -256,6 +256,34 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [repNewClientName, setRepNewClientName] = useState('');
   const [repNewClientNIF, setRepNewClientNIF] = useState('');
   const [repNewClientEmail, setRepNewClientEmail] = useState('');
+  const [repNewClientWhatsApp, setRepNewClientWhatsApp] = useState('');
+  const [repNewClientCEP, setRepNewClientCEP] = useState('');
+  const [repNewClientRua, setRepNewClientRua] = useState('');
+  const [repNewClientNumero, setRepNewClientNumero] = useState('');
+  const [repNewClientBairro, setRepNewClientBairro] = useState('');
+  const [repNewClientCidade, setRepNewClientCidade] = useState('');
+  const [repNewClientEstado, setRepNewClientEstado] = useState('');
+
+  // 🚀 BUSCADOR DE CEP DO REPRESENTANTE (VIACEP)
+  const handleRepCepSearch = async (cepInput) => {
+    const cep = cepInput.replace(/\D/g, '');
+    setRepNewClientCEP(cep);
+
+    if (cep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setRepNewClientRua(data.logradouro || '');
+          setRepNewClientBairro(data.bairro || '');
+          setRepNewClientCidade(data.localidade || '');
+          setRepNewClientEstado(data.uf || '');
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+      }
+    }
+  };
 
   // ============================================================================
   // 🌟 ESTADOS DE FRETE E INTEGRAÇÃO MERCADO PAGO
@@ -1036,8 +1064,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   // ============================================================================
   const handleCreateRepClient = async (e) => {
     e.preventDefault();
-    if (!repNewClientName || !repNewClientNIF || !repNewClientEmail) {
-      alert("Por favor, preencha todos os dados da nova loja.");
+    if (!repNewClientName || !repNewClientNIF || !repNewClientEmail || !repNewClientCEP) {
+      alert("Por favor, preencha todos os dados e o CEP da nova loja.");
       return;
     }
 
@@ -1048,11 +1076,18 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       name: repNewClientName,
       email: repNewClientEmail,
       nif: repNewClientNIF,
+      whatsapp: repNewClientWhatsApp,
+      cep: repNewClientCEP,
+      rua: repNewClientRua,
+      numero: repNewClientNumero,
+      bairro: repNewClientBairro,
+      cidade: repNewClientCidade,
+      estado: repNewClientEstado,
       isB2B: true,
       creditLimit: 0, // Entra sem limite até o Admin aprovar
       status: 'pendente',
-      vendedorId: currentUser.id, // Amarra ao ID do vendedor logado
-      vendedorNome: currentUser.name, // Amarra ao Nome do vendedor
+      vendedorId: currentUser.id,
+      vendedorNome: currentUser.name,
       dataCriacao: new Date().toISOString()
     };
 
@@ -1067,20 +1102,20 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         
         alert(`Sucesso! A loja ${repNewClientName} foi adicionada à sua carteira.`);
         
-        // 🌟 MÁGICA: Já seleciona o cliente e joga o vendedor pro catálogo!
+        // Seleciona o cliente e joga o vendedor pro catálogo
         setSelectedClientForRep(createdClient);
         setCurrentScreen('catalog');
         setIsRepNewClientModalOpen(false);
         
       } else {
-        alert("Modo Simulação: O cliente seria criado e selecionado.");
+        alert("Modo Simulação: O cliente seria criado.");
         setIsRepNewClientModalOpen(false);
       }
       
-      // Limpa o formulário
-      setRepNewClientName('');
-      setRepNewClientNIF('');
-      setRepNewClientEmail('');
+      // Limpa todo o formulário
+      setRepNewClientName(''); setRepNewClientNIF(''); setRepNewClientEmail(''); setRepNewClientWhatsApp('');
+      setRepNewClientCEP(''); setRepNewClientRua(''); setRepNewClientNumero(''); setRepNewClientBairro('');
+      setRepNewClientCidade(''); setRepNewClientEstado('');
       
     } catch (error) {
       console.error("Erro ao criar cliente:", error);
@@ -1332,10 +1367,11 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               </button>
             </div>
 
-            {/* MODAL: CRIAR NOVO CLIENTE (Fica invisível até clicar no botão) */}
+            {/* MODAL: CRIAR NOVO CLIENTE (Portal Rep) */}
             {isRepNewClientModalOpen && (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+                {/* Nota: Adicionado max-w-2xl e rolagem (overflow-y-auto) para caber o endereço */}
+                <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 scrollbar-none">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-black text-[#4A6B64] flex items-center gap-2">
                       <UsersIcon size={24} className="text-[#8ECAC5]" />
@@ -1347,19 +1383,69 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                   </div>
 
                   <form onSubmit={handleCreateRepClient} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Razão Social / Nome Fantasia</label>
-                      <input type="text" placeholder="Nome da Loja" value={repNewClientName} onChange={(e) => setRepNewClientName(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">CNPJ</label>
-                      <input type="text" placeholder="00.000.000/0000-00" value={repNewClientNIF} onChange={(e) => setRepNewClientNIF(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Email do Lojista</label>
-                      <input type="email" placeholder="contato@loja.com.br" value={repNewClientEmail} onChange={(e) => setRepNewClientEmail(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
-                    </div>
                     
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Razão Social / Nome Fantasia</label>
+                        <input type="text" placeholder="Nome da Loja" value={repNewClientName} onChange={(e) => setRepNewClientName(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">CNPJ</label>
+                        <input type="text" placeholder="00.000.000/0000-00" value={repNewClientNIF} onChange={(e) => setRepNewClientNIF(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">WhatsApp (Comercial)</label>
+                        <input type="text" placeholder="(11) 99999-9999" value={repNewClientWhatsApp} onChange={(e) => setRepNewClientWhatsApp(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Email do Lojista</label>
+                        <input type="email" placeholder="contato@loja.com.br" value={repNewClientEmail} onChange={(e) => setRepNewClientEmail(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                      </div>
+                    </div>
+
+                    {/* 🌟 MÓDULO DE ENDEREÇO INTELIGENTE */}
+                    <div className="bg-white border border-[#E8F3F2] p-4 rounded-xl shadow-sm mt-4">
+                      <h4 className="text-xs font-bold text-[#8ECAC5] uppercase mb-3 flex items-center gap-2">
+                        <MapPinIcon size={14}/> Endereço Fiscal (Sede)
+                      </h4>
+                      
+                      <div className="grid grid-cols-3 gap-3 mb-3">
+                        <div className="col-span-1">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">CEP</label>
+                          <input type="text" maxLength="9" placeholder="00000-000" value={repNewClientCEP} onChange={(e) => handleRepCepSearch(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] font-bold border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Rua / Logradouro</label>
+                          <input type="text" value={repNewClientRua} onChange={(e) => setRepNewClientRua(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3 mb-3">
+                        <div className="col-span-1">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Nº</label>
+                          <input type="text" value={repNewClientNumero} onChange={(e) => setRepNewClientNumero(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                        </div>
+                        <div className="col-span-3">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Bairro</label>
+                          <input type="text" value={repNewClientBairro} onChange={(e) => setRepNewClientBairro(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">Cidade</label>
+                          <input type="text" value={repNewClientCidade} onChange={(e) => setRepNewClientCidade(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition cursor-not-allowed" readOnly/>
+                        </div>
+                        <div className="col-span-1">
+                          <label className="block text-[10px] font-bold text-[#698F8A] mb-1">UF</label>
+                          <input type="text" value={repNewClientEstado} onChange={(e) => setRepNewClientEstado(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] font-bold border border-[#E8F3F2] rounded-lg py-2 px-3 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition text-center cursor-not-allowed" readOnly/>
+                        </div>
+                      </div>
+                    </div>
+
                     <button type="submit" disabled={isUploading} className="w-full bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white py-3.5 rounded-xl font-bold transition shadow-md mt-6 active:scale-95 flex justify-center items-center gap-2">
                       {isUploading ? 'Cadastrando...' : 'Cadastrar e Fazer Pedido'}
                     </button>
