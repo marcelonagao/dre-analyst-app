@@ -282,6 +282,28 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [authCidade, setAuthCidade] = useState('');
   const [authEstado, setAuthEstado] = useState('');
 
+  const [selectedClientForRep, setSelectedClientForRep] = useState(null);
+
+  const [adminTab, setAdminTab] = useState('clientes');
+  const [repTab, setRepTab] = useState('clientes');
+
+  const [activeAuthTab, setActiveAuthTab] = useState('login');
+  
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [dbProducts, setDbProducts] = useState([]);
+  const [dbClients, setDbClients] = useState([]);
+  
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Dados do formulário de Departamento
+  const [formDeptName, setFormDeptName] = useState('');
+  const [formDeptIcon, setFormDeptIcon] = useState(''); 
+  const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
+  const [novaMarcaInput, setNovaMarcaInput] = useState('');
+
+  const [uploadingMarcaIndex, setUploadingMarcaIndex] = useState(null);
+
   // 🚀 BUSCADOR DE CEP AUTOMÁTICO (VIACEP)
   const handleCepSearch = async (cepInput) => {
     const cep = cepInput.replace(/\D/g, '');
@@ -350,31 +372,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 
   const marcasDestaque = ['DERMACHEM', 'FACE BEAUTIFUL', 'AIFER', 'ACTION'];
 
-  const [selectedClientForRep, setSelectedClientForRep] = useState(null);
-
-  const [adminTab, setAdminTab] = useState('clientes');
-  const [repTab, setRepTab] = useState('clientes');
-
-  const [activeAuthTab, setActiveAuthTab] = useState('login');
-  const [authEmail, setAuthFormEmail] = useState('');
-  const [authPassword, setAuthFormPassword] = useState('');
-  const [authName, setAuthFormName] = useState(''); 
-  const [authNIF, setAuthFormNif] = useState('');   
-
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [dbProducts, setDbProducts] = useState([]);
-  const [dbClients, setDbClients] = useState([]);
   
-  const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-
-  // Dados do formulário de Departamento
-  const [formDeptName, setFormDeptName] = useState('');
-  const [formDeptIcon, setFormDeptIcon] = useState(''); 
-  const [formDeptMarcas, setFormDeptMarcas] = useState([]); 
-  const [novaMarcaInput, setNovaMarcaInput] = useState('');
-
-  const [uploadingMarcaIndex, setUploadingMarcaIndex] = useState(null);
 
   // 🌟 COMUNICAÇÃO COM O APP.JSX (Esconder/Mostrar Menu Lateral)
   useEffect(() => {
