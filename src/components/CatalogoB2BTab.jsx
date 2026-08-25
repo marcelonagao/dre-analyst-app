@@ -225,6 +225,14 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   const [evalCreditLimit, setEvalCreditLimit] = useState('');
   const [evalRepId, setEvalRepId] = useState('');
 
+  // ============================================================================
+  // 🌟 ESTADOS DO PORTAL DO REPRESENTANTE (NOVO CLIENTE)
+  // ============================================================================
+  const [isRepNewClientModalOpen, setIsRepNewClientModalOpen] = useState(false);
+  const [repNewClientName, setRepNewClientName] = useState('');
+  const [repNewClientNIF, setRepNewClientNIF] = useState('');
+  const [repNewClientEmail, setRepNewClientEmail] = useState('');
+
   // 🌟 LISTA DA SUA EQUIPE COMERCIAL (Pode editar os nomes como preferir)
   const representantesCadastrados = [
     { id: 'rep_1', name: 'Carlos Vendedor' },
@@ -939,6 +947,65 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     }
   };
 
+  // ============================================================================
+  // 🚀 MOTOR DE CRIAÇÃO DE CLIENTE PELO REPRESENTANTE
+  // ============================================================================
+  const handleCreateRepClient = async (e) => {
+    e.preventDefault();
+    if (!repNewClientName || !repNewClientNIF || !repNewClientEmail) {
+      alert("Por favor, preencha todos os dados da nova loja.");
+      return;
+    }
+
+    setIsUploading(true);
+    
+    // Cria o esqueleto do cliente já amarrado a este vendedor!
+    const newUser = {
+      name: repNewClientName,
+      email: repNewClientEmail,
+      nif: repNewClientNIF,
+      isB2B: true,
+      creditLimit: 0, // Entra sem limite até o Admin aprovar
+      status: 'pendente',
+      vendedorId: currentUser.id, // Amarra ao ID do vendedor logado
+      vendedorNome: currentUser.name, // Amarra ao Nome do vendedor
+      dataCriacao: new Date().toISOString()
+    };
+
+    try {
+      if (isFirebaseConfigured && firebaseUser) {
+        const clientsPath = typeof window !== 'undefined' && window.__app_id 
+          ? collection(db, 'artifacts', appId, 'public', 'data', 'clientes')
+          : collection(db, 'clientes');
+        
+        const docRef = await addDoc(clientsPath, newUser);
+        const createdClient = { id: docRef.id, ...newUser };
+        
+        alert(`Sucesso! A loja ${repNewClientName} foi adicionada à sua carteira.`);
+        
+        // 🌟 MÁGICA: Já seleciona o cliente e joga o vendedor pro catálogo!
+        setSelectedClientForRep(createdClient);
+        setCurrentScreen('catalog');
+        setIsRepNewClientModalOpen(false);
+        
+      } else {
+        alert("Modo Simulação: O cliente seria criado e selecionado.");
+        setIsRepNewClientModalOpen(false);
+      }
+      
+      // Limpa o formulário
+      setRepNewClientName('');
+      setRepNewClientNIF('');
+      setRepNewClientEmail('');
+      
+    } catch (error) {
+      console.error("Erro ao criar cliente:", error);
+      alert("Erro ao salvar. Verifique sua conexão.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const openProductDetails = (product) => {
     setSelectedProduct(product);
     setModalQuantity(1);
@@ -1121,8 +1188,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 
         {repTab === 'clientes' && (
           <>
-            <div className="bg-white p-4 shadow-sm rounded-2xl mb-6 border border-[#8ECAC5]/20">
-              <div className="relative w-full">
+            <div className="bg-white p-4 shadow-sm rounded-2xl mb-6 border border-[#8ECAC5]/20 flex gap-2 sm:gap-4 flex-col sm:flex-row">
+              <div className="relative flex-1">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#698F8A]" size={20} />
                 <input 
                   type="text" 
@@ -1132,7 +1199,51 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              
+              {/* 🌟 NOVO BOTÃO DE CADASTRAR CLIENTE NOVO */}
+              <button 
+                onClick={() => setIsRepNewClientModalOpen(true)}
+                className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-sm whitespace-nowrap shrink-0 active:scale-95"
+              >
+                <PlusIcon size={18} /> Novo Lojista
+              </button>
             </div>
+
+            {/* MODAL: CRIAR NOVO CLIENTE (Fica invisível até clicar no botão) */}
+            {isRepNewClientModalOpen && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-black text-[#4A6B64] flex items-center gap-2">
+                      <UsersIcon size={24} className="text-[#8ECAC5]" />
+                      Novo Lojista
+                    </h3>
+                    <button onClick={() => setIsRepNewClientModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                      <CloseIcon size={24} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateRepClient} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Razão Social / Nome Fantasia</label>
+                      <input type="text" placeholder="Nome da Loja" value={repNewClientName} onChange={(e) => setRepNewClientName(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">CNPJ</label>
+                      <input type="text" placeholder="00.000.000/0000-00" value={repNewClientNIF} onChange={(e) => setRepNewClientNIF(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Email do Lojista</label>
+                      <input type="email" placeholder="contato@loja.com.br" value={repNewClientEmail} onChange={(e) => setRepNewClientEmail(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+                    </div>
+                    
+                    <button type="submit" disabled={isUploading} className="w-full bg-[#8ECAC5] hover:bg-[#7ABDB8] text-white py-3.5 rounded-xl font-bold transition shadow-md mt-6 active:scale-95 flex justify-center items-center gap-2">
+                      {isUploading ? 'Cadastrando...' : 'Cadastrar e Fazer Pedido'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
 
             {myClients.length === 0 ? (
               <div className="bg-white p-8 rounded-2xl shadow-sm text-center border border-[#E8F3F2]">
