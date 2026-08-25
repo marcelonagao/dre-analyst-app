@@ -1164,11 +1164,20 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       );
     }
 
+    // Filtro Front-end Inteligente (Resolve maiúsculas, minúsculas e campos vazios)
     const filteredProducts = dbProducts.filter(p => {
-      const nameMatch = p.name ? p.name.toLowerCase().includes(searchQuery.toLowerCase()) : false;
-      const categorySearchMatch = p.category ? p.category.toLowerCase().includes(searchQuery.toLowerCase()) : false;
-      const textMatch = nameMatch || categorySearchMatch;
-      const categoryFilterMatch = selectedCategory === 'Todas' || p.category === selectedCategory;
+      // 1. O que foi digitado na barra de busca
+      const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
+      const nameMatch = p.name && p.name.toLowerCase().includes(termoBusca);
+      const categorySearchMatch = p.category && p.category.toLowerCase().includes(termoBusca);
+      const textMatch = termoBusca === '' || nameMatch || categorySearchMatch;
+
+      // 2. O que foi clicado nas bolinhas de categoria
+      const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
+      const categoryFilterMatch = catSelect === '' || catSelect === 'todas' || 
+                                  (p.category && p.category.toLowerCase().includes(catSelect)) ||
+                                  (p.name && p.name.toLowerCase().includes(catSelect));
+
       return textMatch && categoryFilterMatch;
     });
 
@@ -1343,7 +1352,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                     : 'Todos os Produtos'}
               </h2>
               <span className="bg-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1 rounded-full">
-                {dbProducts.length} itens encontrados
+                {/* 🌟 MUDANÇA AQUI: Trocado dbProducts por filteredProducts */}
+                {filteredProducts.length} itens encontrados
               </span>
             </div>
 
