@@ -1017,6 +1017,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
             <AlertCircleIcon size={14} /> Entrar como Loja Nova (Progresso 0/3)
           </button>
 
+          {/* 🌟 BOTÕES OCULTOS TEMPORARIAMENTE PARA APRESENTAÇÃO 🌟 
           <button
             onClick={() => handleLogin('rep')}
             className="w-full flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2.5 px-4 rounded-xl text-xs font-bold border border-indigo-200 transition"
@@ -1030,6 +1031,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           >
             <ShieldIcon size={14} /> Acesso Painel Gestor (Aprovar Clientes)
           </button>
+          */}
         </div>
       </div>
     </div>
