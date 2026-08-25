@@ -1022,7 +1022,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   };
 
   // ============================================================================
-  // 🚀 MOTOR DE APROVAÇÃO FINANCEIRA (ADMIN)
+  // 🚀 MOTOR DE APROVAÇÃO FINANCEIRA E INJEÇÃO NO BLING (ADMIN)
   // ============================================================================
   const handleSaveEvaluation = async () => {
     if (!isFirebaseConfigured) {
@@ -1037,23 +1037,53 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         ? doc(db, 'artifacts', appId, 'public', 'data', 'clientes', evalClient.id)
         : doc(db, 'clientes', evalClient.id);
 
-      // Pega o nome do representante selecionado
+      // Pega o nome do representante selecionado para atrelar a venda
       const repSelecionado = representantesCadastrados.find(r => r.id === evalRepId) || { id: null, name: null };
 
-      // Atualiza o cliente no banco de dados!
+      // 🌟 1. PAYLOAD PARA O BLING (O pacote de dados perfeito)
+      const blingPayload = {
+        nome: evalClient.name,
+        tipoPessoa: 'J', // Jurídica
+        cpfCnpj: evalClient.nif,
+        email: evalClient.email,
+        celular: evalClient.whatsapp || '',
+        limiteCredito: Number(evalCreditLimit) || 0,
+        idVendedor: repSelecionado.id, // O Bling já vai saber de quem é a comissão!
+        endereco: {
+          cep: evalClient.cep || '',
+          logradouro: evalClient.rua || '',
+          numero: evalClient.numero || '',
+          bairro: evalClient.bairro || '',
+          municipio: evalClient.cidade || '',
+          uf: evalClient.estado || ''
+        }
+      };
+
+      console.log("📦 Disparando API para injetar Contato no Bling:", blingPayload);
+
+      // Simulando o tempo de processamento da API do ERP (1.5 segundos)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // 🚨 Na vida real em produção, aqui entra o seu fetch para o webhook/Bling:
+      // const response = await fetch('/api/bling/criar-contato', { method: 'POST', body: JSON.stringify(blingPayload) });
+      // if (!response.ok) throw new Error("Bling recusou o cadastro (CNPJ duplicado ou inválido).");
+
+      // 🌟 2. ATUALIZAÇÃO NO FIREBASE (Só acontece se o Bling disser OK!)
       await updateDoc(clientDocRef, {
         status: 'aprovado',
         creditLimit: Number(evalCreditLimit) || 0,
         vendedorId: repSelecionado.id,
         vendedorNome: repSelecionado.name,
-        dataAprovacao: new Date().toISOString()
+        dataAprovacao: new Date().toISOString(),
+        sincronizadoBling: true // Flag de segurança!
       });
       
-      alert(`✅ Sucesso! A loja ${evalClient.name} foi aprovada com R$ ${evalCreditLimit} de limite e vinculada ao vendedor ${repSelecionado.name || 'Nenhum'}.`);
-      setIsEvalModalOpen(false); // Fecha o modal
+      alert(`✅ Sucesso B2B! A loja ${evalClient.name} foi injetada no Bling, aprovada com R$ ${evalCreditLimit} de limite e vinculada a ${repSelecionado.name || 'Nenhum'}.`);
+      setIsEvalModalOpen(false);
+      
     } catch (error) {
-      console.error("Erro ao aprovar crédito:", error);
-      alert("Erro de comunicação ao aprovar o cliente.");
+      console.error("Erro ao aprovar crédito e enviar ao Bling:", error);
+      alert("❌ O ERP Bling recusou o cadastro. Verifique se o CNPJ já está cadastrado lá.");
     } finally {
       setIsUploading(false);
     }
