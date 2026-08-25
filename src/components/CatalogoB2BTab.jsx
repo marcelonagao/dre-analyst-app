@@ -1130,7 +1130,9 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           </button>
         </div>
 
-          {/* ABA: CRIAR CADASTRO */}
+         {/* ========================================= */}
+          {/* ABA 1: CRIAR CADASTRO (NOVA CONTA) */}
+          {/* ========================================= */}
           {activeAuthTab === 'register' && (
             <form onSubmit={handleAuthSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
               
@@ -1207,17 +1209,24 @@ export default function CatalogoB2BTab({ onRoleChange }) {
             </form>
           )}
 
-          <div>
-            <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Endereço de Email (Comercial)</label>
-            <input
-              type="email"
-              placeholder="contato@sualoja.com"
-              value={authEmail}
-              onChange={(e) => setAuthFormEmail(e.target.value)}
-              className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
-              required
-            />
-          </div>
+          {/* ========================================= */}
+          {/* ABA 2: ENTRAR (LOGIN) */}
+          {/* ========================================= */}
+          {activeAuthTab === 'login' && (
+            <form onSubmit={handleAuthSubmit} className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div>
+                <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Endereço de Email (Comercial)</label>
+                <input type="email" placeholder="contato@sualoja.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-[#4A6B64] uppercase tracking-wider mb-1">Palavra-passe</label>
+                <input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} required className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"/>
+              </div>
+              <button type="submit" className="w-full bg-[#4A6B64] hover:bg-[#3A5A53] text-white py-4 rounded-xl font-black text-lg transition shadow-md mt-6 active:scale-95">
+                Acessar Catálogo
+              </button>
+            </form>
+          )}
 
       
 
