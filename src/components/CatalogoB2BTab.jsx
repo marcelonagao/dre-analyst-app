@@ -270,6 +270,10 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   // 🌟 ESTADOS DE AUTENTICAÇÃO E CADASTRO COMPLETO
   // ============================================================================
   // (Mantenha os que você já tem: authEmail, authPassword, authName, authNIF...)
+  const [authName, setAuthName] = useState('');
+  const [authNIF, setAuthNIF] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
   const [authWhatsApp, setAuthWhatsApp] = useState('');
   const [authCEP, setAuthCEP] = useState('');
   const [authRua, setAuthRua] = useState('');
@@ -1129,6 +1133,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         </div>
 
         <form onSubmit={handleAuthSubmit} className="space-y-4">
+          {/* ABA: CRIAR CADASTRO */}
           {/* ABA: CRIAR CADASTRO */}
           {activeAuthTab === 'register' && (
             <form onSubmit={handleAuthSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
