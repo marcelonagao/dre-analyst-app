@@ -1130,8 +1130,6 @@ export default function CatalogoB2BTab({ onRoleChange }) {
           </button>
         </div>
 
-        <form onSubmit={handleAuthSubmit} className="space-y-4">
-          {/* ABA: CRIAR CADASTRO */}
           {/* ABA: CRIAR CADASTRO */}
           {activeAuthTab === 'register' && (
             <form onSubmit={handleAuthSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -1221,25 +1219,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#4A6B64] uppercase mb-1">Palavra-passe</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={authPassword}
-              onChange={(e) => setAuthFormPassword(e.target.value)}
-              className="w-full bg-[#F4F9F8] text-[#4A6B64] border border-[#E8F3F2] rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#8ECAC5] transition"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-[#4A6B64] hover:bg-[#3A5A53] text-white py-3.5 rounded-xl font-bold transition shadow-md mt-4 active:scale-95"
-          >
-            {activeAuthTab === 'register' ? 'Criar Conta' : 'Acessar Catálogo'}
-          </button>
-        </form>
+      
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#E8F3F2]"></div></div>
