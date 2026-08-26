@@ -71,6 +71,7 @@ export default async function handler(req, res) {
     
     return res.status(200).json({ 
       success: true, 
+      fotos_sincronizadas: fotosSincronizadas, // 🌟 ADICIONE ESTA LINHA AQUI!
       message: `✅ Lote da Página ${pagina} (Com Estoque) concluído! ${fotosSincronizadas} fotos HD salvas. ${produtosSemFoto} sem foto. 👉 Para continuar, acesse a URL: /api/robo-fotos?pagina=${proxPagina}` 
     });
 
