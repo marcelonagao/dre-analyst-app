@@ -7,6 +7,18 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
 // 🌟 NOVO: Importando o "Drive" de imagens do Firebase
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
+import { createClient } from '@supabase/supabase-js';
+
+// ============================================================================
+// 🔌 CONEXÃO DIRETA COM O SUPABASE (FRONT-END)
+// ============================================================================
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// ⚠️ ATENÇÃO: No Front-end usamos a chave pública (ANON_KEY). 
+// Nunca use a SERVICE_ROLE_KEY no lado do cliente!
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 // --- COMPONENTES NATIVOS DE ÍCONES EM SVG ---
 const ShoppingCartIcon = ({ size = 24, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -513,7 +525,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   }, [firebaseUser]);
 
   // ============================================================================
-  // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO
+  // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO (AGORA DIRETO NO SUPABASE)
   // ============================================================================
   const buscarProdutos = async (pagina = 1, termoDeBusca = selectedCategory) => {
     if (!firebaseUser && !currentUser) return;
@@ -526,36 +538,61 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     }
 
     try {
-      const query = termoDeBusca !== 'Todas' ? termoDeBusca : searchQuery;
-      const res = await fetch(`/api/catalogo-b2b?pagina=${pagina}&busca=${encodeURIComponent(query)}`);
-      const data = await res.json();
+      const queryTerm = termoDeBusca !== 'Todas' ? termoDeBusca : searchQuery;
       
-      if (data.success) {
-        const produtosAdaptados = data.produtos.map((p) => {
+      // 1. Configuração da Paginação no Supabase (de 100 em 100)
+      const limite = 100;
+      const from = (pagina - 1) * limite;
+      const to = from + limite - 1;
+
+      // 2. Constrói a busca na tabela limpa do Supabase
+      let queryBuilder = supabase
+        .from('produtos')
+        .select('*')
+        .order('nome', { ascending: true }) // Organiza em ordem alfabética
+        .range(from, to);
+
+      // 3. Aplica o filtro se o usuário clicou numa marca ou digitou na busca
+      if (queryTerm && queryTerm !== 'Todas') {
+        // A mágica: busca a palavra tanto no nome quanto na marca (ilike ignora maiúsculas/minúsculas)
+        queryBuilder = queryBuilder.or(`nome.ilike.%${queryTerm}%,marca.ilike.%${queryTerm}%`);
+      }
+
+      // 4. Executa a requisição em milissegundos
+      const { data: produtosData, error } = await queryBuilder;
+
+      if (error) throw error;
+
+      if (produtosData) {
+        const projetoSupabase = import.meta.env.VITE_SUPABASE_URL; 
+        const horaAtual = new Date().getHours();
+
+        // 5. Adapta os dados do banco para o padrão visual do seu painel
+        const produtosAdaptados = produtosData.map((p) => {
           const partesNome = p.nome.split('-');
-          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : 'Geral';
-          const horaAtual = new Date().getHours();
+          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : (p.marca || 'Geral');
           
           return {
             id: p.sku, 
-            blingId: p.id, 
+            blingId: p.sku, 
             name: p.nome, 
             category: categoriaDerivada,
-            price: Number(p.preco), 
-            stock: 999, 
-            image: p.imagemUrl + `?v=${horaAtual}`, 
-            description: `SKU: ${p.sku} | Distribuição Oficial GKL.`
+            price: Number(p.custo_unitario), // Puxa o preço salvo no banco
+            stock: p.estoque_atual || 0,     // 🌟 BÔNUS: Agora mostra o estoque real em vez de 999!
+            image: `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`, 
+            description: `SKU: ${p.sku} | Estoque: ${p.estoque_atual} | Distribuição Oficial GKL.`
           };
         });
         
         if (pagina === 1) setDbProducts(produtosAdaptados);
         else setDbProducts(prev => [...prev, ...produtosAdaptados]);
         
-        setTemMaisProdutos(data.temMais);
+        // Se vieram 100 produtos, ele entende que existe uma próxima página a ser carregada
+        setTemMaisProdutos(produtosData.length === limite);
         setPaginaAtual(pagina);
       }
     } catch (error) {
-      console.error("Erro ao buscar:", error);
+      console.error("Erro ao buscar no Supabase:", error);
     } finally {
       setLoadingCatalog(false);
       setCarregandoMais(false);
