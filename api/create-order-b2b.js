@@ -5,11 +5,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
 
   try {
-    const { itens, clienteCnpj, clienteNome } = req.body;
+    // 🌟 1. Recebendo o numeroPedidoApp que veio do Front-end (Supabase)
+    const { itens, clienteCnpj, clienteNome, numeroPedidoApp, vendedorId } = req.body;
 
     if (!itens || itens.length === 0) return res.status(400).json({ error: 'O carrinho está vazio.' });
 
-    // 1. PEGAR A CHAVE (O Gerente decide se usa a salva ou se pede uma nova)
+    // PEGAR A CHAVE (O Gerente decide se usa a salva ou se pede uma nova)
     const accessToken = await getValidBlingToken();
 
     // ==========================================================
@@ -33,8 +34,8 @@ export default async function handler(req, res) {
           const payloadContato = {
             nome: clienteNome,
             numeroDocumento: cnpjLimpo,
-            tipo: cnpjLimpo.length === 14 ? 'J' : 'F', // Jurídica (14) ou Física (11)
-            situacao: 'A' // 🌟 AQUI ESTÁ A CORREÇÃO: Diz pro Bling que o cliente já nasce "Ativo"
+            tipo: cnpjLimpo.length === 14 ? 'J' : 'F', 
+            situacao: 'A' 
           };
 
           const createRes = await fetch('https://www.bling.com.br/Api/v3/contatos', {
@@ -45,12 +46,9 @@ export default async function handler(req, res) {
           
           const createData = await createRes.json();
           
-          // 🚨 A LUPA: Se o Bling recusar o cadastro, paramos tudo e mostramos o erro!
           if (!createRes.ok || createData.error) {
             const detalhesErro = createData.error?.fields || createData.error?.description || createData.error || createData;
             console.error("❌ ERRO DETALHADO DO BLING (CONTATO):", JSON.stringify(detalhesErro));
-            
-            // Lança o erro para o Front-end mostrar no alert()
             throw new Error(`Bling recusou o cadastro do CNPJ ${cnpjLimpo}. Motivo: ${JSON.stringify(detalhesErro)}`);
           }
           
@@ -71,13 +69,20 @@ export default async function handler(req, res) {
     const pedidoBling = {
       data: dataHoje,
       dataSaida: dataHoje,
+      numeroLoja: numeroPedidoApp, // 🔗 AMARRAÇÃO DE OURO: O Bling guarda o ID do Supabase!
       contato: { id: Number(idClienteBling) },
       itens: itens.map(item => ({
-        produto: { id: Number(item.id) },
-        quantidade: Number(item.quantidade),
-        valor: Number(item.preco)
+        codigo: item.id, // 🌟 CORREÇÃO: Usamos o SKU (codigo) em vez do ID interno para evitar o erro NaN
+        descricao: item.name, 
+        quantidade: Number(item.quantidade || item.quantity || 1),
+        valor: Number(item.preco || item.price)
       }))
     };
+
+    // 🌟 AMARRAÇÃO DO REPRESENTANTE: Se tiver vendedor, enviamos para o Bling!
+    if (vendedorId) {
+      pedidoBling.vendedor = { id: Number(vendedorId) };
+    }
 
     const blingRes = await fetch('https://www.bling.com.br/Api/v3/pedidos/vendas', {
       method: 'POST',

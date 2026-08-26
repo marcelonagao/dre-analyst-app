@@ -1057,8 +1057,8 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     setCurrentScreen('login');
   };
 
-  // ============================================================================
-  // 🚀 MOTOR DE CHECKOUT B2B (BLING + MERCADO PAGO + FIREBASE)
+ // ============================================================================
+  // 🚀 MOTOR DE CHECKOUT B2B (MERCADO PAGO + SUPABASE)
   // ============================================================================
   const handleFinalizeOrder = async (paymentMethod) => {
     if (cart.length === 0) return alert("Seu carrinho está vazio!");
@@ -1086,17 +1086,41 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     try {
       // 2. INTEGRAÇÃO MERCADO PAGO (PIX)
       if (paymentMethod === 'pix') {
-        // Simulando a chamada para a sua API do Mercado Pago
-        // Na vida real: const res = await fetch('/api/mercado-pago/pix', { body: JSON.stringify({ amount: finalTotal }) })
         setTimeout(() => {
           setPixQrCode('00020126580014br.gov.bcb.pix0136GKL-BRASIL-TESTE-MERCADOPAGO-123456');
           setIsProcessingPayment(false);
         }, 1500);
-        return; // Interrompe aqui para o usuário pagar na tela antes de ir pro Bling!
+        return; // Interrompe aqui para o usuário pagar na tela
       }
 
-      // 3. INTEGRAÇÃO BLING E FIREBASE (Se for Boleto ou após o Pix ser pago)
+      // ====================================================================
+      // 3. INTEGRAÇÃO DUPLA (SUPABASE + BLING)
+      // ====================================================================
+      const pedidoId = `PED-${Date.now()}`; // ID único que vai amarrar o App e o Bling
+
+      // 3.1. GRAVA NO SUPABASE (Para histórico do cliente no app e futuro dashboard)
+      const itensParaSalvar = cart.map(item => ({
+        pedido_id: pedidoId, 
+        cliente_nome: targetClient?.name || 'Cliente GKL',
+        cliente_cnpj: targetClient?.nif || 'Não informado',
+        vendedor_id: currentUser.isRep ? currentUser.id : null, // 🌟 ADICIONE ESTA LINHA!
+        sku: item.id, 
+        nome_produto: item.name,
+        quantidade: item.quantidade || item.quantity || 1,
+        preco_unitario: item.price,
+        frete: shippingCost || 0,
+        total_pedido: finalTotal,
+        metodo_pagamento: paymentMethod,
+        status: 'pendente', // 🌟 Fica pendente até o Bling faturar!
+        data_criacao: new Date().toISOString()
+      }));
+
+      const { error: dbError } = await supabase.from('vendas').insert(itensParaSalvar);
+      if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
+
+      // 3.2. ENVIA PARA O BLING (O ERP assume a operação comercial)
       const orderData = {
+        numeroPedidoApp: pedidoId, // 🔗 Esse é o elo de ligação!
         clienteId: targetClient?.id || firebaseUser?.uid || 'local',
         clienteNome: targetClient?.name || 'Cliente GKL',
         clienteCnpj: targetClient?.nif || 'Não informado',
@@ -1104,20 +1128,29 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         itens: cart,
         frete: shippingCost || 0,
         total: finalTotal,
-        metodoPagamento: paymentMethod,
-        status: 'Integrado ao Bling',
-        dataCriacao: new Date().toISOString()
+        metodoPagamento: paymentMethod
       };
 
-      // Aqui entra sua lógica existente de salvar no db (addDoc) e mandar pro Bling (fetch /api/create-order-b2b)
-      console.log("Enviando para Bling/Firebase:", orderData);
+      console.log("Enviando pedido para o Bling...", orderData);
+
+      // Descomente e ajuste esta linha para bater com a rota real da sua API na Vercel:
+      // const blingRes = await fetch('/api/create-order-b2b', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(orderData)
+      // });
       
+      // if (!blingRes.ok) {
+      //   console.warn("Aviso: Pedido salvo no app, mas houve lentidão ao enviar ao Bling.");
+      // }
+
+      console.log("✅ Pedido finalizado com sucesso!");
       setCart([]);
       setCurrentScreen('success');
       
     } catch (error) {
       console.error("Erro no checkout:", error);
-      alert("Falha de comunicação. Tente novamente.");
+      alert(`Falha ao registrar pedido: ${error.message}`);
     } finally {
       setIsProcessingPayment(false);
     }
