@@ -1646,22 +1646,26 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       );
     }
 
-    // Filtro Front-end Inteligente (Resolve maiúsculas, minúsculas e campos vazios)
-    const filteredProducts = dbProducts.filter(p => {
-      // 1. O que foi digitado na barra de busca
-      const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
-      const nameMatch = p.name && p.name.toLowerCase().includes(termoBusca);
-      const categorySearchMatch = p.category && p.category.toLowerCase().includes(termoBusca);
-      const textMatch = termoBusca === '' || nameMatch || categorySearchMatch;
+    // Filtro Front-end Inteligente (Com trava de estoque e busca)
+const filteredProducts = dbProducts.filter(p => {
+  // 🌟 TRAVA DE ESTOQUE: Só permite exibir se o estoque for maior que zero
+  const estoqueReal = Number(p.estoque || p.stock || 0);
+  const temEstoque = estoqueReal > 0;
 
-      // 2. O que foi clicado nas bolinhas de categoria
-      const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
-      const categoryFilterMatch = catSelect === '' || catSelect === 'todas' || 
-                                  (p.category && p.category.toLowerCase().includes(catSelect)) ||
-                                  (p.name && p.name.toLowerCase().includes(catSelect));
+  // 1. O que foi digitado na barra de busca
+  const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
+  const nameMatch = p.name && p.name.toLowerCase().includes(termoBusca);
+  const categorySearchMatch = p.category && p.category.toLowerCase().includes(termoBusca);
+  const textMatch = termoBusca === '' || nameMatch || categorySearchMatch;
 
-      return textMatch && categoryFilterMatch;
-    });
+  // 2. O que foi clicado nas bolinhas de categoria
+  const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
+  const categoryFilterMatch = catSelect === '' || catSelect === 'todas' ||
+                              (p.category && p.category.toLowerCase().includes(catSelect)) ||
+                              (p.name && p.name.toLowerCase().includes(catSelect));
+
+  return temEstoque && textMatch && categoryFilterMatch;
+});
 
     const targetClient = currentUser?.isRep ? selectedClientForRep : currentUser;
     const targetOrders = 3;
