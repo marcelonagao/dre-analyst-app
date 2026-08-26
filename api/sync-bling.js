@@ -75,7 +75,8 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     let produtosConta = [];
 
     while (temMaisPaginas && pagina <= 10) {
-      const blingRes = await fetch(`https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&tipo=P`, {
+      // 🌟 ADICIONADO &situacao=A PARA TRAZER APENAS PRODUTOS ATIVOS
+      const blingRes = await fetch(`https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&tipo=P&situacao=A`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Accept': 'application/json'
