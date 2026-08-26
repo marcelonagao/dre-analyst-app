@@ -671,39 +671,65 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     }
   }, [dbClients, currentUser]);
 
+  // ============================================================================
+  // 🔍 BUSCA DE PEDIDOS NO SUPABASE (NOVO MOTOR)
+  // ============================================================================
   useEffect(() => {
-    if (!isFirebaseConfigured || !firebaseUser || !currentUser) return;
+    // Só inicia a busca se tiver alguém logado
+    if (!firebaseUser || !currentUser) return;
 
-    const orderPath = typeof window !== 'undefined' && window.__app_id
-      ? collection(db, 'artifacts', appId, 'public', 'data', 'pedidos')
-      : collection(db, 'pedidos');
+    const carregarMeusPedidos = async () => {
+      try {
+        // 1. Inicia a consulta já ordenando do mais novo para o mais velho
+        let query = supabase
+          .from('pedidos_app')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    const unsubscribe = onSnapshot(orderPath, (snapshot) => {
-      let fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      if (currentUser.isAdmin) {
-        // Admin vê todos os pedidos
-      } else if (currentUser.isRep) {
-        if (selectedClientForRep) {
-          fetchedOrders = fetchedOrders.filter((o) => o.clienteId === selectedClientForRep.id);
+        // 2. Filtros inteligentes direto no banco de dados
+        if (currentUser.isAdmin) {
+          // Admin vê todos os pedidos (passa direto)
+        } else if (currentUser.isRep) {
+          if (selectedClientForRep) {
+             // Representante escolheu um cliente na lista: vê só os pedidos dele
+            const clientDoc = selectedClientForRep.nif || selectedClientForRep.cnpj || selectedClientForRep.id;
+            query = query.eq('cliente_cnpj', clientDoc);
+          } else {
+             // Representante na visão geral: vê todos os pedidos que ele mesmo tirou
+            query = query.eq('vendedor_id', currentUser.id);
+          }
         } else {
-          fetchedOrders = fetchedOrders.filter((o) => o.vendedorId === currentUser.id);
+          // Cliente comum: vê apenas os seus próprios pedidos
+          const clientDoc = currentUser.nif || currentUser.cnpj || currentUser.id || firebaseUser.uid;
+          query = query.eq('cliente_cnpj', clientDoc);
         }
-      } else {
-        const clientId = currentUser.id || firebaseUser.uid;
-        fetchedOrders = fetchedOrders.filter((o) => o.clienteId === clientId);
+
+        // 3. Executa a requisição
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        // 4. Adapta os nomes das colunas para o seu layout antigo continuar funcionando
+        if (data) {
+          const pedidosAdaptados = data.map(pedido => ({
+            ...pedido,
+            id: pedido.pedido_id,           // Para o painel expandir os detalhes
+            dataCriacao: pedido.created_at, // Para a data aparecer na tela
+            itens: pedido.carrinho          // A lista de produtos comprados
+          }));
+
+          setMyOrders(pedidosAdaptados);
+        }
+
+      } catch (error) {
+        console.error("Erro ao buscar histórico no Supabase:", error.message);
       }
+    };
 
-      fetchedOrders.sort((a, b) => {
-        return new Date(b.dataCriacao || 0).getTime() - new Date(a.dataCriacao || 0).getTime();
-      });
-      setMyOrders(fetchedOrders);
-    }, (error) => {
-      console.error("Aviso do Firestore (pedidos):", error);
-    });
+    // Dispara a busca
+    carregarMeusPedidos();
 
-    return () => unsubscribe();
-  }, [firebaseUser, currentUser, selectedClientForRep]);
+  }, [firebaseUser, currentUser, selectedClientForRep]); // Se o rep trocar de cliente, refaz a busca sozinho!
 
   // ============================================================================
   // 🌟 ESCUTANDO OS BANNERS DO BANCO DE DADOS EM TEMPO REAL
