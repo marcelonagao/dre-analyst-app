@@ -391,6 +391,49 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     { id: 'rep_3', name: 'Equipe Interna GKL' }
   ];
 
+// ============================================================================
+  // 📸 MOTOR DE SINCRONIZAÇÃO DE FOTOS (BLING -> SUPABASE)
+  // ============================================================================
+  const [isSyncingFotos, setIsSyncingFotos] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('');
+
+  const handleSincronizarTodasAsFotos = async () => {
+    setIsSyncingFotos(true);
+    let paginaAtual = 1;
+    let temMaisPaginas = true;
+    let totalFotosAtualizadas = 0;
+
+    try {
+      while (temMaisPaginas) {
+        setSyncStatus(`Varrendo Bling (Página ${paginaAtual})... Não feche a tela.`);
+        
+        // Chama a sua API perfeita que já existe na Vercel
+        const response = await fetch(`/api/robo-fotos?pagina=${paginaAtual}`);
+        const data = await response.json();
+
+        if (data.fotos_sincronizadas) {
+          totalFotosAtualizadas += data.fotos_sincronizadas;
+        }
+
+        // Se a API avisar que a página veio vazia, ele para o loop
+        if (data.message && data.message.includes("vazia")) {
+          temMaisPaginas = false;
+        } else {
+          paginaAtual++;
+        }
+      }
+
+      alert(`✅ Sincronização 100% Concluída! ${totalFotosAtualizadas} fotos foram checadas e atualizadas na vitrine.`);
+      
+    } catch (error) {
+      console.error("Erro na sincronização de fotos:", error);
+      alert("Houve uma queda de conexão durante a varredura. Tente novamente mais tarde.");
+    } finally {
+      setIsSyncingFotos(false);
+      setSyncStatus('');
+    }
+  };
+
   // Motor do Banner
   useEffect(() => {
     if (catalogView !== 'home' || bannersPromocionais.length === 0) return;
@@ -2646,6 +2689,35 @@ const filteredProducts = dbProducts.filter(p => {
               </button>
             </div>
             
+            {/* ========================================================= */}
+            {/* NOVO CARD: SINCRONIZADOR DE FOTOS (Fica abaixo da I.A.) */}
+            {/* ========================================================= */}
+            <div className="bg-[#F8F9FA] border border-[#E9ECEF] p-6 rounded-2xl mb-8 flex flex-col items-start gap-4 shadow-sm mt-6">
+              <div>
+                <h4 className="text-[#343A40] font-black text-lg flex items-center gap-2">
+                  <span className="text-2xl">📸</span> Sincronizador de Mídia (Imagens)
+                </h4>
+                <p className="text-[#6C757D] text-sm mt-2 leading-relaxed">
+                  {syncStatus || "Busca novas fotos de produtos inseridas recentemente no Bling e faz o envio automático para a vitrine do sistema. Rode esta rotina sempre que atualizar fotos no ERP."}
+                </p>
+              </div>
+              
+              <button 
+                onClick={handleSincronizarTodasAsFotos}
+                disabled={isSyncingFotos}
+                className="bg-[#00897B] hover:bg-[#00796B] text-white px-6 py-3 rounded-xl font-bold transition shadow-sm whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isSyncingFotos ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Sincronizando...
+                  </>
+                ) : (
+                  '🔄 Puxar Novas Fotos do Bling'
+                )}
+              </button>
+            </div>
+
             {/* PAINEL DE BANNERS */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#E8F3F2]">
               <div className="flex justify-between items-center mb-6">
