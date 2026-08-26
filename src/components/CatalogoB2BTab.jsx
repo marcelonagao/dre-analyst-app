@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 // --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 // 🌟 NOVO: Importando o "Drive" de imagens do Firebase
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -1070,17 +1070,40 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     }
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setCart([]);
-    setSelectedCategory('Todas');
-    setSelectedProduct(null);
-    setSelectedClientForRep(null);
-    setAuthFormEmail('');
-    setAuthFormPassword('');
-    setAuthFormName('');
-    setAuthFormNif('');
-    setCurrentScreen('login');
+  const handleLogout = async () => { // 🌟 Transformamos em async
+    try {
+      // 1. Desconecta o usuário do Firebase (MUITO IMPORTANTE!)
+      // Certifique-se de que o 'auth' e o 'signOut' estão importados no topo do arquivo.
+      // ex: import { signOut } from 'firebase/auth';
+      if (typeof signOut === 'function' && auth) {
+        await signOut(auth);
+      }
+
+      // 2. Limpa os estados do usuário
+      setCurrentUser(null);
+      
+      // 3. Zera o carrinho e os formulários
+      setCart([]);
+      setSelectedCategory('Todas');
+      setSelectedProduct(null);
+      setSelectedClientForRep(null);
+      setAuthFormEmail('');
+      setAuthFormPassword('');
+      setAuthFormName('');
+      setAuthFormNif('');
+      
+      // 4. 🌟 O PULO DO GATO: Zera as abas internas para não ficar preso na tela de pedidos!
+      // Se você tiver um estado que controla aquela tela (ex: setRepTab ou setActiveTab), zere ele aqui.
+      if (typeof setRepTab === 'function') setRepTab('catalogo'); // Ou o nome da sua aba inicial
+      
+      // 5. Finalmente, joga para a tela de login
+      setCurrentScreen('login');
+      
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      // Força a ida para o login mesmo se o Firebase der erro
+      setCurrentScreen('login'); 
+    }
   };
 
  // ============================================================================
