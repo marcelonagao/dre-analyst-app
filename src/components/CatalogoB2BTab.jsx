@@ -1098,24 +1098,19 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       // ====================================================================
       const pedidoId = `PED-${Date.now()}`; // ID único que vai amarrar o App e o Bling
 
-      // 3.1. GRAVA NO SUPABASE (Para histórico do cliente no app e futuro dashboard)
-      const itensParaSalvar = cart.map(item => ({
-        pedido_id: pedidoId, 
+      // 3.1. GRAVA NO SUPABASE (Na tabela exclusiva do App)
+      const pedidoParaApp = {
+        id: pedidoId, 
         cliente_nome: targetClient?.name || 'Cliente GKL',
         cliente_cnpj: targetClient?.nif || 'Não informado',
-        vendedor_id: currentUser.isRep ? currentUser.id : null, // 🌟 ADICIONE ESTA LINHA!
-        sku: item.id, 
-        nome_produto: item.name,
-        quantidade: item.quantidade || item.quantity || 1,
-        preco_unitario: item.price,
-        frete: shippingCost || 0,
-        total_pedido: finalTotal,
+        vendedor_id: currentUser.isRep ? currentUser.id : null, 
+        total: finalTotal,
         metodo_pagamento: paymentMethod,
-        status: 'pendente', // 🌟 Fica pendente até o Bling faturar!
-        data_criacao: new Date().toISOString()
-      }));
+        status: 'pendente', // O cliente ou rep verá isso na tela deles
+        carrinho: cart // Salva os itens todos agrupados num pacote só!
+      };
 
-      const { error: dbError } = await supabase.from('vendas').insert(itensParaSalvar);
+      const { error: dbError } = await supabase.from('pedidos_app').insert([pedidoParaApp]);
       if (dbError) throw new Error(`Erro ao salvar no banco: ${dbError.message}`);
 
       // 3.2. ENVIA PARA O BLING (O ERP assume a operação comercial)
