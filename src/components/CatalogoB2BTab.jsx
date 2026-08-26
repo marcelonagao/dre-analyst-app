@@ -1100,7 +1100,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 
       // 3.1. GRAVA NO SUPABASE (Na tabela exclusiva do App)
       const pedidoParaApp = {
-        id: pedidoId, 
+        pedido_id: pedidoId, 
         cliente_nome: targetClient?.name || 'Cliente GKL',
         cliente_cnpj: targetClient?.nif || 'Não informado',
         vendedor_id: currentUser.isRep ? currentUser.id : null, 
