@@ -1851,19 +1851,21 @@ const filteredProducts = dbProducts.filter(p => {
                   className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
                 >
                   <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
-                      className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
-                      onError={(e) => {
-                        if (product.blingImage && e.target.src !== product.blingImage) {
-                          e.target.src = product.blingImage;
-                        } else {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400';
-                        }
-                      }}
-                    />
+                  <img 
+  src={item.sku 
+    ? `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${item.sku}.jpg` 
+    : item.image} 
+  alt={item.name} 
+  className="max-w-full max-h-full object-contain mix-blend-multiply" 
+  onError={(e) => { 
+    if (item.image && e.target.src !== item.image) {
+      e.target.src = item.image;
+    } else {
+      e.target.onerror = null; 
+      e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; 
+    }
+  }}
+/>
                     {product.category && (
                       <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest shadow-sm z-10">
                         {product.category}
