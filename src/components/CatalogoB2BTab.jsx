@@ -1852,14 +1852,14 @@ const filteredProducts = dbProducts.filter(p => {
                 >
                   <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
                   <img 
-  src={item.sku 
-    ? `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${item.sku}.jpg` 
-    : item.image} 
-  alt={item.name} 
+  src={product.sku 
+    ? `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${product.sku}.jpg` 
+    : product.image} 
+  alt={product.name} 
   className="max-w-full max-h-full object-contain mix-blend-multiply" 
   onError={(e) => { 
-    if (item.image && e.target.src !== item.image) {
-      e.target.src = item.image;
+    if (product.image && e.target.src !== product.image) {
+      e.target.src = product.image;
     } else {
       e.target.onerror = null; 
       e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; 
