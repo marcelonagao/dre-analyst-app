@@ -1998,7 +1998,21 @@ const filteredProducts = dbProducts.filter(p => {
           {cart.map(item => (
             <div key={item.id} className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-[#E8F3F2]">
               <div className="flex items-center justify-center w-24 h-24 shrink-0 bg-white border border-[#F4F9F8] rounded-xl p-2 mx-auto sm:mx-0">
-                <img src={item.image} alt={item.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+              <img 
+  src={item.sku 
+    ? `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${item.sku}.jpg` 
+    : item.image} 
+  alt={item.name} 
+  className="max-w-full max-h-full object-contain mix-blend-multiply" 
+  onError={(e) => { 
+    if (item.image && e.target.src !== item.image) {
+      e.target.src = item.image;
+    } else {
+      e.target.onerror = null; 
+      e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; 
+    }
+  }}
+/>
               </div>
               
               <div className="flex-1 flex flex-col justify-between">
