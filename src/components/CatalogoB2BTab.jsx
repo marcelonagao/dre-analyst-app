@@ -569,9 +569,31 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 
         // 5. Adapta os dados do banco para o padrão visual do seu painel
         const produtosAdaptados = produtosData.map((p) => {
-          const partesNome = p.nome.split('-');
-          const categoriaDerivada = partesNome.length > 1 ? partesNome[0].trim() : (p.marca || 'Geral');
-          
+         // ==========================================
+        // LÓGICA INTELIGENTE DE MARCA/CATEGORIA
+        // ==========================================
+        let categoriaDerivada = 'Geral';
+
+        // 1. Tenta usar a marca oficial que veio do banco de dados (Se o Bling estiver preenchido certo)
+        if (p.marca && p.marca !== 'Sem Marca' && p.marca.trim() !== '') {
+          categoriaDerivada = p.marca;
+        } 
+        // 2. Plano B: Tenta adivinhar cortando pelo hífen
+        else if (p.nome.includes('-')) {
+          const partes = p.nome.split('-');
+          const primeiraParte = partes[0].trim();
+          const ultimaParte = partes[partes.length - 1].trim();
+
+          // Se o texto antes do hífen for muito longo (mais de 25 letras), é o produto. A marca está no final!
+          if (primeiraParte.length > 25) {
+            categoriaDerivada = ultimaParte;
+          } 
+          // Se for curtinho, a marca está no começo (Ex: FACE BEAUTIFUL - PO)
+          else {
+            categoriaDerivada = primeiraParte;
+          }
+        }
+                    
           return {
             id: p.sku, 
             blingId: p.sku, 
