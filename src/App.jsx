@@ -69,56 +69,90 @@ export default function App() {
       {/* 🌟 CAMINHO 1: Ocultando Menu Lateral se for Cliente B2B */}
       {!isB2BClient && (
         <aside className="hidden md:flex md:w-64 lg:w-72 bg-slate-900 text-white flex-col justify-between shrink-0 border-r border-slate-800 fixed left-0 top-0 bottom-0 h-screen z-30 shadow-2xl">
-          <div className="p-6 space-y-6 overflow-y-auto">
-            <div className="flex items-center space-x-3">
-              <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
-                <IconBarChart3 className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-base font-black tracking-tight text-white leading-tight">Controller</h1>
-                <p className="text-[11px] text-slate-400">Executive Fintech Studio</p>
-              </div>
+          
+        {/* 🔝 PARTE SUPERIOR: Logo, Filtros e Navegação da Gestão */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          
+          {/* Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
+              <IconBarChart3 className="w-6 h-6" />
             </div>
-
-            <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80 space-y-1.5">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Competência Ativa</span>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-emerald-400 w-full">
-                  <IconCalendar className="w-4 h-4 shrink-0" />
-                  <select
-                    value={selectedCompetencia}
-                    onChange={(e) => { setSelectedCompetencia(e.target.value); setViewMode('mensal'); }}
-                    className="bg-slate-900 text-white font-bold text-xs rounded-lg px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer w-full"
-                  >
-                    {(competenciasList || []).map((comp) => (
-                      <option key={comp} value={comp}>{comp}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-base font-black tracking-tight text-white leading-tight">Controller</h1>
+              <p className="text-[11px] text-slate-400">Executive Fintech Studio</p>
             </div>
-
-            <nav className="space-y-1.5">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-1">NAVEGAÇÃO</span>
-              <button onClick={() => setActiveTab(TABS.VISAO_GERAL)} aria-label="Ir para Visão Geral" className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.VISAO_GERAL ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <div className="flex items-center space-x-3"><IconPieChart className="w-4 h-4" /><span>Visão Geral</span></div>
-              </button>
-              <button onClick={() => setActiveTab(TABS.DRE)} aria-label="Ir para DRE" className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.DRE ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <div className="flex items-center space-x-3"><IconLayers className="w-4 h-4" /><span>DRE por Canais</span></div>
-              </button>
-              <button onClick={() => setActiveTab(TABS.ABC)} aria-label="Ir para Curva ABC" className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.ABC ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <div className="flex items-center space-x-3"><IconPackage className="w-4 h-4" /><span>Curva ABC Produtos</span></div>
-              </button>
-              <button onClick={() => setActiveTab(TABS.INTELIGENCIA)} aria-label="Ir para Inteligência" className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.INTELIGENCIA ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <div className="flex items-center space-x-3"><IconBrain className="w-4 h-4" /><span>Inteligência & Compras</span></div>
-              </button>
-              
-              <button onClick={() => setActiveTab(TABS.CATALOGO_B2B)} aria-label="Ir para Portal B2B" className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.CATALOGO_B2B ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <div className="flex items-center space-x-3"><span className="text-sm">🛒</span><span>Portal B2B</span></div>
-              </button>
-            </nav>
           </div>
-        </aside>
+
+          {/* Filtro de Competência */}
+          <div className="bg-slate-800/80 p-3 rounded-2xl border border-slate-700/80 space-y-1.5">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Competência Ativa</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-emerald-400 w-full">
+                <IconCalendar className="w-4 h-4 shrink-0" />
+                <select
+                  value={selectedCompetencia}
+                  onChange={(e) => { setSelectedCompetencia(e.target.value); setViewMode('mensal'); }}
+                  className="bg-slate-900 text-white font-bold text-xs rounded-lg px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer w-full"
+                >
+                  {(competenciasList || []).map((comp) => (
+                    <option key={comp} value={comp}>{comp}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu Principal (Apenas Gestão) */}
+          <nav className="space-y-1.5 mt-4">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-2">Painel de Gestão</span>
+            
+            <button onClick={() => setActiveTab(TABS.VISAO_GERAL)} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.VISAO_GERAL ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+              <div className="flex items-center space-x-3"><IconPieChart className="w-4 h-4" /><span>Visão Geral</span></div>
+            </button>
+            
+            <button onClick={() => setActiveTab(TABS.DRE)} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.DRE ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+              <div className="flex items-center space-x-3"><IconLayers className="w-4 h-4" /><span>DRE por Canais</span></div>
+            </button>
+            
+            <button onClick={() => setActiveTab(TABS.ABC)} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.ABC ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+              <div className="flex items-center space-x-3"><IconPackage className="w-4 h-4" /><span>Curva ABC Produtos</span></div>
+            </button>
+            
+            <button onClick={() => setActiveTab(TABS.INTELIGENCIA)} className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${activeTab === TABS.INTELIGENCIA ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+              <div className="flex items-center space-x-3"><IconBrain className="w-4 h-4" /><span>Inteligência & Compras</span></div>
+            </button>
+          </nav>
+        </div>
+
+        {/* 🔻 PARTE INFERIOR: Ações Rápidas (Sempre visíveis no rodapé) */}
+        <div className="p-6 bg-slate-950/50 border-t border-slate-800/80 space-y-3">
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block px-2 mb-1">Acesso Externo</span>
+          
+          {/* Botão de Destaque: Acessar Loja B2B */}
+          <button 
+            onClick={() => setActiveTab(TABS.CATALOGO_B2B)} 
+            className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-md ${
+              activeTab === TABS.CATALOGO_B2B 
+                ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/30' 
+                : 'bg-slate-800 border border-slate-700 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300'
+            }`}
+          >
+            <span className="text-lg">🛒</span>
+            <span>Acessar Loja B2B</span>
+          </button>
+
+          {/* Botão de Sair do Painel Admin */}
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-red-400 hover:bg-slate-800/50 transition-all"
+            title="Sair do Painel"
+          >
+            <span>Sair do Sistema</span>
+          </button>
+        </div>
+
+      </aside>
       )}
 
       {/* 🌟 CAMINHO 1: Se for B2B, remove a margem esquerda (pl-64) para ocupar 100% da tela */}
