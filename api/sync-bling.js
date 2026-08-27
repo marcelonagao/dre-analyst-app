@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 1. FORÇANDO A CHAVE DE SUPERADMIN (Ignora o bloqueio de permissão)
+// 1. FORÇANDO A CHAVE DE SUPERADMIN
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -12,75 +12,62 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-// 2. FUNÇÃO QUE BUSCA NO BLING E SALVA O TOKEN NOVO
-async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
+// ============================================================================
+// 🧠 INTELIGÊNCIA DINÂMICA: Avalia o produto com base nas regras do banco
+// ============================================================================
+function aplicarRegrasDinamicas(nomeProduto, regrasDaBase) {
+  if (!nomeProduto) return { categoria: "Outros", subcategoria: "Diversos" };
+  const nome = nomeProduto.toUpperCase();
+
+  // O robô varre todas as regras que você cadastrou no Supabase
+  for (const regra of regrasDaBase) {
+    if (regra.palavra_chave && nome.includes(regra.palavra_chave.toUpperCase())) {
+      return { 
+        categoria: regra.categoria || "Outros", 
+        subcategoria: regra.subcategoria || "Diversos" 
+      };
+    }
+  }
+
+  // Se não bater com nenhuma regra sua, ele joga para o genérico
+  return { categoria: "Outros", subcategoria: "Não Classificado" };
+}
+
+// 2. FUNÇÃO QUE BUSCA NO BLING E CLASSIFICA OS PRODUTOS
+async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome, regrasDaBase) {
   if (!clientId || !clientSecret) return [];
 
   try {
-    // Tenta ler o token atualizado do banco de dados
-    let { data: tokenData } = await supabase
-      .from('bling_tokens')
-      .select('refresh_token')
-      .eq('conta', contaNome)
-      .single();
-
+    let { data: tokenData } = await supabase.from('bling_tokens').select('refresh_token').eq('conta', contaNome).single();
     let tokenParaUsar = tokenData ? tokenData.refresh_token : envRefreshToken;
 
-    if (!tokenParaUsar) {
-      console.warn(`⚠️ Nenhum Refresh Token para a conta ${contaNome}.`);
-      return [];
-    }
+    if (!tokenParaUsar) return [];
 
-    // Solicita o acesso ao Bling
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${credentials}`
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: tokenParaUsar
-      })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${credentials}` },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: tokenParaUsar })
     });
 
     const tokenInfo = await tokenResponse.json();
+    if (!tokenResponse.ok) return [];
 
-    if (!tokenResponse.ok) {
-      console.error(`❌ Erro OAuth no Bling ${contaNome}:`, tokenInfo);
-      return [];
-    }
-
-    // 3. PRIORIDADE MÁXIMA: TENTA SALVAR O TOKEN IMEDIATAMENTE (E ISOLA O ERRO)
     try {
-      const { error: dbError } = await supabase
-        .from('bling_tokens')
-        .upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
-
-      if (dbError) {
-        console.error(`❌ ALERTA: Supabase recusou salvar o token do ${contaNome}! Motivo:`, dbError.message);
-      } else {
-        console.log(`💾 Novo Refresh Token do ${contaNome} salvo com sucesso no banco!`);
-      }
+      await supabase.from('bling_tokens').upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
     } catch (err) {
-      console.error(`❌ Erro crítico ao conectar com Supabase para salvar token:`, err);
+      console.error(`Erro ao salvar token:`, err);
     }
 
     const accessToken = tokenInfo.access_token;
-
-    // Busca os produtos e estoques
     let pagina = 1;
     let temMaisPaginas = true;
     let produtosConta = [];
 
-    while (temMaisPaginas && pagina <= 10) {
-      // 🌟 ADICIONADO &situacao=A PARA TRAZER APENAS PRODUTOS ATIVOS
+    // Busca até 100 páginas (10.000 produtos)
+    while (temMaisPaginas && pagina <= 100) {
       const blingRes = await fetch(`https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&tipo=P&situacao=A`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
       });
 
       if (!blingRes.ok) break;
@@ -96,15 +83,21 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
       for (const prod of listaProdutos) {
         if (!prod.codigo) continue;
         const sku = String(prod.codigo).trim();
+        const nomeProd = prod.nome || 'Produto Sem Nome';
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
         const custoUnitario = Number(prod.precoCusto || prod.preco) || 0;
 
+        // 🧠 APLICA A INTELIGÊNCIA DINÂMICA AQUI
+        const classificacao = aplicarRegrasDinamicas(nomeProd, regrasDaBase);
+
         produtosConta.push({
           sku,
-          nome: prod.nome || 'Produto Sem Nome',
-          marca: prod.brand || prod.marca || 'Sem Marca',
+          nome: nomeProd,
+          marca: prod.brand || prod.marca || 'Sem Marca', // A marca já vem do Bling
           custoUnitario,
-          estoque: estoqueFisico
+          estoque: estoqueFisico,
+          categoria: classificacao.categoria,
+          subcategoria: classificacao.subcategoria
         });
       }
       pagina++;
@@ -119,61 +112,51 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
   }
 }
 
-// 4. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
+// 3. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
 export default async function handler(req, res) {
   try {
-    console.log("🚀 Iniciando Sincronização Dupla Bling (B2B + B2C) ➔ Supabase...");
+    console.log("🚀 Iniciando Sincronização e Categorização Dinâmica...");
 
-    // Executa as duas consultas usando os nomes EXATOS das variáveis da sua Vercel
+    // 🌟 NOVO: O robô baixa o "livro de regras" do Supabase antes de começar!
+    const { data: regrasData, error: regrasError } = await supabase.from('regras_categorias').select('*');
+    if (regrasError) console.error("Aviso: Erro ao baixar regras de categoria:", regrasError.message);
+    const regrasDaBase = regrasData || [];
+
+    // Executa as buscas passando o livro de regras para a função
     const [prodsB2B, prodsB2C] = await Promise.all([
-      buscarProdutosBling(
-        process.env.BLING_B2B_CLIENT_ID,
-        process.env.BLING_B2B_CLIENT_SECRET,
-        process.env.BLING_REFRESH_TOKEN_B2B,
-        'B2B'
-      ),
-      buscarProdutosBling(
-        process.env.BLING_CLIENT_ID_B2C,
-        process.env.BLING_CLIENT_SECRET_B2C,
-        process.env.BLING_REFRESH_TOKEN_B2C,
-        'B2C'
-      )
+      buscarProdutosBling(process.env.BLING_B2B_CLIENT_ID, process.env.BLING_B2B_CLIENT_SECRET, process.env.BLING_REFRESH_TOKEN_B2B, 'B2B', regrasDaBase),
+      buscarProdutosBling(process.env.BLING_CLIENT_ID_B2C, process.env.BLING_CLIENT_SECRET_B2C, process.env.BLING_REFRESH_TOKEN_B2C, 'B2C', regrasDaBase)
     ]);
 
     const estoqueConsolidadoMap = new Map();
 
-    for (const p of prodsB2B) {
-      estoqueConsolidadoMap.set(p.sku, {
-        sku: p.sku,
-        nome: p.nome,
-        marca: p.marca,
-        custo_unitario: p.custoUnitario,
-        estoque_atual: p.estoque,
-        lead_time: 15
-      });
-    }
-
-    for (const p of prodsB2C) {
-      if (estoqueConsolidadoMap.has(p.sku)) {
-        const itemExistente = estoqueConsolidadoMap.get(p.sku);
-        itemExistente.estoque_atual += p.estoque;
-        if (p.custoUnitario > 0) itemExistente.custo_unitario = p.custoUnitario;
-      } else {
-        estoqueConsolidadoMap.set(p.sku, {
-          sku: p.sku,
-          nome: p.nome,
-          marca: p.marca,
-          custo_unitario: p.custoUnitario,
-          estoque_atual: p.estoque,
-          lead_time: 15
-        });
+    const processarProdutos = (lista) => {
+      for (const p of lista) {
+        if (estoqueConsolidadoMap.has(p.sku)) {
+          const item = estoqueConsolidadoMap.get(p.sku);
+          item.estoque_atual += p.estoque;
+          if (p.custoUnitario > 0) item.custo_unitario = p.custoUnitario;
+        } else {
+          estoqueConsolidadoMap.set(p.sku, {
+            sku: p.sku,
+            nome: p.nome,
+            marca: p.marca,
+            categoria: p.categoria,
+            subcategoria: p.subcategoria,
+            custo_unitario: p.custoUnitario,
+            estoque_atual: p.estoque,
+            lead_time: 15
+          });
+        }
       }
-    }
+    };
+
+    processarProdutos(prodsB2B);
+    processarProdutos(prodsB2C);
 
     const produtosParaAtualizar = Array.from(estoqueConsolidadoMap.values());
 
     if (produtosParaAtualizar.length > 0) {
-      // GRAVANDO NO BANCO (Agora com a chave de Superadmin garantida)
       const { error: errSupabase } = await supabase
         .from('produtos')
         .upsert(produtosParaAtualizar, { onConflict: 'sku' });
@@ -182,17 +165,14 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        mensagem: `${produtosParaAtualizar.length} produtos consolidados entre B2B e B2C.`,
-        skusConsolidados: produtosParaAtualizar.length,
-        totalB2B: prodsB2B.length,
-        totalB2C: prodsB2C.length
+        mensagem: `${produtosParaAtualizar.length} produtos sincronizados, consolidados e categorizados com sucesso!`,
       });
     }
 
     return res.status(200).json({ success: true, mensagem: "Nenhum dado retornado dos Blings." });
 
   } catch (error) {
-    console.error("Erro na sincronização B2B/B2C:", error);
+    console.error("Erro na sincronização:", error);
     return res.status(500).json({ error: error.message });
   }
 }
