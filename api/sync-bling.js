@@ -15,21 +15,36 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // ============================================================================
 // 🧠 INTELIGÊNCIA DINÂMICA: Avalia o produto com base nas regras do banco
 // ============================================================================
+
+// 🌟 NOVO: Função que tira acentos, cedilhas e deixa tudo maiúsculo
+function normalizarTexto(texto) {
+  if (!texto) return "";
+  // Transforma "Sérum Facial " em "SERUM FACIAL"
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+}
+
 function aplicarRegrasDinamicas(nomeProduto, regrasDaBase) {
   if (!nomeProduto) return { categoria: "Outros", subcategoria: "Diversos" };
-  const nome = nomeProduto.toUpperCase();
+  
+  // Limpa o nome do produto que veio do Bling
+  const nomeLimpo = normalizarTexto(nomeProduto);
 
-  // O robô varre todas as regras que você cadastrou no Supabase
+  // Varre todas as regras cadastradas no Supabase
   for (const regra of regrasDaBase) {
-    if (regra.palavra_chave && nome.includes(regra.palavra_chave.toUpperCase())) {
-      return { 
-        categoria: regra.categoria || "Outros", 
-        subcategoria: regra.subcategoria || "Diversos" 
-      };
+    if (regra.palavra_chave) {
+      // Limpa a palavra-chave que veio da sua tabela
+      const palavraLimpa = normalizarTexto(regra.palavra_chave);
+      
+      // Verifica se a palavra da regra existe dentro do nome do produto
+      if (nomeLimpo.includes(palavraLimpa)) {
+        return { 
+          categoria: regra.categoria || "Outros", 
+          subcategoria: regra.subcategoria || "Diversos" 
+        };
+      }
     }
   }
 
-  // Se não bater com nenhuma regra sua, ele joga para o genérico
   return { categoria: "Outros", subcategoria: "Não Classificado" };
 }
 
