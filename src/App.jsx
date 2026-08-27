@@ -159,7 +159,7 @@ export default function App() {
       <div className={`${!isB2BClient ? 'md:pl-64 lg:pl-72' : ''} flex-1 w-full min-w-0 flex flex-col min-h-screen bg-slate-50 overflow-x-hidden`}>
         
         {/* Ocultando Header de Gestão se for B2B */}
-        {!isB2BClient && (
+        {activeTab !== TABS.CATALOGO_B2B && (
           <>
             {/* 🖥️ HEADER DESKTOP DA GESTÃO */}
             <header className="hidden md:flex items-center justify-between bg-white border-b border-slate-200 px-8 py-4 shadow-xs w-full">
