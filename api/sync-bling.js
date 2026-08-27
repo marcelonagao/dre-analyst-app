@@ -13,43 +13,126 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 // ============================================================================
-// 🧠 INTELIGÊNCIA DINÂMICA: Avalia o produto com base nas regras do banco
+// 🧠 INTELIGÊNCIA DE CATEGORIAS: Regras Fixas (Hardcoded)
 // ============================================================================
 
-// 🌟 NOVO: Função que tira acentos, cedilhas e deixa tudo maiúsculo
-function normalizarTexto(texto) {
-  if (!texto) return "";
-  // Transforma "Sérum Facial " em "SERUM FACIAL"
-  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+function limparTexto(texto) {
+    if (!texto) return '';
+    return texto
+        .normalize('NFD') // Separa o caractere do acento
+        .replace(/[\u0300-\u036f]/g, '') // Remove os acentos
+        .trim()
+        .toUpperCase(); // Deixa tudo em maiúsculo para não falhar
 }
 
-function aplicarRegrasDinamicas(nomeProduto, regrasDaBase) {
-  if (!nomeProduto) return { categoria: "Outros", subcategoria: "Diversos" };
-  
-  // Limpa o nome do produto que veio do Bling
-  const nomeLimpo = normalizarTexto(nomeProduto);
+// Suas 86 regras otimizadas!
+const regrasCategorizacao = [
+  { palavra_chave: 'Mousse', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Body Splash', categoria: 'Perfumaria', subcategoria: 'Body Splash' },
+  { palavra_chave: 'Demaquilante', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Skincare', categoria: 'Cuidados Faciais', subcategoria: 'Tratamento Facial' },
+  { palavra_chave: 'Esfoliante', categoria: 'Cuidados Corporais', subcategoria: 'Esfoliação Corporal' },
+  { palavra_chave: 'Sérum', categoria: 'Cuidados Faciais', subcategoria: 'Tratamento Facial' },
+  { palavra_chave: 'Gloss', categoria: 'Maquiagem', subcategoria: 'Lábios' },
+  { palavra_chave: 'Gelatina', categoria: 'Cabelos', subcategoria: 'Finalizadores' },
+  { palavra_chave: 'Bruma', categoria: 'Maquiagem', subcategoria: 'Fixadores e Preparadores' },
+  { palavra_chave: 'Glitter', categoria: 'Maquiagem', subcategoria: 'Olhos e Rosto' },
+  { palavra_chave: 'Máscara Facial', categoria: 'Cuidados Faciais', subcategoria: 'Tratamento Facial' },
+  { palavra_chave: 'Pó Facial', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Lip Tint', categoria: 'Maquiagem', subcategoria: 'Lábios' },
+  { palavra_chave: 'Hidratante', categoria: 'Cuidados Faciais', subcategoria: 'Hidratação Facial' },
+  { palavra_chave: 'Óleo', categoria: 'Cuidados Faciais', subcategoria: 'Tratamento Facial' },
+  { palavra_chave: 'Cílios', categoria: 'Maquiagem', subcategoria: 'Olhos' },
+  { palavra_chave: 'Delineador', categoria: 'Maquiagem', subcategoria: 'Olhos' },
+  { palavra_chave: 'Corretivo', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Água Micelar', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Sabonete', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Amolecedor', categoria: 'Cuidados com as Unhas', subcategoria: 'Tratamento para Unhas' },
+  { palavra_chave: 'Fixador', categoria: 'Maquiagem', subcategoria: 'Fixadores e Preparadores' },
+  { palavra_chave: 'Base', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Blush', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Iluminador', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Batom', categoria: 'Maquiagem', subcategoria: 'Lábios' },
+  { palavra_chave: 'Contorno', categoria: 'Maquiagem', subcategoria: 'Rosto' },
+  { palavra_chave: 'Tônico', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza e Tonificação' },
+  { palavra_chave: 'Adstringente', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Blindagem', categoria: 'Maquiagem', subcategoria: 'Fixadores e Preparadores' },
+  { palavra_chave: 'Navalha', categoria: 'Acessórios de Beleza', subcategoria: 'Depilação' },
+  { palavra_chave: 'Gel', categoria: 'Maquiagem', subcategoria: 'Olhos' },
+  { palavra_chave: 'Balm', categoria: 'Cuidados Faciais', subcategoria: 'Hidratação Labial' },
+  { palavra_chave: 'Henna', categoria: 'Maquiagem', subcategoria: 'Sobrancelhas' },
+  { palavra_chave: 'Sabonete Íntimo', categoria: 'Cuidados Pessoais', subcategoria: 'Higiene Íntima' },
+  { palavra_chave: 'Lenço', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Maquiagem', categoria: 'Cuidados Pessoais', subcategoria: 'Kits' },
+  { palavra_chave: 'Cuidados', categoria: 'Cuidados Corporais', subcategoria: 'Kits' },
+  { palavra_chave: 'Espuma', categoria: 'Cuidados Faciais', subcategoria: 'Limpeza Facial' },
+  { palavra_chave: 'Protetor', categoria: 'Cuidados Faciais', subcategoria: 'Proteção Solar' },
+  { palavra_chave: 'Creme', categoria: 'Cuidados Pessoais', subcategoria: 'Tratamento Multiuso' },
+  { palavra_chave: 'Olheiras', categoria: 'Cuidados Faciais', subcategoria: 'Tratamento Facial' },
+  { palavra_chave: 'Primer', categoria: 'Maquiagem', subcategoria: 'Fixadores e Preparadores' },
+  { palavra_chave: 'Perfume', categoria: 'Perfumaria', subcategoria: 'Deo Colônia / Perfumes' },
+  { palavra_chave: 'Lápis', categoria: 'Maquiagem', subcategoria: 'Olhos' },
+  { palavra_chave: 'Pente', categoria: 'Cabelos', subcategoria: 'Acessórios para Cabelo' },
+  { palavra_chave: 'Barbear', categoria: 'Cuidados Pessoais', subcategoria: 'Barbear e Depilação' },
+  { palavra_chave: 'Tesoura', categoria: 'Utilidades Domésticas', subcategoria: 'Papelaria e Escritório' },
+  { palavra_chave: 'Pinça', categoria: 'Maquiagem', subcategoria: 'Sobrancelhas' },
+  { palavra_chave: 'Cortador', categoria: 'Cuidados com as Unhas', subcategoria: 'Manicure e Pedicure' },
+  { palavra_chave: 'Etiquetadora', categoria: 'Utilidades Domésticas', subcategoria: 'Papelaria e Escritório' },
+  { palavra_chave: 'Elástico', categoria: 'Cabelos', subcategoria: 'Acessórios para Cabelo' },
+  { palavra_chave: 'Escova', categoria: 'Cuidados Orais', subcategoria: 'Higiene Bucal' },
+  { palavra_chave: 'Pincel', categoria: 'Cuidados Pessoais', subcategoria: 'Barbear e Depilação' },
+  { palavra_chave: 'Palito', categoria: 'Cuidados com as Unhas', subcategoria: 'Manicure e Pedicure' },
+  { palavra_chave: 'Esponja', categoria: 'Maquiagem', subcategoria: 'Acessórios de Maquiagem' },
+  { palavra_chave: 'Alicate', categoria: 'Cuidados com as Unhas', subcategoria: 'Manicure e Pedicure' },
+  { palavra_chave: 'Estilete', categoria: 'Utilidades Domésticas', subcategoria: 'Ferramentas e Utilidades' },
+  { palavra_chave: 'Manicure', categoria: 'Cuidados com as Unhas', subcategoria: 'Manicure e Pedicure' },
+  { palavra_chave: 'Espátula', categoria: 'Cuidados com as Unhas', subcategoria: 'Manicure e Pedicure' },
+  { palavra_chave: 'Cadeado', categoria: 'Utilidades Domésticas', subcategoria: 'Ferramentas e Utilidades' },
+  { palavra_chave: 'Touca', categoria: 'Banho e Corpo', subcategoria: 'Acessórios de Banho' },
+  { palavra_chave: 'Espelho', categoria: 'Maquiagem', subcategoria: 'Acessórios de Maquiagem' },
+  { palavra_chave: 'Presilha', categoria: 'Cabelos', subcategoria: 'Acessórios para Cabelo' },
+  { palavra_chave: 'Piranha', categoria: 'Cabelos', subcategoria: 'Acessórios para Cabelo' },
+  { palavra_chave: 'Acessórios', categoria: 'Cabelos', subcategoria: 'Acessórios para Cabelo' },
+  { palavra_chave: 'Frasco', categoria: 'Cuidados Pessoais', subcategoria: 'Acessórios de Viagem' },
+  { palavra_chave: 'Faixa', categoria: 'Maquiagem', subcategoria: 'Acessórios de Maquiagem' },
+  { palavra_chave: 'Chocalho', categoria: 'Brinquedos', subcategoria: 'Brinquedos Infantis' },
+  { palavra_chave: 'Trena', categoria: 'Utilidades Domésticas', subcategoria: 'Ferramentas e Utilidades' },
+  { palavra_chave: 'Lixa', categoria: 'Cuidados Corporais', subcategoria: 'Mãos e Pés' },
+  { palavra_chave: 'Design', categoria: 'Maquiagem', subcategoria: 'Sobrancelhas' },
+  { palavra_chave: 'Etiqueta', categoria: 'Utilidades Domésticas', subcategoria: 'Papelaria e Escritório' },
+  { palavra_chave: 'Mangueira', categoria: 'Utilidades Domésticas', subcategoria: 'Jardinagem e Limpeza' },
+  { palavra_chave: 'Brinquedo', categoria: 'Brinquedos', subcategoria: 'Brinquedos Infantis' },
+  { palavra_chave: 'Capacho', categoria: 'Utilidades Domésticas', subcategoria: 'Decoração e Utilidades' },
+  { palavra_chave: 'Kit', categoria: 'Cuidados Pessoais', subcategoria: 'Kits' },
+  { palavra_chave: 'Colher', categoria: 'Utilidades Domésticas', subcategoria: 'Utensílios de Cozinha' },
+  { palavra_chave: 'Triturador', categoria: 'Utilidades Domésticas', subcategoria: 'Utensílios de Cozinha' },
+  { palavra_chave: 'Faca', categoria: 'Utilidades Domésticas', subcategoria: 'Utensílios de Cozinha' },
+  { palavra_chave: 'Carga', categoria: 'Cuidados Pessoais', subcategoria: 'Barbear e Depilação' },
+  { palavra_chave: 'Fita Dupla Face', categoria: 'Utilidades Domésticas', subcategoria: 'Papelaria e Escritório' },
+  { palavra_chave: 'Chaveiro', categoria: 'Utilidades Domésticas', subcategoria: 'Utensílios de Cozinha' },
+  { palavra_chave: 'Kit Churrasco', categoria: 'Utilidades Domésticas', subcategoria: 'Utensílios de Cozinha' },
+  { palavra_chave: 'Pino', categoria: 'Utilidades Domésticas', subcategoria: 'Papelaria e Escritório' },
+  { palavra_chave: 'Lanterna', categoria: 'Utilidades Domésticas', subcategoria: 'Ferramentas e Utilidades' },
+];
 
-  // Varre todas as regras cadastradas no Supabase
-  for (const regra of regrasDaBase) {
-    if (regra.palavra_chave) {
-      // Limpa a palavra-chave que veio da sua tabela
-      const palavraLimpa = normalizarTexto(regra.palavra_chave);
-      
-      // Verifica se a palavra da regra existe dentro do nome do produto
-      if (nomeLimpo.includes(palavraLimpa)) {
-        return { 
-          categoria: regra.categoria || "Outros", 
-          subcategoria: regra.subcategoria || "Diversos" 
-        };
-      }
+function processarProdutoBling(nomeProdutoBling) {
+    const nomeLimpo = limparTexto(nomeProdutoBling);
+    
+    for (const regra of regrasCategorizacao) {
+        const palavraLimpa = limparTexto(regra.palavra_chave);
+        if (nomeLimpo.includes(palavraLimpa)) {
+            return {
+                categoria: regra.categoria,
+                subcategoria: regra.subcategoria
+            };
+        }
     }
-  }
 
-  return { categoria: "Outros", subcategoria: "Não Classificado" };
+    return { categoria: 'Outros', subcategoria: 'Não Classificado' };
 }
 
 // 2. FUNÇÃO QUE BUSCA NO BLING E CLASSIFICA OS PRODUTOS
-async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome, regrasDaBase) {
+async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
   if (!clientId || !clientSecret) return [];
 
   try {
@@ -102,13 +185,13 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
         const custoUnitario = Number(prod.precoCusto || prod.preco) || 0;
 
-        // 🧠 APLICA A INTELIGÊNCIA DINÂMICA AQUI
-        const classificacao = aplicarRegrasDinamicas(nomeProd, regrasDaBase);
+        // 🧠 APLICA A INTELIGÊNCIA AQUI
+        const classificacao = processarProdutoBling(nomeProd);
 
         produtosConta.push({
           sku,
           nome: nomeProd,
-          marca: prod.brand || prod.marca || 'Sem Marca', // A marca já vem do Bling
+          marca: prod.brand || prod.marca || 'Sem Marca',
           custoUnitario,
           estoque: estoqueFisico,
           categoria: classificacao.categoria,
@@ -130,17 +213,11 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
 // 3. FUNÇÃO PRINCIPAL QUE RODA NA VERCEL
 export default async function handler(req, res) {
   try {
-    console.log("🚀 Iniciando Sincronização e Categorização Dinâmica...");
+    console.log("🚀 Iniciando Sincronização e Categorização Direta...");
 
-    // 🌟 NOVO: O robô baixa o "livro de regras" do Supabase antes de começar!
-    const { data: regrasData, error: regrasError } = await supabase.from('regras_categorias').select('*');
-    if (regrasError) console.error("Aviso: Erro ao baixar regras de categoria:", regrasError.message);
-    const regrasDaBase = regrasData || [];
-
-    // Executa as buscas passando o livro de regras para a função
     const [prodsB2B, prodsB2C] = await Promise.all([
-      buscarProdutosBling(process.env.BLING_B2B_CLIENT_ID, process.env.BLING_B2B_CLIENT_SECRET, process.env.BLING_REFRESH_TOKEN_B2B, 'B2B', regrasDaBase),
-      buscarProdutosBling(process.env.BLING_CLIENT_ID_B2C, process.env.BLING_CLIENT_SECRET_B2C, process.env.BLING_REFRESH_TOKEN_B2C, 'B2C', regrasDaBase)
+      buscarProdutosBling(process.env.BLING_B2B_CLIENT_ID, process.env.BLING_B2B_CLIENT_SECRET, process.env.BLING_REFRESH_TOKEN_B2B, 'B2B'),
+      buscarProdutosBling(process.env.BLING_CLIENT_ID_B2C, process.env.BLING_CLIENT_SECRET_B2C, process.env.BLING_REFRESH_TOKEN_B2C, 'B2C')
     ]);
 
     const estoqueConsolidadoMap = new Map();
