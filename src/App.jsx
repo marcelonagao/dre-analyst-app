@@ -268,10 +268,11 @@ export default function App() {
                   margemAtual={kpisExibidos.margemLiquidaMedia} 
                 />
               )}
-              {/* O CATÁLOGO AGORA OCUPA 100% DO ESPAÇO E AVISA QUEM ESTÁ LOGADO */}
-              {activeTab === TABS.CATALOGO_B2B && (
+              {/* 🌟 MELHORIA: Ocultar o Catálogo em vez de Desmontar! 
+                  Isso preserva o login, o carrinho e a tela exata onde você estava. */}
+              <div className={activeTab === TABS.CATALOGO_B2B ? 'block w-full h-full' : 'hidden'}>
                 <CatalogoB2BTab onRoleChange={setAppUserRole} />
-              )}
+              </div>
             </Suspense>
           )}
         </main>
