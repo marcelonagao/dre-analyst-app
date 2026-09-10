@@ -584,9 +584,10 @@ export default function CatalogoB2BTab({ onRoleChange }) {
         .order('nome', { ascending: true }) 
         .range(from, to);
 
-      if (queryTerm && queryTerm !== 'Todas') {
-        queryBuilder = queryBuilder.or(`nome.ilike.%${queryTerm}%,marca.ilike.%${queryTerm}%`);
-      }
+        if (queryTerm && queryTerm !== 'Todas') {
+          // Agora o banco também procura na categoria e na subcategoria!
+          queryBuilder = queryBuilder.or(`nome.ilike.%${queryTerm}%,marca.ilike.%${queryTerm}%,categoria.ilike.%${queryTerm}%,subcategoria.ilike.%${queryTerm}%`);
+        }
 
       const { data: produtosData, error } = await queryBuilder;
 
@@ -1837,11 +1838,12 @@ const filteredProducts = dbProducts.filter(p => {
   const estoqueReal = Number(p.stock || 0);
   const temEstoque = estoqueReal > 0;
 
-  // 1. O que foi digitado na barra de busca
+  // 1. O que foi digitado na barra de busca (Agora enxerga subcategorias também!)
   const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
   const textMatch = termoBusca === '' || 
                     (p.name && p.name.toLowerCase().includes(termoBusca)) || 
                     (p.category && p.category.toLowerCase().includes(termoBusca)) ||
+                    (p.subcategory && p.subcategory.toLowerCase().includes(termoBusca)) ||
                     (p.marca && p.marca.toLowerCase().includes(termoBusca));
 
   // 2. O que foi clicado nas bolinhas de categoria
