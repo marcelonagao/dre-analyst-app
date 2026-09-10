@@ -502,37 +502,71 @@ export default function CatalogoB2BTab({ onRoleChange }) {
   // ============================================================================
   // 🌟 ESCUTANDO OS DEPARTAMENTOS DO BANCO DE DADOS
   // ============================================================================
+  // ============================================================================
+  // 🌟 O NOVO CÉREBRO: Lendo Categorias Dinamicamente do Estoque Real
+  // ============================================================================
   useEffect(() => {
-    if (!isFirebaseConfigured || !firebaseUser) return;
-    
-    const deptPath = typeof window !== 'undefined' && window.__app_id 
-      ? collection(db, 'artifacts', appId, 'public', 'data', 'vitrine_departamentos')
-      : collection(db, 'vitrine_departamentos');
-      
-    const unsubscribe = onSnapshot(deptPath, (snapshot) => {
-      if (!snapshot.empty) {
-        const fetchedDepts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        fetchedDepts.sort((a, b) => a.nome.localeCompare(b.nome));
-        setMapaCategorias(fetchedDepts);
-      } else {
-        setMapaCategorias([]);
+    const carregarCategoriasDinamicas = async () => {
+      try {
+        // 1. Vai no banco e pega a categoria e subcategoria de todos os produtos COM ESTOQUE
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('categoria, subcategoria')
+          .gt('estoque_atual', 0); // Só mapeia o que tem pra vender!
+
+        if (error) throw error;
+
+        if (data) {
+          // 2. Agrupa tudo magicamente
+          const deptsMap = {};
+          
+          data.forEach(p => {
+            const cat = p.categoria && p.categoria !== 'Outros' ? p.categoria : 'Diversos';
+            const sub = p.subcategoria && p.subcategoria !== 'Não Classificado' ? p.subcategoria : 'Geral';
+            
+            if (!deptsMap[cat]) {
+              // Associa um ícone genérico que você pode personalizar depois
+              let icone = '✨'; 
+              if (cat.toLowerCase().includes('cabelo')) icone = '🧴';
+              if (cat.toLowerCase().includes('maquiagem')) icone = '💄';
+              if (cat.toLowerCase().includes('unha') || cat.toLowerCase().includes('manicure')) icone = '💅';
+              if (cat.toLowerCase().includes('banho')) icone = '🛁';
+              if (cat.toLowerCase().includes('faciais') || cat.toLowerCase().includes('skincare')) icone = '🫧';
+              
+              deptsMap[cat] = { id: cat, nome: cat, icone: icone, marcasSet: new Set() };
+            }
+            deptsMap[cat].marcasSet.add(sub);
+          });
+
+          // 3. Converte para o formato exato que a sua tela de bolinhas já usa
+          const deptsFormatados = Object.values(deptsMap).map(d => ({
+            id: d.id,
+            nome: d.nome,
+            icone: d.icone,
+            marcas: Array.from(d.marcasSet).map(m => ({ nome: m, busca: m }))
+          })).sort((a, b) => a.nome.localeCompare(b.nome));
+
+          setMapaCategorias(deptsFormatados);
+        }
+      } catch (err) {
+        console.error("Erro ao montar categorias dinâmicas:", err);
       }
-    }, (error) => {
-      console.error("Erro ao buscar departamentos:", error);
-    });
-    
-    return () => unsubscribe();
-  }, [firebaseUser]);
+    };
+
+    if (firebaseUser || currentUser) {
+      carregarCategoriasDinamicas();
+    }
+  }, [firebaseUser, currentUser]);
 
   // ============================================================================
-  // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO (AGORA DIRETO NO SUPABASE)
+  // 🚀 MOTOR DE BUSCA COM PAGINAÇÃO E FILTRO (DIRETO NO SUPABASE)
   // ============================================================================
   const buscarProdutos = async (pagina = 1, termoDeBusca = selectedCategory) => {
     if (!firebaseUser && !currentUser) return;
 
     if (pagina === 1) {
       setLoadingCatalog(true);
-      setDbProducts([]); // Limpa a tela ao trocar de categoria
+      setDbProducts([]); 
     } else {
       setCarregandoMais(true);
     }
@@ -540,76 +574,49 @@ export default function CatalogoB2BTab({ onRoleChange }) {
     try {
       const queryTerm = termoDeBusca !== 'Todas' ? termoDeBusca : searchQuery;
       
-      // 1. Configuração da Paginação no Supabase (de 100 em 100)
       const limite = 100;
       const from = (pagina - 1) * limite;
       const to = from + limite - 1;
 
-      // 2. Constrói a busca na tabela limpa do Supabase
       let queryBuilder = supabase
         .from('produtos')
         .select('*')
-        .order('nome', { ascending: true }) // Organiza em ordem alfabética
+        .order('nome', { ascending: true }) 
         .range(from, to);
 
-      // 3. Aplica o filtro se o usuário clicou numa marca ou digitou na busca
       if (queryTerm && queryTerm !== 'Todas') {
-        // A mágica: busca a palavra tanto no nome quanto na marca (ilike ignora maiúsculas/minúsculas)
         queryBuilder = queryBuilder.or(`nome.ilike.%${queryTerm}%,marca.ilike.%${queryTerm}%`);
       }
 
-      // 4. Executa a requisição em milissegundos
       const { data: produtosData, error } = await queryBuilder;
 
       if (error) throw error;
 
       if (produtosData) {
-        const projetoSupabase = import.meta.env.VITE_SUPABASE_URL; 
+        const projetoSupabase = import.meta.env.VITE_SUPABASE_URL || "https://owtdvdelyalhielaeoca.supabase.co"; 
         const horaAtual = new Date().getHours();
 
-        // 5. Adapta os dados do banco para o padrão visual do seu painel
         const produtosAdaptados = produtosData.map((p) => {
-         // ==========================================
-        // LÓGICA INTELIGENTE DE MARCA/CATEGORIA
-        // ==========================================
-        let categoriaDerivada = 'Geral';
-
-        // 1. Tenta usar a marca oficial que veio do banco de dados (Se o Bling estiver preenchido certo)
-        if (p.marca && p.marca !== 'Sem Marca' && p.marca.trim() !== '') {
-          categoriaDerivada = p.marca;
-        } 
-        // 2. Plano B: Tenta adivinhar cortando pelo hífen
-        else if (p.nome.includes('-')) {
-          const partes = p.nome.split('-');
-          const primeiraParte = partes[0].trim();
-          const ultimaParte = partes[partes.length - 1].trim();
-
-          // Se o texto antes do hífen for muito longo (mais de 25 letras), é o produto. A marca está no final!
-          if (primeiraParte.length > 25) {
-            categoriaDerivada = ultimaParte;
-          } 
-          // Se for curtinho, a marca está no começo (Ex: FACE BEAUTIFUL - PO)
-          else {
-            categoriaDerivada = primeiraParte;
-          }
-        }
+          // ⚠️ Puxando o preço direto da coluna 'custo_unitario' do banco
+          const precoExibicao = Number(p.custo_unitario) || 0; 
                     
           return {
             id: p.sku, 
             blingId: p.sku, 
             name: p.nome, 
-            category: categoriaDerivada,
-            price: Number(p.custo_unitario), // Puxa o preço salvo no banco
-            stock: p.estoque_atual || 0,     // 🌟 BÔNUS: Agora mostra o estoque real em vez de 999!
+            marca: p.marca || 'Sem Marca',
+            category: p.categoria || 'Outros',      // 🚀 Categoria oficial
+            subcategory: p.subcategoria || 'Geral', // 🚀 Subcategoria oficial
+            price: precoExibicao,                   // 💰 Preço real B2B
+            stock: p.estoque_atual || 0,            // 📦 Estoque real
             image: `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.sku}.jpg?v=${horaAtual}`, 
-            description: `SKU: ${p.sku} | Estoque: ${p.estoque_atual} | Distribuição Oficial GKL.`
+            description: `SKU: ${p.sku} | Marca: ${p.marca || 'N/A'} | Distribuição Oficial GKL.`
           };
         });
         
         if (pagina === 1) setDbProducts(produtosAdaptados);
         else setDbProducts(prev => [...prev, ...produtosAdaptados]);
         
-        // Se vieram 100 produtos, ele entende que existe uma próxima página a ser carregada
         setTemMaisProdutos(produtosData.length === limite);
         setPaginaAtual(pagina);
       }
@@ -1825,22 +1832,23 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       );
     }
 
-    // Filtro Front-end Inteligente (Com trava de estoque e busca)
+// Filtro Front-end Inteligente (Com trava de estoque e busca)
 const filteredProducts = dbProducts.filter(p => {
-  // 🌟 TRAVA DE ESTOQUE: Só permite exibir se o estoque for maior que zero
-  const estoqueReal = Number(p.estoque || p.stock || 0);
+  const estoqueReal = Number(p.stock || 0);
   const temEstoque = estoqueReal > 0;
 
   // 1. O que foi digitado na barra de busca
   const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
-  const nameMatch = p.name && p.name.toLowerCase().includes(termoBusca);
-  const categorySearchMatch = p.category && p.category.toLowerCase().includes(termoBusca);
-  const textMatch = termoBusca === '' || nameMatch || categorySearchMatch;
+  const textMatch = termoBusca === '' || 
+                    (p.name && p.name.toLowerCase().includes(termoBusca)) || 
+                    (p.category && p.category.toLowerCase().includes(termoBusca)) ||
+                    (p.marca && p.marca.toLowerCase().includes(termoBusca));
 
   // 2. O que foi clicado nas bolinhas de categoria
   const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
   const categoryFilterMatch = catSelect === '' || catSelect === 'todas' ||
-                              (p.category && p.category.toLowerCase().includes(catSelect)) ||
+                              (p.category && p.category.toLowerCase() === catSelect) ||
+                              (p.subcategory && p.subcategory.toLowerCase() === catSelect) ||
                               (p.name && p.name.toLowerCase().includes(catSelect));
 
   return temEstoque && textMatch && categoryFilterMatch;
