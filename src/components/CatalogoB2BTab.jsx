@@ -1945,9 +1945,10 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                       className="absolute inset-0 w-full h-full object-contain p-2 mix-blend-multiply" 
                       onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
                     />
-                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[9px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
-                      <TruckIcon size={12} /> Entrega Express
-                    </div>
+                    {/* TAG ENTREGA EXPRESS AZUL E BRASIL */}
+<div className="absolute bottom-0 left-0 w-full bg-[#005E99] text-white text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+  <span className="text-xs leading-none">🇧🇷</span> Entrega Express
+</div>
                   </div>
                   
                   <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
@@ -1995,9 +1996,10 @@ export default function CatalogoB2BTab({ onRoleChange }) {
                       className="absolute inset-0 w-full h-full object-contain p-2 mix-blend-multiply" 
                       onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
                     />
-                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[9px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
-                      <TruckIcon size={12} /> Entrega Express
-                    </div>
+                    {/* TAG ENTREGA EXPRESS AZUL E BRASIL */}
+<div className="absolute bottom-0 left-0 w-full bg-[#005E99] text-white text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+  <span className="text-xs leading-none">🇧🇷</span> Entrega Express
+</div>
                   </div>
                   
                   <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
@@ -2793,32 +2795,30 @@ export default function CatalogoB2BTab({ onRoleChange }) {
               </div>
 
               <div className="space-y-4">
-                {mapaCategorias.map((dept, idx) => (
-                  <div key={idx} className="border border-[#E8F3F2] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition">
-                    <div className="flex items-center gap-4">
-                      <span className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl bg-teal-50 text-teal-600`}>{dept.icone}</span>
-                      <div>
-                        <h4 className="font-bold text-[#4A6B64] text-lg">{dept.nome}</h4>
-                        <p className="text-xs text-[#698F8A]">{dept.marcas?.length || 0} subcategorias/marcas cadastradas</p>
+                {/* Categorias Dinâmicas do Banco (Com Ícones na Cor da Marca) */}
+                {mapaCategorias.map((dept, idx) => {
+                  
+                  // Mágica para escolher o ícone certo baseado no nome da categoria
+                  const nomeCat = dept.nome.toLowerCase();
+                  let IconeCategoria = PackageIcon; // Ícone Padrão (Caixinha)
+                  if (nomeCat.includes('beleza') || nomeCat.includes('cabelo') || nomeCat.includes('unha')) IconeCategoria = SparklesIcon;
+                  if (nomeCat.includes('brinquedo') || nomeCat.includes('infantil')) IconeCategoria = TargetIcon;
+                  if (nomeCat.includes('acessório') || nomeCat.includes('utilidade')) IconeCategoria = BriefcaseIcon;
+
+                  return (
+                    <div key={idx} onClick={() => { setActiveDeptHome(dept.id); abrirMarca(dept.nome); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
+                      
+                      {/* Ícone Renderizado na cor exata da GKL */}
+                      <div className="text-[#8ECAC5] mb-1.5 group-hover:scale-110 group-hover:text-[#4A6B64] transition-all">
+                        <IconeCategoria size={28} />
                       </div>
+                      
+                      <span className={`text-[10px] font-bold text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64] ${activeDeptHome === dept.id ? 'text-[#4A6B64] border-b-2 border-[#8ECAC5]' : 'text-[#698F8A]'}`}>
+                        {dept.nome}
+                      </span>
                     </div>
-                    <div className="flex gap-2">
-                    <button 
-  onClick={() => {
-    setEditingItem(dept);
-    setFormDeptName(dept.nome);
-    setFormDeptIcon(dept.icone);
-    setFormDeptMarcas(dept.marcas || []); 
-    setIsCategoryModalOpen(true);
-  }} 
-  className="flex-1 sm:flex-none text-center bg-[#F4F9F8] hover:bg-[#E8F3F2] text-[#4A6B64] px-4 py-2 rounded-xl text-sm font-bold transition"
->
-  Editar
-</button>
-                    <button onClick={() => handleDeleteCategory(dept)} className="flex-1 sm:flex-none text-center bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold transition"> Excluir </button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
