@@ -1893,103 +1893,100 @@ const filteredProducts = dbProducts.filter(p => {
         )}
 
         {/* ========================================= */}
-        {/* MODO 1: HOME (Vitrine Completa) */}
+        {/* MODO 1: HOME (Vitrine Estilo Busca Busca) */}
         {/* ========================================= */}
         {catalogView === 'home' && (
-          <div className="max-w-6xl mx-auto px-2 sm:px-4 mt-4 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="w-full animate-in fade-in duration-500">
             
-            {/* 🌟 CARROSSEL DE BANNERS DA LOJA */}
+            {/* 🌟 1. BANNER COLADO NO TOPO (Fica atrás do Header) */}
             {bannersPromocionais.length > 0 && (
-              <div className="relative w-full rounded-xl sm:rounded-2xl overflow-hidden shadow-sm mb-6 sm:mb-8 group aspect-[21/9] sm:aspect-[4/1] bg-gray-200">
+              <div className="relative w-full h-[240px] sm:h-[320px] bg-[#4A6B64] overflow-hidden">
                 {bannersPromocionais.map((banner, index) => (
                   <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                   </div>
                 ))}
                 
                 {/* BOLINHAS DE NAVEGAÇÃO DO CARROSSEL */}
-                <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
                   {bannersPromocionais.map((_, index) => (
                     <button 
                       key={index} 
                       onClick={() => setCurrentBanner(index)} 
-                      className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-5 sm:w-8' : 'bg-white/70 w-1.5 sm:w-2 hover:bg-white'}`}
+                      className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-6' : 'bg-white/50 w-2 hover:bg-white'}`}
                     ></button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* 🌟 SEÇÃO DE CATEGORIAS (MOLDURA MERCADO LIVRE - BOLAS PARA AS SUBCATEGORIAS) */}
-            {(() => {
-              // Puxa o departamento selecionado do menu de cima, ou o primeiro por padrão
-              const deptAtual = mapaCategorias.find(d => d.id === activeDeptHome) || mapaCategorias[0];
-              if (!deptAtual) return null;
-
-              return (
-                <div className="mb-8 bg-white py-6 px-4 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-center mb-6">
-                    <h3 className="text-sm sm:text-base font-black text-[#4A6B64] uppercase tracking-wider flex items-center gap-2">
-                      {deptAtual.icone} {deptAtual.nome}
-                    </h3>
-                  </div>
-
-                  {deptAtual.marcas && deptAtual.marcas.length > 0 ? (
-                    <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-none justify-start">
-                    {deptAtual.marcas.map((marca, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => abrirMarca(marca.busca)}
-                        className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]"
-                      >
-                        <div className="text-[#8ECAC5] text-3xl mb-1.5 group-hover:scale-110 group-hover:text-[#4A6B64] transition-all">
-                          {deptAtual.icone}
-                        </div>
-                        <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64]">
-                          {marca.nome}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  ) : (
-                    <div className="text-center py-4 text-[#698F8A] text-sm">
-                      Nenhuma subcategoria cadastrada para este departamento.
-                    </div>
-                  )}
+            {/* 🌟 2. CATEGORIAS LIMPAS (EMOJI + TEXTO) */}
+            <div className="bg-white pt-4 pb-3 mb-4 shadow-sm border-b border-[#E8F3F2]">
+              <div className="flex gap-2 overflow-x-auto px-3 scrollbar-none justify-start items-start">
+                
+                {/* Botão Fixo: Destaques */}
+                <div onClick={() => { setActiveDeptHome(null); voltarParaHome(); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
+                  <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">✨</div>
+                  <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight group-hover:text-[#4A6B64]">Destaques</span>
                 </div>
-              );
-            })()}
 
-            {/* 🌟 MÁGICA: SESSÃO DE PRODUTOS EM DESTAQUE NA HOME! */}
+                {/* Categorias Dinâmicas do Banco */}
+                {mapaCategorias.map((dept, idx) => (
+                  <div key={idx} onClick={() => { setActiveDeptHome(dept.id); abrirMarca(dept.nome); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
+                    <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">
+                      {dept.icone}
+                    </div>
+                    <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64]">
+                      {dept.nome}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 🌟 3. PRODUTOS EM DESTAQUE (NOVO ESTILO MARKETPLACE) */}
             {dbProducts.length > 0 && (
-              <div className="mb-10">
-                <div className="flex items-center gap-2 mb-4">
+              <div className="mb-10 px-2 max-w-6xl mx-auto">
+                <div className="flex items-center gap-2 mb-4 px-2">
                   <SparklesIcon size={24} className="text-[#8ECAC5]" />
                   <h3 className="text-xl sm:text-2xl font-black text-[#4A6B64]">Destaques para o seu Negócio</h3>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 px-2">
                   {dbProducts.slice(0, 10).map(product => (
-                    <div key={product.id} onClick={() => openProductDetails(product)} className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-gray-100 hover:shadow-md transition-all duration-300 cursor-pointer group">
-                      
-                      <div className="h-40 relative p-3 flex justify-center items-center bg-white border-b border-gray-50">
+                    <div 
+                      key={product.id} 
+                      onClick={() => openProductDetails(product)}
+                      className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow"
+                    >
+                      {/* FOTO DO PRODUTO SEM PADDING + TAG DE FRETE */}
+                      <div className="relative aspect-square bg-[#F4F9F8] flex items-center justify-center">
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
-                          onError={(e) => { e.target.onerror = null; e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
+                          className="w-full h-full object-cover mix-blend-multiply" 
+                          onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
                         />
+                        
+                        {/* TAG ENTREGA EXPRESS NAS CORES GKL */}
+                        <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+                          <TruckIcon size={12} /> Entrega Express
+                        </div>
                       </div>
                       
-                      <div className="p-3 flex-1 flex flex-col">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{product.category}</span>
-                        <h3 className="text-xs font-semibold text-[#4A6B64] line-clamp-2 leading-tight mb-2 group-hover:text-[#8ECAC5] transition-colors">{product.name}</h3>
-                        <div className="mt-auto flex justify-between items-end">
-                          <span className="text-base font-black text-[#4A6B64]">R$ {formatPrice(product.price)}</span>
-                          <button onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }} className="w-8 h-8 flex items-center justify-center bg-[#F4F9F8] text-[#8ECAC5] rounded-full hover:bg-[#8ECAC5] hover:text-white transition-colors">
-                            <PlusIcon size={16} />
-                          </button>
+                      {/* TEXTOS E PREÇO */}
+                      <div className="p-2 flex-1 flex flex-col">
+                        <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-1">
+                          {product.name}
+                        </h3>
+                        
+                        <div className="mt-auto flex items-baseline gap-1">
+                          {/* PREÇO GRANDE NA COR DA MARCA */}
+                          <span className="text-sm sm:text-base font-black text-[#4A6B64]">
+                            R${formatPrice(product.price)}
+                          </span>
+                          <span className="text-[9px] text-[#8ECAC5] font-bold lowercase">no pix</span>
                         </div>
                       </div>
                     </div>
@@ -3179,24 +3176,15 @@ const filteredProducts = dbProducts.filter(p => {
   return ( 
     <div className="min-h-screen bg-[#EBEBEB] font-sans relative">
       
+      {/* ============================================================================ */}
+      {/* 🌟 NOVO HEADER: ESTILO BUSCA BUSCA (TRANSPARENTE SOBRE O BANNER) */}
+      {/* ============================================================================ */}
       {currentUser && currentScreen !== 'login' && (
-        <header className="bg-[#4A6B64] sticky top-0 z-40 shadow-md">
+        <header className={`w-full z-40 px-3 py-3 flex items-center gap-3 transition-all ${currentScreen === 'catalog' ? 'absolute top-0 left-0 bg-gradient-to-b from-black/50 to-transparent' : 'bg-[#4A6B64] sticky top-0 shadow-md'}`}>
           
-          <div className="max-w-6xl mx-auto px-4 py-2 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-6">
-            
-            <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => { if (!currentUser.isAdmin && !currentUser.isRep) voltarParaHome(); }}>
-              <SparklesIcon size={24} className="text-[#8ECAC5]" />
-              <div className="flex flex-col">
-                <span className="font-black text-lg sm:text-xl leading-tight text-white tracking-wide">GKL BRASIL</span>
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-[#8ECAC5] leading-none">
-                  {currentUser.isAdmin ? 'Painel Admin' : currentUser.isRep ? 'Portal Rep.' : 'B2B Atacado'}
-                </span>
-              </div>
-            </div>
-
-            {/* 🌟 BARRA DE BUSCA GLOBAL (Responsiva: Centro no PC, Linha inteira no Celular) */}
-            {currentScreen === 'catalog' ? (
-              <form 
+          {/* BARRA DE PESQUISA NA ESQUERDA */}
+          {currentScreen === 'catalog' ? (
+            <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
@@ -3206,91 +3194,41 @@ const filteredProducts = dbProducts.filter(p => {
                   window.scrollTo(0, 0);
                 }
               }} 
-              className="flex-1 w-full sm:w-auto order-3 sm:order-none mt-2 sm:mt-0 max-w-2xl mx-auto bg-[#F4F9F8] rounded-md flex items-center px-2 py-1.5 shadow-inner"
+              className="flex-1 bg-white rounded-md flex items-center px-3 py-2 shadow-sm"
             >
-              <SearchIcon size={20} className="text-[#8ECAC5] ml-2" />
+              <SearchIcon size={18} className="text-[#8ECAC5]" />
               <input
                 type="text"
-                placeholder="Pesquisar no Busca Busca..."
+                placeholder="Pesquisar produtos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent outline-none text-sm text-[#4A6B64] font-semibold ml-2 placeholder-[#8ECAC5] py-1"
+                className="w-full bg-transparent outline-none text-sm text-[#4A6B64] font-semibold ml-2 placeholder-gray-400"
               />
               {searchQuery && (
-                <button 
-                  type="button" 
-                  onClick={() => { setSearchQuery(''); if (catalogView === 'lista') voltarParaHome(); }}
-                  className="mr-2 text-[#8ECAC5] hover:text-[#4A6B64] transition-colors"
-                >
+                <button type="button" onClick={() => { setSearchQuery(''); if (catalogView === 'lista') voltarParaHome(); }} className="text-gray-400 hover:text-[#4A6B64]">
                   <CloseIcon size={16} />
                 </button>
               )}
             </form>
-            ) : (
-              <div className="flex-1"></div>
-            )}
-
-            <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-white order-2 sm:order-none">
-              <div className="text-right hidden md:block">
-                <span className="text-xs text-gray-200 block leading-tight">Olá, <strong className="text-white">{currentUser.name}</strong></span>
-                {currentUser.isB2B && <span className="text-[10px] text-[#8ECAC5] font-bold">Limite: R$ {formatPrice(currentUser.creditLimit)}</span>}
-              </div>
-
-              {!currentUser.isAdmin && (
-                <>
-                  <button onClick={() => setCurrentScreen('orders')} className="hover:text-[#8ECAC5] transition" title="Meus Pedidos">
-                    <ClipboardIcon size={22} />
-                  </button>
-                  <button onClick={() => setCurrentScreen('cart')} className="relative hover:text-[#8ECAC5] transition">
-                    <ShoppingCartIcon size={22} />
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
-                        {cartItemCount}
-                      </span>
-                    )}
-                  </button>
-                </>
-              )}
-              <button onClick={handleLogout} className="hover:text-[#8ECAC5] transition ml-1" title="Sair">
-                <LogOutIcon size={22} />
-              </button>
-            </div>
-          </div>
-
-          {/* 🌟 2º ANDAR: Menu Superior Deslizante (Estilo Abas) */}
-          {currentScreen === 'catalog' && (
-            <div className="bg-[#3A5A53] px-0 relative z-30 border-t border-[#4A6B64] shadow-sm">
-              <div className="max-w-6xl mx-auto flex items-center overflow-x-auto whitespace-nowrap scrollbar-none text-[13px] font-semibold text-white/80">
-                
-                {/* Aba "Destaques / Início" */}
-                <button 
-                  onClick={() => { setActiveDeptHome(null); voltarParaHome(); }} 
-                  className={`py-3 px-5 transition-all cursor-pointer shrink-0 border-b-[3px] ${(!activeDeptHome && catalogView === 'home') ? 'border-white text-white font-bold bg-white/5' : 'border-transparent hover:bg-white/5 hover:text-white'}`}
-                >
-                  Destaques
-                </button>
-
-                {mapaCategorias.map(dept => {
-                  // Verifica se este é o departamento ativo
-                  const isSelected = activeDeptHome === dept.id;
-                  
-                  return (
-                    <button 
-                      key={dept.id} 
-                      onClick={() => {
-                        setActiveDeptHome(dept.id);
-                        if (catalogView !== 'home') voltarParaHome();
-                      }}
-                      className={`py-3 px-5 transition-all cursor-pointer shrink-0 border-b-[3px] ${isSelected ? 'border-[#8ECAC5] text-white font-bold bg-white/5' : 'border-transparent hover:bg-white/5 hover:text-white'}`}
-                    >
-                      {dept.nome}
-                    </button>
-                  );
-                })}
-              </div>
+          ) : (
+            <div className="flex-1 flex items-center gap-2 text-white cursor-pointer" onClick={voltarParaHome}>
+              <ArrowLeftIcon size={24} /> <span className="font-bold">Voltar</span>
             </div>
           )}
-          
+
+          {/* ÍCONES DE AÇÃO NA DIREITA */}
+          <div className="flex items-center gap-4 text-white shrink-0">
+            <button onClick={() => setCurrentScreen('orders')} title="Meus Pedidos" className="hover:text-[#8ECAC5] transition-colors"><ClipboardIcon size={22} /></button>
+            <button onClick={() => setCurrentScreen('cart')} className="relative hover:text-[#8ECAC5] transition-colors">
+              <ShoppingCartIcon size={22} />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-transparent">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+            <button onClick={handleLogout} title="Sair" className="hover:text-red-400 transition-colors ml-1"><LogOutIcon size={22} /></button>
+          </div>
         </header>
       )}
 
