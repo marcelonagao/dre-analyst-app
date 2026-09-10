@@ -143,12 +143,14 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     let tokenParaUsar = tokenData ? tokenData.refresh_token : envRefreshToken;
 
     if (!tokenParaUsar) {
-      console.error(`❌ [${contaNome}] Nenhum Refresh Token encontrado (nem no banco, nem no .env)!`);
+      console.error(`❌ [${contaNome}] Nenhum Refresh Token encontrado!`);
       return [];
     }
 
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
+    
+    // 🌟 CORREÇÃO 1: Endpoint de Autenticação Atualizado (api.bling.com.br)
+    const tokenResponse = await fetch('https://api.bling.com.br/v3/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${credentials}` },
       body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: tokenParaUsar })
@@ -156,7 +158,6 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
 
     const tokenInfo = await tokenResponse.json();
     
-    // 🚨 O MEGAFONE: Agora se o token falhar, a Vercel vai gritar o motivo exato!
     if (!tokenResponse.ok) {
       console.error(`❌ [${contaNome}] Bling recusou o Token. Motivo:`, tokenInfo);
       return [];
@@ -174,8 +175,8 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     let produtosConta = [];
 
     while (temMaisPaginas && pagina <= 100) {
-      // 🚀 VOLTAMOS COM O CRITERIO=5 (Produtos com Estoque)
-      const urlBling = `https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&criterio=5&situacao=A`;
+      // 🌟 CORREÇÃO 2: Endpoint de Produtos Atualizado (api.bling.com.br)
+      const urlBling = `https://api.bling.com.br/v3/produtos?pagina=${pagina}&limite=100&criterio=5&situacao=A`;
       
       const blingRes = await fetch(urlBling, {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
