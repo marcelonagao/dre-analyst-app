@@ -599,7 +599,7 @@ export default function CatalogoB2BTab({ onRoleChange }) {
 
         const produtosAdaptados = produtosData.map((p) => {
           // ⚠️ Puxando o preço direto da coluna 'custo_unitario' do banco
-          const precoExibicao = Number(p.custo_unitario) || 0; 
+          const precoExibicao = Number(p.preco) || 0; 
                     
           return {
             id: p.sku, 

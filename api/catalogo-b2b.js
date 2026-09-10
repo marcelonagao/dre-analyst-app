@@ -26,16 +26,19 @@ export default async function handler(req, res) {
     const produtosBling = produtosData.data || [];
     const projetoSupabase = process.env.VITE_SUPABASE_URL;
 
+    // 🚀 MAPEAMENTO BLINDADO DOS PREÇOS
     const catalogoLimpo = produtosBling.map(p => ({
       id: p.id,
       sku: p.codigo,
       nome: p.nome,
-      preco: p.preco,
-      // URL apontando sempre para o Supabase (O Fallback no front-end garante a segurança)
+      // No Bling V3, 'p.preco' é sempre o preço de Venda B2C/B2B principal
+      preco_venda: Number(p.preco) || 0,
+      // Se você usar preço promocional lá no ERP, ele já puxa automático!
+      preco_promocional: p.precoPromocional ? Number(p.precoPromocional) : null,
+      
       imagemUrl: `${projetoSupabase}/storage/v1/object/public/fotos-b2b/${p.codigo}.jpg`, 
     }));
 
-    // Se vieram 100 itens, assumimos que há uma próxima página
     const temMais = produtosBling.length === 100;
 
     return res.status(200).json({ success: true, produtos: catalogoLimpo, temMais });
