@@ -1833,13 +1833,11 @@ export default function CatalogoB2BTab({ onRoleChange }) {
       );
     }
 
-// Filtro Front-end Inteligente (Com trava de estoque e busca)
-const filteredProducts = dbProducts.filter(p => {
-  const estoqueReal = Number(p.stock || 0);
-  const temEstoque = estoqueReal > 0;
+    // Filtro Front-end Inteligente (Com trava de estoque e busca)
+    const filteredProducts = dbProducts.filter(p => {
+      const estoqueReal = Number(p.estoque || p.stock || 0);
+      const temEstoque = estoqueReal > 0;
 
-  // 1. O que foi digitado na barra de busca
-  // 1. O que foi digitado na barra de busca (Agora enxerga subcategorias também!)
       const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
       const textMatch = termoBusca === '' || 
                         (p.name && p.name.toLowerCase().includes(termoBusca)) || 
@@ -1847,15 +1845,14 @@ const filteredProducts = dbProducts.filter(p => {
                         (p.subcategory && p.subcategory.toLowerCase().includes(termoBusca)) ||
                         (p.marca && p.marca.toLowerCase().includes(termoBusca));
 
-  // 2. O que foi clicado nas bolinhas de categoria
-  const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
-  const categoryFilterMatch = catSelect === '' || catSelect === 'todas' ||
-                              (p.category && p.category.toLowerCase() === catSelect) ||
-                              (p.subcategory && p.subcategory.toLowerCase() === catSelect) ||
-                              (p.name && p.name.toLowerCase().includes(catSelect));
+      const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
+      const categoryFilterMatch = catSelect === '' || catSelect === 'todas' ||
+                                  (p.category && p.category.toLowerCase() === catSelect) ||
+                                  (p.subcategory && p.subcategory.toLowerCase() === catSelect) ||
+                                  (p.name && p.name.toLowerCase().includes(catSelect));
 
-  return temEstoque && textMatch && categoryFilterMatch;
-});
+      return temEstoque && textMatch && categoryFilterMatch;
+    });
 
     const targetClient = currentUser?.isRep ? selectedClientForRep : currentUser;
     const targetOrders = 3;
@@ -1866,7 +1863,8 @@ const filteredProducts = dbProducts.filter(p => {
     const isApproved = targetClient?.creditLimit > 0;
 
     return (
-      <div className="pb-24 min-h-screen bg-[#F4F9F8] pt-4">
+      <div className="pb-24 min-h-screen bg-[#F4F9F8]">
+        
         {/* Barra de Progresso Inteligente */}
         {!isApproved && targetClient && !currentUser.isAdmin && (
           <div className={`p-4 border-b ${hasReachedTarget ? 'bg-[#E8F3F2] border-[#8ECAC5]' : 'bg-yellow-50 border-yellow-200'}`}>
@@ -1879,180 +1877,135 @@ const filteredProducts = dbProducts.filter(p => {
                     : `Faltam ${remainingOrders} compra${remainingOrders > 1 ? 's' : ''} à vista para solicitar limite faturado.`}
                 </p>
               </div>
-              
               {!hasReachedTarget && (
                 <div className="w-full bg-yellow-200/50 rounded-full h-2.5 mt-2">
-                  <div 
-                    className="bg-yellow-500 h-2.5 rounded-full transition-all duration-1000 ease-out" 
-                    style={{ width: `${progressPercent}%` }}
-                  ></div>
+                  <div className="bg-yellow-500 h-2.5 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }}></div>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ========================================= */}
-        {/* MODO 1: HOME (Vitrine Estilo Busca Busca) */}
-        {/* ========================================= */}
-        {catalogView === 'home' && (
-          <div className="w-full animate-in fade-in duration-500">
-            
-            {/* 🌟 1. BANNER COLADO NO TOPO (Fica atrás do Header) */}
-            {bannersPromocionais.length > 0 && (
-              <div className="relative w-full h-[240px] sm:h-[320px] bg-[#4A6B64] overflow-hidden">
-                {bannersPromocionais.map((banner, index) => (
-                  <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                    <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                  </div>
-                ))}
-                
-                {/* BOLINHAS DE NAVEGAÇÃO DO CARROSSEL */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-                  {bannersPromocionais.map((_, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => setCurrentBanner(index)} 
-                      className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-6' : 'bg-white/50 w-2 hover:bg-white'}`}
-                    ></button>
-                  ))}
-                </div>
+        {/* 🌟 1. BANNER COLADO NO TOPO (SÓ APARECE NA HOME) */}
+        {catalogView === 'home' && bannersPromocionais.length > 0 && (
+          <div className="relative w-full h-[240px] sm:h-[320px] bg-[#4A6B64] overflow-hidden animate-in fade-in duration-500">
+            {bannersPromocionais.map((banner, index) => (
+              <div key={banner.id} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <img src={banner.imagem} alt={banner.alt} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
-            )}
-
-            {/* 🌟 2. CATEGORIAS LIMPAS (EMOJI + TEXTO) */}
-            <div className="bg-white pt-4 pb-3 mb-4 shadow-sm border-b border-[#E8F3F2]">
-              <div className="flex gap-2 overflow-x-auto px-3 scrollbar-none justify-start items-start">
-                
-                {/* Botão Fixo: Destaques */}
-                <div onClick={() => { setActiveDeptHome(null); voltarParaHome(); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
-                  <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">✨</div>
-                  <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight group-hover:text-[#4A6B64]">Destaques</span>
-                </div>
-
-                {/* Categorias Dinâmicas do Banco */}
-                {mapaCategorias.map((dept, idx) => (
-                  <div key={idx} onClick={() => { setActiveDeptHome(dept.id); abrirMarca(dept.nome); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
-                    <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">
-                      {dept.icone}
-                    </div>
-                    <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64]">
-                      {dept.nome}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            ))}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+              {bannersPromocionais.map((_, index) => (
+                <button key={index} onClick={() => setCurrentBanner(index)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${index === currentBanner ? 'bg-white w-6' : 'bg-white/50 w-2 hover:bg-white'}`}></button>
+              ))}
             </div>
-
-            {/* 🌟 3. PRODUTOS EM DESTAQUE (NOVO ESTILO MARKETPLACE) */}
-            {dbProducts.length > 0 && (
-              <div className="mb-10 px-2 max-w-6xl mx-auto">
-                <div className="flex items-center gap-2 mb-4 px-2">
-                  <SparklesIcon size={24} className="text-[#8ECAC5]" />
-                  <h3 className="text-xl sm:text-2xl font-black text-[#4A6B64]">Destaques para o seu Negócio</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 px-2">
-                  {dbProducts.slice(0, 10).map(product => (
-                    <div 
-                      key={product.id} 
-                      onClick={() => openProductDetails(product)}
-                      className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow"
-                    >
-                      {/* FOTO DO PRODUTO SEM PADDING + TAG DE FRETE */}
-                      <div className="relative aspect-square bg-[#F4F9F8] flex items-center justify-center">
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="w-full h-full object-cover mix-blend-multiply" 
-                          onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
-                        />
-                        
-                        {/* TAG ENTREGA EXPRESS NAS CORES GKL */}
-                        <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
-                          <TruckIcon size={12} /> Entrega Express
-                        </div>
-                      </div>
-                      
-                      {/* TEXTOS E PREÇO */}
-                      <div className="p-2 flex-1 flex flex-col">
-                        <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-1">
-                          {product.name}
-                        </h3>
-                        
-                        <div className="mt-auto flex items-baseline gap-1">
-                          {/* PREÇO GRANDE NA COR DA MARCA */}
-                          <span className="text-sm sm:text-base font-black text-[#4A6B64]">
-                            R${formatPrice(product.price)}
-                          </span>
-                          <span className="text-[9px] text-[#8ECAC5] font-bold lowercase">no pix</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex justify-center mt-6">
-                  <button onClick={() => abrirMarca('Todas')} className="text-sm font-bold text-[#8ECAC5] hover:text-[#4A6B64] transition-colors border border-[#8ECAC5] hover:border-[#4A6B64] rounded-full px-6 py-2">
-                    Ver todos os produtos
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* ========================================= */}
-        {/* MODO 2: LISTA DE PRODUTOS */}
-        {/* ========================================= */}
-        {catalogView === 'lista' && (
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-6 animate-in fade-in duration-300">
+        {/* 🌟 2. MENU DE CATEGORIAS (AGORA FICA VISÍVEL SEMPRE!) */}
+        <div className="bg-white pt-4 pb-3 mb-4 shadow-sm border-b border-[#E8F3F2] sticky top-[60px] z-30">
+          <div className="flex gap-2 overflow-x-auto px-3 scrollbar-none justify-start items-start">
             
-            <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
-                {/* Se clicou na categoria, mostra a categoria. Se digitou livremente, mostra o texto digitado */}
-                {selectedCategory 
-                  ? `Resultados para "${selectedCategory}"` 
-                  : searchQuery 
-                    ? `Buscando por "${searchQuery}"` 
-                    : 'Todos os Produtos'}
-              </h2>
-              <span className="bg-[#E8F3F2] text-[#4A6B64] text-xs font-bold px-3 py-1 rounded-full">
-                {/* 🌟 MUDANÇA AQUI: Trocado dbProducts por filteredProducts */}
-                {filteredProducts.length} itens encontrados
+            <div onClick={() => { setActiveDeptHome(null); voltarParaHome(); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
+              <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">✨</div>
+              <span className={`text-[10px] font-bold text-center leading-tight group-hover:text-[#4A6B64] ${!activeDeptHome && catalogView === 'home' ? 'text-[#4A6B64] border-b-2 border-[#8ECAC5]' : 'text-[#698F8A]'}`}>
+                Destaques
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 px-2">
-              {filteredProducts.map(product => (
-                <div 
-                  key={product.id} 
-                  onClick={() => openProductDetails(product)}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow"
-                >
-                  <div className="relative aspect-square bg-[#F4F9F8] flex items-center justify-center">
+            {mapaCategorias.map((dept, idx) => (
+              <div key={idx} onClick={() => { setActiveDeptHome(dept.id); abrirMarca(dept.nome); }} className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]">
+                <div className="text-3xl mb-1.5 group-hover:scale-110 transition-transform">{dept.icone}</div>
+                <span className={`text-[10px] font-bold text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64] ${activeDeptHome === dept.id ? 'text-[#4A6B64] border-b-2 border-[#8ECAC5]' : 'text-[#698F8A]'}`}>
+                  {dept.nome}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 🌟 3. PRODUTOS EM DESTAQUE (HOME) */}
+        {catalogView === 'home' && dbProducts.length > 0 && (
+          <div className="mb-10 px-2 max-w-6xl mx-auto animate-in fade-in duration-500">
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <SparklesIcon size={24} className="text-[#8ECAC5]" />
+              <h3 className="text-xl sm:text-2xl font-black text-[#4A6B64]">Destaques para o seu Negócio</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 px-2">
+              {dbProducts.slice(0, 10).map(product => (
+                <div key={product.id} onClick={() => openProductDetails(product)} className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow">
+                  
+                  {/* CAIXA RÍGIDA DA IMAGEM: Nunca quebra o alinhamento! */}
+                  <div className="relative w-full aspect-square bg-white flex-shrink-0">
                     <img 
                       src={product.image} 
                       alt={product.name} 
-                      className="w-full h-full object-cover mix-blend-multiply" 
-                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
+                      className="absolute inset-0 w-full h-full object-contain p-2 mix-blend-multiply" 
+                      onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
                     />
-                    
-                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[9px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
                       <TruckIcon size={12} /> Entrega Express
                     </div>
                   </div>
                   
-                  <div className="p-2 flex-1 flex flex-col">
-                    <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-1">
+                  <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
+                    <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-2 uppercase">
                       {product.name}
                     </h3>
-                    
                     <div className="mt-auto flex items-baseline gap-1">
-                      <span className="text-sm sm:text-base font-black text-[#4A6B64]">
-                        R${formatPrice(product.price)}
-                      </span>
+                      <span className="text-sm sm:text-base font-black text-[#4A6B64]">R${formatPrice(product.price)}</span>
+                      <span className="text-[9px] text-[#8ECAC5] font-bold lowercase">no pix</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-center mt-6">
+              <button onClick={() => abrirMarca('Todas')} className="text-sm font-bold text-[#8ECAC5] hover:text-[#4A6B64] transition-colors border border-[#8ECAC5] hover:border-[#4A6B64] rounded-full px-6 py-2">
+                Ver todos os produtos
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 🌟 4. RESULTADOS DA PESQUISA / CATEGORIA (LISTA) */}
+        {catalogView === 'lista' && (
+          <div className="mb-10 px-2 max-w-6xl mx-auto animate-in fade-in duration-300">
+            <div className="flex justify-between items-center mb-4 px-2">
+              <h2 className="text-lg sm:text-xl font-bold text-[#4A6B64]">
+                {selectedCategory ? selectedCategory : searchQuery ? `Buscando: "${searchQuery}"` : 'Todos os Produtos'}
+              </h2>
+              <span className="bg-[#8ECAC5] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                {filteredProducts.length} itens
+              </span>
+            </div>
+
+            {/* O MESMO GRID RÍGIDO E PERFEITO APLICADO AQUI! */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 px-2">
+              {filteredProducts.map(product => (
+                <div key={product.id} onClick={() => openProductDetails(product)} className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow">
+                  
+                  <div className="relative w-full aspect-square bg-white flex-shrink-0">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="absolute inset-0 w-full h-full object-contain p-2 mix-blend-multiply" 
+                      onError={(e) => { e.target.src = product.blingImage || 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
+                    />
+                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[9px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+                      <TruckIcon size={12} /> Entrega Express
+                    </div>
+                  </div>
+                  
+                  <div className="p-2 sm:p-3 flex-1 flex flex-col justify-between">
+                    <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-2 uppercase">
+                      {product.name}
+                    </h3>
+                    <div className="mt-auto flex items-baseline gap-1">
+                      <span className="text-sm sm:text-base font-black text-[#4A6B64]">R${formatPrice(product.price)}</span>
                       <span className="text-[9px] text-[#8ECAC5] font-bold lowercase">no pix</span>
                     </div>
                   </div>
@@ -2062,11 +2015,7 @@ const filteredProducts = dbProducts.filter(p => {
 
             {temMaisProdutos && !loadingCatalog && (
               <div className="flex justify-center mt-10 mb-6 pb-20">
-                <button 
-                  onClick={() => buscarProdutos(paginaAtual + 1)}
-                  disabled={carregandoMais}
-                  className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2"
-                >
+                <button onClick={() => buscarProdutos(paginaAtual + 1)} disabled={carregandoMais} className="bg-[#4A6B64] hover:bg-[#3A5A53] text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2">
                   {carregandoMais ? "Carregando..." : "Carregar mais produtos"}
                 </button>
               </div>
@@ -2083,17 +2032,14 @@ const filteredProducts = dbProducts.filter(p => {
               </span>
               <span className="font-extrabold text-xl">R$ {formatPrice(cartTotal)}</span>
             </div>
-            <button 
-              onClick={() => setCurrentScreen('cart')}
-              className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform"
-            >
+            <button onClick={() => setCurrentScreen('cart')} className="flex items-center gap-2 font-bold bg-white text-[#00897B] px-5 py-2.5 rounded-xl shadow-sm hover:scale-105 transition-transform">
               Ver Carrinho
             </button>
           </div>
         )}
       </div>
     );
-  }; // FIM DO renderCatalog
+  };
 
   const renderCart = () => (
     <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
