@@ -1838,13 +1838,14 @@ const filteredProducts = dbProducts.filter(p => {
   const estoqueReal = Number(p.stock || 0);
   const temEstoque = estoqueReal > 0;
 
+  // 1. O que foi digitado na barra de busca
   // 1. O que foi digitado na barra de busca (Agora enxerga subcategorias também!)
-  const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
-  const textMatch = termoBusca === '' || 
-                    (p.name && p.name.toLowerCase().includes(termoBusca)) || 
-                    (p.category && p.category.toLowerCase().includes(termoBusca)) ||
-                    (p.subcategory && p.subcategory.toLowerCase().includes(termoBusca)) ||
-                    (p.marca && p.marca.toLowerCase().includes(termoBusca));
+      const termoBusca = searchQuery ? searchQuery.toLowerCase() : '';
+      const textMatch = termoBusca === '' || 
+                        (p.name && p.name.toLowerCase().includes(termoBusca)) || 
+                        (p.category && p.category.toLowerCase().includes(termoBusca)) ||
+                        (p.subcategory && p.subcategory.toLowerCase().includes(termoBusca)) ||
+                        (p.marca && p.marca.toLowerCase().includes(termoBusca));
 
   // 2. O que foi clicado nas bolinhas de categoria
   const catSelect = selectedCategory ? selectedCategory.toLowerCase() : '';
@@ -1935,28 +1936,22 @@ const filteredProducts = dbProducts.filter(p => {
                   </div>
 
                   {deptAtual.marcas && deptAtual.marcas.length > 0 ? (
-                    <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scrollbar-none justify-start sm:justify-center">
-                      {deptAtual.marcas.map((marca, idx) => (
-                        <div 
-                          key={idx} 
-                          onClick={() => abrirMarca(marca.busca)}
-                          className="flex flex-col items-center cursor-pointer group shrink-0 w-[76px] sm:w-24"
-                        >
-                          {/* 🌟 MÁGICA AQUI: Lógica de renderizar a foto da marca ou o emoji */}
-                          <div className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] rounded-full bg-[#F4F9F8] border border-[#E8F3F2] flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 group-hover:bg-[#E8F3F2] group-hover:border-[#8ECAC5] transition-all duration-300 overflow-hidden relative">
-                            {marca.imagem ? (
-                              <img src={marca.imagem} alt={marca.nome} className="w-full h-full object-contain p-2 mix-blend-multiply hover:scale-110 transition-transform duration-500" />
-                            ) : (
-                              <span className="opacity-80">{deptAtual.icone || '🏷️'}</span>
-                            )}
-                          </div>
-                          
-                          <span className="text-[10px] sm:text-xs font-bold text-[#4A6B64] mt-2 text-center line-clamp-2 leading-tight group-hover:text-[#00897B] transition-colors">
-                            {marca.nome}
-                          </span>
+                    <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-none justify-start">
+                    {deptAtual.marcas.map((marca, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => abrirMarca(marca.busca)}
+                        className="flex flex-col items-center cursor-pointer group shrink-0 w-[72px]"
+                      >
+                        <div className="text-[#8ECAC5] text-3xl mb-1.5 group-hover:scale-110 group-hover:text-[#4A6B64] transition-all">
+                          {deptAtual.icone}
                         </div>
-                      ))}
-                    </div>
+                        <span className="text-[10px] font-bold text-[#698F8A] text-center leading-tight line-clamp-2 group-hover:text-[#4A6B64]">
+                          {marca.nome}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   ) : (
                     <div className="text-center py-4 text-[#698F8A] text-sm">
                       Nenhuma subcategoria cadastrada para este departamento.
@@ -2032,98 +2027,36 @@ const filteredProducts = dbProducts.filter(p => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 px-2">
               {filteredProducts.map(product => (
                 <div 
                   key={product.id} 
                   onClick={() => openProductDetails(product)}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col border border-[#E8F3F2] hover:shadow-md transition-all duration-300 cursor-pointer group"
+                  className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col cursor-pointer border border-[#E8F3F2] hover:shadow-md transition-shadow"
                 >
-                  <div className="h-40 sm:h-48 relative p-3 flex justify-center items-center bg-white border-b border-[#F4F9F8]">
-                  <img 
-  src={product.sku 
-    ? `https://owtdvdelyalhielaeoca.supabase.co/storage/v1/object/public/fotos-b2b/${product.sku}.jpg` 
-    : product.image} 
-  alt={product.name} 
-  className="max-w-full max-h-full object-contain mix-blend-multiply" 
-  onError={(e) => { 
-    if (product.image && e.target.src !== product.image) {
-      e.target.src = product.image;
-    } else {
-      e.target.onerror = null; 
-      e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; 
-    }
-  }}
-/>
-                    {product.category && (
-                      <span className="absolute top-2 left-2 bg-[#8ECAC5] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-widest shadow-sm z-10">
-                        {product.category}
-                      </span>
-                    )}
+                  <div className="relative aspect-square bg-[#F4F9F8] flex items-center justify-center">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover mix-blend-multiply" 
+                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400'; }}
+                    />
+                    
+                    <div className="absolute bottom-0 left-0 w-full bg-[#8ECAC5] text-[#4A6B64] text-[8px] sm:text-[10px] font-black py-1 px-1.5 flex items-center gap-1 uppercase tracking-tighter">
+                      <TruckIcon size={12} /> Entrega Express
+                    </div>
                   </div>
                   
-                  <div className="p-2 sm:p-3 flex-1 flex flex-col items-center text-center">
-                    <h3 className="text-xs sm:text-sm font-semibold text-[#4A6B64] line-clamp-2 min-h-[32px] sm:min-h-[40px] leading-tight mb-1 group-hover:text-[#8ECAC5] transition-colors">
+                  <div className="p-2 flex-1 flex flex-col">
+                    <h3 className="text-[11px] sm:text-xs font-bold text-[#4A6B64] line-clamp-2 leading-snug mb-1">
                       {product.name}
                     </h3>
-                    <p className="text-[10px] text-[#698F8A] mb-2">Disponível em Estoque</p>
                     
-                    <div className="mt-auto w-full flex flex-col items-center">
-                      <span className="text-base sm:text-lg font-extrabold text-[#4A6B64] mb-2">
-                        R$ {formatPrice(product.price)}
+                    <div className="mt-auto flex items-baseline gap-1">
+                      <span className="text-sm sm:text-base font-black text-[#4A6B64]">
+                        R${formatPrice(product.price)}
                       </span>
-                      
-                      {(() => {
-                        const itemNoCarrinho = cart.find(item => item.id === product.id);
-                        const qtde = itemNoCarrinho ? itemNoCarrinho.quantity : 0;
-
-                        if (qtde > 0) {
-                          return (
-                            <div className="w-full flex items-center justify-between bg-[#E8F3F2] border border-[#8ECAC5] rounded-lg p-1 overflow-hidden">
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  if (qtde === 1) removeFromCart(product.id); 
-                                  else updateCartQuantity(product.id, qtde - 1); 
-                                }}
-                                className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
-                              >-</button>
-                              
-                              <input 
-                                type="text"
-                                inputMode="numeric"
-                                value={qtde}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/[^0-9]/g, '');
-                                  updateCartQuantity(product.id, val === '' ? '' : Number(val));
-                                }}
-                                onBlur={(e) => {
-                                  if (qtde === '' || qtde <= 0) removeFromCart(product.id);
-                                }}
-                                className="w-10 text-center font-extrabold text-[#4A6B64] bg-transparent outline-none"
-                              />
-
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  updateCartQuantity(product.id, Number(qtde || 0) + 1); 
-                                }}
-                                className="w-8 h-8 flex items-center justify-center text-[#4A6B64] font-bold text-lg hover:bg-white rounded-md transition-colors"
-                              >+</button>
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); addToCart(product, 1); }}
-                              className="w-full bg-[#E8F3F2] text-[#4A6B64] font-bold text-xs sm:text-sm py-2 rounded-lg hover:bg-[#8ECAC5] hover:text-white transition-colors"
-                            >
-                              Adicionar
-                            </button>
-                          );
-                        }
-                      })()}
+                      <span className="text-[9px] text-[#8ECAC5] font-bold lowercase">no pix</span>
                     </div>
                   </div>
                 </div>
@@ -3264,41 +3197,35 @@ const filteredProducts = dbProducts.filter(p => {
             {/* 🌟 BARRA DE BUSCA GLOBAL (Responsiva: Centro no PC, Linha inteira no Celular) */}
             {currentScreen === 'catalog' ? (
               <form 
-                onSubmit={(e) => {
-                  e.preventDefault(); // Impede a página de recarregar
-                  if (searchQuery.trim()) {
-                    setSelectedCategory(''); // Deixa vazio para indicar que é busca livre
-                    setCatalogView('lista'); // Muda a tela para a lista de resultados
-                    buscarProdutos(1, searchQuery.trim()); // Dispara a busca na API
-                    window.scrollTo(0, 0); // Joga a tela pro topo
-                  }
-                }} 
-                className="flex-1 w-full sm:w-auto order-3 sm:order-none mt-2 sm:mt-0 max-w-2xl mx-auto"
-              >
-                <div className="relative flex items-center w-full group">
-                  <SearchIcon size={20} className="absolute left-4 text-[#698F8A] group-focus-within:text-[#8ECAC5] transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Buscar produtos, marcas ou categorias..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-white/95 text-[#4A6B64] font-semibold rounded-full py-2.5 sm:py-3 pl-12 pr-10 outline-none focus:bg-white focus:ring-4 focus:ring-[#8ECAC5]/30 transition-all shadow-inner"
-                  />
-                  {/* Botão para limpar a busca rapidamente */}
-                  {searchQuery && (
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setSearchQuery('');
-                        if (catalogView === 'lista') voltarParaHome();
-                      }}
-                      className="absolute right-4 text-gray-400 hover:text-[#4A6B64] transition-colors"
-                    >
-                      <CloseIcon size={16} />
-                    </button>
-                  )}
-                </div>
-              </form>
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  setSelectedCategory('');
+                  setCatalogView('lista');
+                  buscarProdutos(1, searchQuery.trim());
+                  window.scrollTo(0, 0);
+                }
+              }} 
+              className="flex-1 w-full sm:w-auto order-3 sm:order-none mt-2 sm:mt-0 max-w-2xl mx-auto bg-[#F4F9F8] rounded-md flex items-center px-2 py-1.5 shadow-inner"
+            >
+              <SearchIcon size={20} className="text-[#8ECAC5] ml-2" />
+              <input
+                type="text"
+                placeholder="Pesquisar no Busca Busca..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent outline-none text-sm text-[#4A6B64] font-semibold ml-2 placeholder-[#8ECAC5] py-1"
+              />
+              {searchQuery && (
+                <button 
+                  type="button" 
+                  onClick={() => { setSearchQuery(''); if (catalogView === 'lista') voltarParaHome(); }}
+                  className="mr-2 text-[#8ECAC5] hover:text-[#4A6B64] transition-colors"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              )}
+            </form>
             ) : (
               <div className="flex-1"></div>
             )}
