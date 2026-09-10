@@ -133,13 +133,19 @@ function processarProdutoBling(nomeProdutoBling) {
 
 // 2. FUNÇÃO QUE BUSCA NO BLING E CLASSIFICA OS PRODUTOS
 async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
-  if (!clientId || !clientSecret) return [];
+  if (!clientId || !clientSecret) {
+    console.error(`❌ [${contaNome}] Faltam Client ID ou Secret nas variáveis de ambiente!`);
+    return [];
+  }
 
   try {
     let { data: tokenData } = await supabase.from('bling_tokens').select('refresh_token').eq('conta', contaNome).single();
     let tokenParaUsar = tokenData ? tokenData.refresh_token : envRefreshToken;
 
-    if (!tokenParaUsar) return [];
+    if (!tokenParaUsar) {
+      console.error(`❌ [${contaNome}] Nenhum Refresh Token encontrado (nem no banco, nem no .env)!`);
+      return [];
+    }
 
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const tokenResponse = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
@@ -149,12 +155,17 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     });
 
     const tokenInfo = await tokenResponse.json();
-    if (!tokenResponse.ok) return [];
+    
+    // 🚨 O MEGAFONE: Agora se o token falhar, a Vercel vai gritar o motivo exato!
+    if (!tokenResponse.ok) {
+      console.error(`❌ [${contaNome}] Bling recusou o Token. Motivo:`, tokenInfo);
+      return [];
+    }
 
     try {
       await supabase.from('bling_tokens').upsert({ conta: contaNome, refresh_token: tokenInfo.refresh_token });
     } catch (err) {
-      console.error(`Erro ao salvar token:`, err);
+      console.error(`⚠️ Erro ao salvar novo token no Supabase:`, err);
     }
 
     const accessToken = tokenInfo.access_token;
@@ -162,13 +173,19 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     let temMaisPaginas = true;
     let produtosConta = [];
 
-    // Busca até 100 páginas (10.000 produtos)
     while (temMaisPaginas && pagina <= 100) {
-      const blingRes = await fetch(`https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&tipo=P&situacao=A`, {
+      // 🚀 VOLTAMOS COM O CRITERIO=5 (Produtos com Estoque)
+      const urlBling = `https://www.bling.com.br/Api/v3/produtos?pagina=${pagina}&limite=100&criterio=5&situacao=A`;
+      
+      const blingRes = await fetch(urlBling, {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
       });
 
-      if (!blingRes.ok) break;
+      if (!blingRes.ok) {
+        const erroApi = await blingRes.json();
+        console.error(`❌ [${contaNome}] Erro ao buscar produtos na página ${pagina}:`, erroApi);
+        break;
+      }
 
       const blingData = await blingRes.json();
       const listaProdutos = blingData.data || [];
@@ -184,19 +201,18 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
         const nomeProd = prod.nome || 'Produto Sem Nome';
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
         
-        // 🚀 O SEGREDO ESTÁ AQUI: LENDO O PREÇO DE VENDA E O PREÇO DE CUSTO
+        // LENDO O PREÇO DE VENDA E O DE CUSTO
         const precoDeVenda = Number(prod.preco) || 0; 
         const custoUnitario = Number(prod.precoCusto) || 0;
 
-        // 🧠 APLICA A INTELIGÊNCIA AQUI
         const classificacao = processarProdutoBling(nomeProd);
 
         produtosConta.push({
           sku,
           nome: nomeProd,
           marca: prod.brand || prod.marca || 'Sem Marca',
-          custoUnitario,         // Para o painel de Inteligência e DRE
-          precoVenda: precoDeVenda, // Para o catálogo B2B
+          custoUnitario,         
+          precoVenda: precoDeVenda, 
           estoque: estoqueFisico,
           categoria: classificacao.categoria,
           subcategoria: classificacao.subcategoria
@@ -209,7 +225,7 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     return produtosConta;
 
   } catch (err) {
-    console.error(`Erro ao consultar Bling ${contaNome}:`, err);
+    console.error(`❌ Erro fatal ao consultar Bling ${contaNome}:`, err);
     return [];
   }
 }
