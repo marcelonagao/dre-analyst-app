@@ -131,6 +131,9 @@ function processarProdutoBling(nomeProdutoBling) {
     return { categoria: 'Outros', subcategoria: 'Não Classificado' };
 }
 
+// ⏳ FUNÇÃO DE PAUSA PARA RESPEITAR O LIMITE DO BLING (3 req/seg)
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // 2. FUNÇÃO QUE BUSCA NO BLING E CLASSIFICA OS PRODUTOS
 async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, contaNome) {
   if (!clientId || !clientSecret) {
@@ -149,7 +152,6 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
 
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     
-    // 🌟 CORREÇÃO 1: Endpoint de Autenticação Atualizado (api.bling.com.br)
     const tokenResponse = await fetch('https://api.bling.com.br/v3/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${credentials}` },
@@ -175,7 +177,6 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
     let produtosConta = [];
 
     while (temMaisPaginas && pagina <= 100) {
-      // 🌟 CORREÇÃO 2: Endpoint de Produtos Atualizado (api.bling.com.br)
       const urlBling = `https://api.bling.com.br/v3/produtos?pagina=${pagina}&limite=100&criterio=5&situacao=A`;
       
       const blingRes = await fetch(urlBling, {
@@ -184,8 +185,8 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
 
       if (!blingRes.ok) {
         const erroApi = await blingRes.json();
-        console.error(`❌ [${contaNome}] Erro ao buscar produtos na página ${pagina}:`, erroApi);
-        break;
+        console.error(`❌ [${contaNome}] Erro na página ${pagina}:`, erroApi);
+        break; // Se der erro, para a busca para não travar tudo
       }
 
       const blingData = await blingRes.json();
@@ -202,7 +203,6 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
         const nomeProd = prod.nome || 'Produto Sem Nome';
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
         
-        // LENDO O PREÇO DE VENDA E O DE CUSTO
         const precoDeVenda = Number(prod.preco) || 0; 
         const custoUnitario = Number(prod.precoCusto) || 0;
 
@@ -219,7 +219,12 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
           subcategoria: classificacao.subcategoria
         });
       }
+      
+      console.log(`⏳ [${contaNome}] Página ${pagina} concluída. Aguardando para evitar bloqueio...`);
       pagina++;
+      
+      // 🌟 O SEGREDO: O robô "respira" por 400 milissegundos antes de ir para a próxima página
+      await delay(400); 
     }
 
     console.log(`✅ Bling ${contaNome}: ${produtosConta.length} SKUs encontrados.`);
