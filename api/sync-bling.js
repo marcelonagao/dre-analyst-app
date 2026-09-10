@@ -183,7 +183,10 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
         const sku = String(prod.codigo).trim();
         const nomeProd = prod.nome || 'Produto Sem Nome';
         const estoqueFisico = Math.round(Number(prod.estoque?.saldoFisicoTotal || prod.estoque?.saldoVirtualTotal) || 0);
-        const custoUnitario = Number(prod.precoCusto || prod.preco) || 0;
+        
+        // 🚀 O SEGREDO ESTÁ AQUI: LENDO O PREÇO DE VENDA E O PREÇO DE CUSTO
+        const precoDeVenda = Number(prod.preco) || 0; 
+        const custoUnitario = Number(prod.precoCusto) || 0;
 
         // 🧠 APLICA A INTELIGÊNCIA AQUI
         const classificacao = processarProdutoBling(nomeProd);
@@ -192,7 +195,8 @@ async function buscarProdutosBling(clientId, clientSecret, envRefreshToken, cont
           sku,
           nome: nomeProd,
           marca: prod.brand || prod.marca || 'Sem Marca',
-          custoUnitario,
+          custoUnitario,         // Para o painel de Inteligência e DRE
+          precoVenda: precoDeVenda, // Para o catálogo B2B
           estoque: estoqueFisico,
           categoria: classificacao.categoria,
           subcategoria: classificacao.subcategoria
@@ -228,6 +232,8 @@ export default async function handler(req, res) {
           const item = estoqueConsolidadoMap.get(p.sku);
           item.estoque_atual += p.estoque;
           if (p.custoUnitario > 0) item.custo_unitario = p.custoUnitario;
+          // Se houver um preço de venda maior no B2C, ou algo assim, atualiza (opcional)
+          if (p.precoVenda > 0) item.preco_venda = p.precoVenda;
         } else {
           estoqueConsolidadoMap.set(p.sku, {
             sku: p.sku,
@@ -236,6 +242,7 @@ export default async function handler(req, res) {
             categoria: p.categoria,
             subcategoria: p.subcategoria,
             custo_unitario: p.custoUnitario,
+            preco_venda: p.precoVenda, // 🚀 SALVANDO A NOVA COLUNA NO SUPABASE
             estoque_atual: p.estoque,
             lead_time: 15
           });
